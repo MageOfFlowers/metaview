@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Meta Analysis</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html">← Quay lại</a>
+            <h1>📈 Phân tích Meta Card Game</h1>
+        </header>
+
+        <div class="card">
+            <select id="filterComp"><option value="all">Tất cả giải đấu</option></select>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card"><canvas id="winrateChart"></canvas></div>
+            <div class="card"><canvas id="usageChart"></canvas></div>
+        </div>
+
+        <div class="card">
+            <table id="metaTable">
+                <thead>
+                    <tr><th>Thẻ bài</th><th>Hệ</th><th>Số Deck</th><th>Winrate</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { MetaEngine } from './js/meta-engine.js';
+        const API_BASE = "https://metaanalyse.onrender.com/api";
+        let rawData = {};
+        let charts = {};
+
+        async function init() {
+            // Tải dữ liệu thô
+            const [cards, uses, infos, comps] = await Promise.all([
+                fetch(`${API_BASE}/cards`).then(r => r.json()),
+                fetch(`${API_BASE}/competition-use`).then(r => r.json()),
+                fetch(`${API_BASE}/deck-infos`).then(r => r.json()),
+                fetch(`${API_BASE}/competitions`).then(r => r.json())
+            ]);
+            rawData = { cards, compUses: uses, deckInfos: infos };
+
+            // Đổ dữ liệu vào select
+            const select = document.getElementById('filterComp');
+            comps.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            
+            select.addEventListener('change', render);
+            render();
+        }
+
+        function render() {
+            const compId = document.getElementById('filterComp').value;
+            const stats = MetaEngine.calculateCardStats(rawData, compId);
+
+            // 1. Cập nhật bảng
+            const tbody = document.querySelector('#metaTable tbody');
+            tbody.innerHTML = stats.map(s => `
+                <tr>
+                    <td><strong>${s.name}</strong></td>
+                    <td><span class="badge" style="background:${MetaEngine.getColorCode(s.color)}">${s.color}</span></td>
+                    <td>${s.count}</td>
+                    <td>${s.winrate}%</td>
+                </tr>
+            `).join('');
+
+            // 2. Cập nhật biểu đồ (Ví dụ Bar Chart Winrate)
+            if(charts.win) charts.win.destroy();
+            charts.win = new Chart(document.getElementById('winrateChart'), {
+                type: 'bar',
+                data: {
+                    labels: stats.slice(0, 5).map(s => s.name),
+                    datasets: [{
+                        label: 'Winrate (%)',
+                        data: stats.slice(0, 5).map(s => s.winrate),
+                        backgroundColor: stats.slice(0, 5).map(s => MetaEngine.getColorCode(s.color))
+                    }]
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

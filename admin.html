@@ -1,0 +1,19 @@
+<script src="js/api.js"></script>
+
+<div class="card">
+    <h2>👤 Quản lý User</h2>
+    <input type="text" id="username" placeholder="Tên user...">
+    <button onclick="saveUser()">Thêm</button>
+</div>
+
+<div class="card">
+    <h2>🎴 Quản lý Deck</h2>
+    </div>
+
+<script>
+    async function saveUser() {
+        const name = document.getElementById('username').value;
+        await callAPI(`/users?username=${name}`, 'POST');
+        alert("Đã lưu!");
+    }
+</script>
