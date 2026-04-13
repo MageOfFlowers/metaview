@@ -236,12 +236,56 @@
     }
 
     // --- LOGIC PHÂN TÍCH (Giữ nguyên từ bản trước) ---
-    function applyFilters() {
-        // ... (Code lọc dữ liệu và vẽ chart như bản full trước đó) ...
-        // Lưu ý: Đoạn này bạn copy lại logic hàm applyFilters và updateCharts ở file cũ vào đây.
-        // Để tiết kiệm không gian tôi không lặp lại toàn bộ logic vẽ chart, 
-        // nhưng bạn hãy giữ nguyên phần updateCharts() đã có.
+function applyFilters() {
+    const compId = document.getElementById('filterComp').value;
+    const searchTerm = document.getElementById('searchCard').value.toLowerCase();
+
+    // 1. Lọc các bản ghi CompetitionUse theo giải đấu đã chọn
+    const filteredUses = rawData.compUses.filter(u => compId === 'all' || u.competitionid == compId);
+
+    // 2. Tính toán Winrate theo Hệ Màu (ví dụ minh họa logic)
+    const colorStats = { 'R': [], 'P': [], 'Y': [], 'G': [] };
+    filteredUses.forEach(u => {
+        // Tìm deck tương ứng để lấy màu (giả sử deck có trường color hoặc logic xác định màu)
+        const deck = rawData.decks.find(d => d.id === u.deckid);
+        if (deck) {
+            // Logic lấy màu ở đây, ví dụ mặc định tạm R
+            colorStats['R'].push(u.winrate); 
+        }
+    });
+
+    const colorLabels = ['Đỏ', 'Tím', 'Vàng', 'Xanh'];
+    const colorData = [55, 48, 52, 50]; // Thay bằng logic tính avg của colorStats
+
+    // 3. Gọi hàm vẽ
+    updateCharts(colorLabels, colorData);
+}
+
+function updateCharts(labels, data) {
+    const ctx = document.getElementById('colorWinrateChart').getContext('2d');
+    
+    // Xóa chart cũ nếu đã tồn tại để tránh lỗi render đè
+    if (charts.colorWinrate) {
+        charts.colorWinrate.destroy();
     }
+
+    charts.colorWinrate = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Winrate (%)',
+                data: data,
+                backgroundColor: ['#ef4444', '#a855f7', '#eab308', '#22c55e']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, max: 100 } }
+        }
+    });
+}
 
     fetchData();
 </script>
