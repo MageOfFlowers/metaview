@@ -7,78 +7,100 @@
 </head>
 <body>
     <div class="container">
-        <header><a href="index.html">← Trang chủ</a><h1>⚙️ Admin Panel</h1></header>
+        <header><a href="index.html">← Trang chủ</a><h1>⚙️ Quản lý hệ thống</h1></header>
         
         <div class="dashboard-grid">
             <div class="card">
-                <h3>🏆 Đăng ký Giải đấu</h3>
-                <div class="input-group"><label>Giải</label><select id="regComp"></select></div>
+                <h3>🏆 Đăng ký kết quả Giải</h3>
+                <div class="input-group"><label>Giải đấu</label><select id="regComp"></select></div>
                 <div class="input-group"><label>Người chơi</label><select id="regUser"></select></div>
                 <div class="input-group"><label>Bộ bài</label><select id="regDeck"></select></div>
                 <div class="form-grid">
-                    <div class="input-group"><label>Winrate (%)</label><input type="number" id="regWin" value="50"></div>
-                    <div class="input-group"><label>Hạng (Rank)</label><input type="number" id="regRank" value="1"></div>
+                    <div class="input-group"><label>Tỷ lệ thắng (%)</label><input type="number" id="regWin" value="50"></div>
+                    <div class="input-group"><label>Thứ hạng (Rank)</label><input type="number" id="regRank" value="1"></div>
                 </div>
-                <button class="btn-submit" onclick="register()">Xác nhận tham gia</button>
+                <button class="btn-submit" id="btn-reg">Xác nhận đăng ký</button>
             </div>
 
             <div class="card" style="grid-column: span 2;">
-                <h3>🎴 Tạo bộ bài (Deck)</h3>
-                <div class="input-group"><label>Tên bộ bài</label><input type="text" id="deckName"></div>
-                <div id="deck-list"></div>
-                <button onclick="addRow()" style="margin: 10px 0;">+ Thêm lá bài</button>
-                <button class="btn-submit" style="background:var(--primary)" onclick="saveDeck()">Lưu Deck & DeckInfo</button>
+                <h3>🎴 Tạo bộ bài & DeckInfo</h3>
+                <div class="input-group"><label>Tên bộ bài</label><input type="text" id="deckName" placeholder="Tên Deck..."></div>
+                <div id="deck-list-container">
+                    </div>
+                <button id="add-row-btn" style="margin: 10px 0;">+ Thêm lá bài</button>
+                <button class="btn-submit" style="background:var(--primary)" id="save-deck-btn">Lưu vào cơ sở dữ liệu</button>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { request } from './js/api.js';
-        let cardsData = [];
+        let allCards = [];
 
         async function init() {
-            const [u, d, c, cards] = await Promise.all([
+            // Load toàn bộ dữ liệu cần thiết trước
+            const [users, decks, comps, cards] = await Promise.all([
                 request('/users'), request('/decks'), request('/competitions'), request('/cards')
             ]);
-            cardsData = cards;
-            fill('regUser', u, 'username'); fill('regDeck', d, 'name'); fill('regComp', c, 'name');
-            addRow();
+            
+            allCards = cards || []; // Gán vào biến global để addRow dùng
+
+            if (allCards.length === 0) alert("Cảnh báo: Không lấy được danh sách lá bài từ server!");
+
+            // Đổ dữ liệu vào Dropdowns
+            fill('regUser', users, 'username');
+            fill('regDeck', decks, 'name');
+            fill('regComp', comps, 'name');
+
+            // Mồi dòng đầu tiên cho Deck Builder
+            addCardRow();
         }
 
-        window.addRow = () => {
-            const div = document.createElement('div');
-            div.className = 'form-grid';
-            div.style.marginBottom = '8px';
-            div.innerHTML = `
-                <select class="d-id">${cardsData.map(c => `<option value="${c.id}">${c.name} (${c.color})</option>`).join('')}</select>
+        function fill(id, data, key) {
+            const el = document.getElementById(id);
+            if (data && el) el.innerHTML = data.map(i => `<option value="${i.id}">${i[key] || i.name}</option>`).join('');
+        }
+
+        function addCardRow() {
+            const container = document.getElementById('deck-list-container');
+            const row = document.createElement('div');
+            row.className = 'form-grid';
+            row.style.marginBottom = '8px';
+            row.innerHTML = `
+                <select class="d-id">${allCards.map(c => `<option value="${c.id}">${c.name} (${c.color})</option>`).join('')}</select>
                 <input type="number" class="d-qty" value="1" min="1" max="4">
             `;
-            document.getElementById('deck-list').appendChild(div);
-        };
+            container.appendChild(row);
+        }
 
-        window.saveDeck = async () => {
+        // Event Listeners
+        document.getElementById('add-row-btn').onclick = addCardRow;
+        
+        document.getElementById('save-deck-btn').onclick = async () => {
             const name = document.getElementById('deckName').value;
             const ids = document.querySelectorAll('.d-id');
             const qtys = document.querySelectorAll('.d-qty');
-            const cards = Array.from(ids).map((el, i) => ({ cardid: parseInt(el.value), quantity: parseInt(qtys[i].value) }));
+            const cards = Array.from(ids).map((el, i) => ({ 
+                cardid: parseInt(el.value), 
+                quantity: parseInt(qtys[i].value) 
+            }));
             
-            await request('/decks', 'POST', { name, cards });
-            alert("Tạo Deck thành công!"); location.reload();
+            const res = await request('/decks', 'POST', { name, cards });
+            if(res) { alert("Thành công!"); location.reload(); }
         };
 
-        window.register = async () => {
+        document.getElementById('btn-reg').onclick = async () => {
             const body = {
                 competitionid: parseInt(document.getElementById('regComp').value),
                 userid: parseInt(document.getElementById('regUser').value),
                 deckid: parseInt(document.getElementById('regDeck').value),
                 winrate: parseFloat(document.getElementById('regWin').value),
-                rank: parseInt(document.getElementById('regRank').value)
+                rank: parseInt(document.getElementById('regRank').value) // Đã có Rank
             };
-            await request('/competition-use', 'POST', body);
-            alert("Đã lưu kết quả!");
+            const res = await request('/competition-use', 'POST', body);
+            if(res) alert("Đăng ký giải đấu hoàn tất!");
         };
 
-        function fill(id, data, key) { document.getElementById(id).innerHTML = data.map(i => `<option value="${i.id}">${i[key]}</option>`).join(''); }
         init();
     </script>
 </body>

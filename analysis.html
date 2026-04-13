@@ -2,114 +2,269 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Phân tích Meta nâng cao</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta Analysis - Card Game Portal</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header><a href="index.html">← Trang chủ</a><h1>📈 Phân tích Meta</h1></header>
 
-        <div class="card">
-            <div class="form-grid">
-                <div class="input-group"><label>Giải đấu</label><select id="fComp"><option value="all">Tất cả</option></select></div>
-                <div class="input-group"><label>Từ ngày</label><input type="date" id="fStart"></div>
-                <div class="input-group"><label>Đến ngày</label><input type="date" id="fEnd"></div>
-            </div>
-        </div>
+<div class="container">
+    <header>
+        <a href="index.html" class="back-link">← Trang chủ</a>
+        <h1>📈 Phân tích Meta & Hiệu suất</h1>
+    </header>
 
-        <div class="dashboard-grid" id="quick-stats">
-            <div class="card" style="border-left: 5px solid var(--primary);">
-                <p>Card hot nhất</p><h2 id="top-card">-</h2>
+    <div class="card">
+        <div class="form-grid">
+            <div class="input-group">
+                <label>Giải đấu</label>
+                <select id="filterComp"><option value="all">Tất cả giải đấu</option></select>
             </div>
-            <div class="card" style="border-left: 5px solid var(--success);">
-                <p>Màu Winrate cao nhất</p><h2 id="top-color">-</h2>
+            <div class="input-group">
+                <label>Từ ngày</label>
+                <input type="date" id="filterStart">
             </div>
-            <div class="card" style="border-left: 5px solid var(--warning);">
-                <p>Tổng số trận</p><h2 id="total-match">0</h2>
+            <div class="input-group">
+                <label>Đến ngày</label>
+                <input type="date" id="filterEnd">
             </div>
-        </div>
-
-        <div class="dashboard-grid">
-            <div class="card"><h3>Phân bổ Hệ màu</h3><canvas id="colorChart"></canvas></div>
-            <div class="card"><h3>Winrate theo Card</h3><canvas id="usageChart"></canvas></div>
-        </div>
-
-        <div class="card">
-            <h3>Chi tiết Card Meta</h3>
-            <table id="metaTable">
-                <thead><tr><th>Card</th><th>Hệ</th><th>Số Deck</th><th>Winrate TB</th></tr></thead>
-                <tbody></tbody>
-            </table>
+            <div class="input-group">
+                <label>Tìm thẻ bài</label>
+                <input type="text" id="searchCard" placeholder="Nhập tên thẻ...">
+            </div>
         </div>
     </div>
 
-    <script type="module">
-        import { request } from './js/api.js';
-        import { MetaEngine } from './js/meta-engine.js';
+    <div class="dashboard-grid">
+        <div class="card stat-box" style="border-top: 4px solid var(--primary);">
+            <p>Thẻ bài Meta nhất</p>
+            <h2 id="quick-top-card">-</h2>
+        </div>
+        <div class="card stat-box" style="border-top: 4px solid var(--success);">
+            <p>Hệ màu Winrate cao nhất</p>
+            <h2 id="quick-top-color">-</h2>
+        </div>
+        <div class="card stat-box" style="border-top: 4px solid var(--warning);">
+            <p>Tổng số lượt sử dụng</p>
+            <h2 id="quick-total-usage">0</h2>
+        </div>
+    </div>
 
-        let rawData = {};
-        let charts = {};
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Tỷ lệ sử dụng theo Hệ màu</h3>
+            <div style="height: 300px;"><canvas id="colorUsageChart"></canvas></div>
+        </div>
+        <div class="card">
+            <h3>Top 10 Thẻ bài có Winrate cao nhất</h3>
+            <div style="height: 300px;"><canvas id="winrateBarChart"></canvas></div>
+        </div>
+    </div>
 
-        async function init() {
-            const [c, u, i, comps] = await Promise.all([
-                request('/cards'), request('/competition-use'), request('/deck-infos'), request('/competitions')
-            ]);
-            rawData = { cards: c, compUses: u, deckInfos: i };
-            
-            const sel = document.getElementById('fComp');
-            comps.forEach(item => sel.innerHTML += `<option value="${item.id}">${item.name}</option>`);
-            
-            [sel, document.getElementById('fStart'), document.getElementById('fEnd')].forEach(el => 
-                el.addEventListener('change', render)
-            );
-            render();
-        }
-
-        function render() {
-            const filters = {
-                compId: document.getElementById('fComp').value,
-                startDate: document.getElementById('fStart').value,
-                endDate: document.getElementById('fEnd').value
-            };
-
-            const stats = MetaEngine.calculateStats(rawData, filters);
-            
-            // 1. Cập nhật Quick Stats
-            if(stats.cards.length > 0) {
-                document.getElementById('top-card').innerText = stats.cards[0].name;
-                document.getElementById('total-match').innerText = stats.usesCount;
-            }
-
-            // 2. Cập nhật bảng
-            const tbody = document.querySelector('#metaTable tbody');
-            tbody.innerHTML = stats.cards.map(s => `
+    <div class="card">
+        <h3>Danh sách Meta Thẻ bài (Click vào dòng để xem chi tiết số lượng)</h3>
+        <table>
+            <thead>
                 <tr>
-                    <td><strong>${s.name}</strong></td>
-                    <td><span class="badge" style="background:${MetaEngine.getColorCode(s.color)}">${s.color}</span></td>
-                    <td>${s.useCount}</td>
-                    <td>${s.avgWinrate}%</td>
+                    <th>Tên thẻ bài</th>
+                    <th>Hệ</th>
+                    <th>Số Deck sử dụng</th>
+                    <th>Winrate trung bình</th>
                 </tr>
-            `).join('');
+            </thead>
+            <tbody id="meta-body">
+                </tbody>
+        </table>
+    </div>
 
-            updateCharts(stats);
-        }
+    <div id="quantity-analysis" class="card hidden" style="background: #f1f5f9; border: 2px solid var(--primary);">
+        <h3 id="qty-title">Phân tích hiệu quả số lượng</h3>
+        <div class="dashboard-grid">
+            <div class="card">
+                <canvas id="qtyWinrateChart"></canvas>
+            </div>
+            <div class="card">
+                <table class="simple-table">
+                    <thead>
+                        <tr><th>Số lượng trong Deck</th><th>Số lần xuất hiện</th><th>Winrate</th></tr>
+                    </thead>
+                    <tbody id="qty-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+        <button onclick="document.getElementById('quantity-analysis').classList.add('hidden')" style="background: var(--text-muted); color: white;">Đóng phân tích</button>
+    </div>
+</div>
 
-        function updateCharts(stats) {
-            const ctx1 = document.getElementById('colorChart').getContext('2d');
-            const colorData = Object.keys(stats.colors).map(k => stats.colors[k].count);
-            
-            if(charts.c) charts.c.destroy();
-            charts.c = new Chart(ctx1, {
-                type: 'pie',
-                data: {
-                    labels: ['Đỏ', 'Tím', 'Vàng', 'Xanh'],
-                    datasets: [{ data: colorData, backgroundColor: ['#ef4444', '#a855f7', '#eab308', '#22c55e'] }]
-                }
+<script type="module">
+    import { request } from './js/api.js';
+    import { MetaEngine } from './js/meta-engine.js';
+
+    let rawData = { cards: [], compUses: [], deckInfos: [] };
+    let charts = {};
+
+    async function init() {
+        try {
+            const [cards, uses, infos, comps] = await Promise.all([
+                request('/cards'),
+                request('/competition-use'),
+                request('/deck-infos'),
+                request('/competitions')
+            ]);
+
+            rawData = { cards, compUses: uses, deckInfos: infos };
+
+            // Đổ dữ liệu vào select giải đấu
+            const fComp = document.getElementById('filterComp');
+            comps.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                fComp.appendChild(opt);
             });
+
+            // Gán sự kiện
+            [fComp, 'filterStart', 'filterEnd', 'searchCard'].forEach(id => {
+                const el = typeof id === 'string' ? document.getElementById(id) : id;
+                el.addEventListener('input', render);
+            });
+
+            render();
+        } catch (err) {
+            console.error("Không thể khởi tạo trang Analysis:", err);
+        }
+    }
+
+    function render() {
+        const filters = {
+            compId: document.getElementById('filterComp').value,
+            startDate: document.getElementById('filterStart').value,
+            endDate: document.getElementById('filterEnd').value,
+            search: document.getElementById('searchCard').value.toLowerCase()
+        };
+
+        const stats = MetaEngine.calculateStats(rawData, filters);
+        
+        // 1. Cập nhật Quick Stats
+        if(stats.cards.length > 0) {
+            document.getElementById('quick-top-card').innerText = stats.cards[0].name;
+            document.getElementById('quick-total-usage').innerText = stats.usesCount;
+            
+            // Tìm màu có winrate cao nhất
+            let bestColor = '-';
+            let maxWin = 0;
+            Object.keys(stats.colors).forEach(c => {
+                const wr = stats.colors[c].count > 0 ? stats.colors[c].win / stats.colors[c].count : 0;
+                if(wr > maxWin) { maxWin = wr; bestColor = c; }
+            });
+            document.getElementById('quick-top-color').innerText = `Hệ ${bestColor} (${maxWin.toFixed(1)}%)`;
         }
 
-        init();
-    </script>
+        // 2. Đổ bảng dữ liệu
+        const tbody = document.getElementById('meta-body');
+        const filteredCards = stats.cards.filter(c => c.name.toLowerCase().includes(filters.search));
+        
+        tbody.innerHTML = filteredCards.map(s => `
+            <tr onclick="window.analyzeQuantity(${s.id}, '${s.name}')" class="clickable-row">
+                <td><strong>${s.name} 🔍</strong></td>
+                <td><span class="badge" style="background:${MetaEngine.getColorCode(s.color)}">${s.color}</span></td>
+                <td>${s.useCount} lượt</td>
+                <td>${s.avgWinrate}%</td>
+            </tr>
+        `).join('');
+
+        updateMainCharts(stats);
+    }
+
+    function updateMainCharts(stats) {
+        // Biểu đồ Màu (Doughnut)
+        const ctxColor = document.getElementById('colorUsageChart').getContext('2d');
+        if(charts.color) charts.color.destroy();
+        charts.color = new Chart(ctxColor, {
+            type: 'doughnut',
+            data: {
+                labels: ['Đỏ (R)', 'Tím (P)', 'Vàng (Y)', 'Xanh (G)'],
+                datasets: [{
+                    data: ['R', 'P', 'Y', 'G'].map(c => stats.colors[c].count),
+                    backgroundColor: ['#ef4444', '#a855f7', '#eab308', '#22c55e']
+                }]
+            },
+            options: { maintainAspectRatio: false }
+        });
+
+        // Biểu đồ Winrate (Bar - Ngang)
+        const ctxWin = document.getElementById('winrateBarChart').getContext('2d');
+        const topWin = [...stats.cards]
+            .filter(c => c.useCount > 0)
+            .sort((a,b) => b.avgWinrate - a.avgWinrate)
+            .slice(0, 10);
+
+        if(charts.winrate) charts.winrate.destroy();
+        charts.winrate = new Chart(ctxWin, {
+            type: 'bar',
+            data: {
+                labels: topWin.map(c => c.name),
+                datasets: [{
+                    label: 'Winrate (%)',
+                    data: topWin.map(c => c.avgWinrate),
+                    backgroundColor: topWin.map(c => MetaEngine.getColorCode(c.color))
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                scales: { x: { beginAtZero: true, max: 100 } },
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // Hàm phân tích số lượng khi click vào dòng
+    window.analyzeQuantity = (cardId, cardName) => {
+        const qtyStats = MetaEngine.calculateQuantityStats(rawData, cardId);
+        const section = document.getElementById('quantity-analysis');
+        section.classList.remove('hidden');
+        document.getElementById('qty-title').innerText = `Phân tích số lượng trong bộ bài: ${cardName}`;
+
+        // Đổ bảng Qty
+        document.getElementById('qty-table-body').innerHTML = qtyStats.map(q => `
+            <tr>
+                <td><strong>${q.quantity} bản</strong></td>
+                <td>${q.count} deck</td>
+                <td>${q.avgWinrate}%</td>
+            </tr>
+        `).join('');
+
+        // Vẽ biểu đồ Qty
+        const ctxQty = document.getElementById('qtyWinrateChart').getContext('2d');
+        if(charts.qty) charts.qty.destroy();
+        charts.qty = new Chart(ctxQty, {
+            type: 'bar',
+            data: {
+                labels: qtyStats.map(q => `${q.quantity} bản`),
+                datasets: [{
+                    label: 'Winrate trung bình',
+                    data: qtyStats.map(q => q.avgWinrate),
+                    backgroundColor: '#2563eb'
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, max: 100 } } }
+        });
+
+        section.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    init();
+</script>
+
+<style>
+    .clickable-row { cursor: pointer; transition: background 0.2s; }
+    .clickable-row:hover { background: #f1f5f9 !important; }
+    .stat-box { text-align: center; padding: 15px; }
+    .stat-box h2 { font-size: 1.4rem; margin-top: 10px; color: var(--text-main); }
+    .simple-table { width: 100%; border-collapse: collapse; }
+    .simple-table th, .simple-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+</style>
+
 </body>
 </html>

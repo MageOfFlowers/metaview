@@ -44,6 +44,34 @@ export const MetaEngine = {
         return { cards: finalCards, colors: colorStats, usesCount: filteredUses.length };
     },
 
+    calculateQuantityStats(rawData, cardId) {
+        const { compUses, deckInfos } = rawData;
+        const statsByQty = {
+            1: { win: 0, count: 0 },
+            2: { win: 0, count: 0 },
+            3: { win: 0, count: 0 },
+            4: { win: 0, count: 0 }
+        };
+
+        // Lọc các bộ bài có chứa lá bài cardId này
+        compUses.forEach(use => {
+            const cardInDeck = deckInfos.find(di => di.deckid === use.deckid && di.cardid == cardId);
+            if (cardInDeck) {
+                const qty = cardInDeck.quantity;
+                if (statsByQty[qty]) {
+                    statsByQty[qty].count++;
+                    statsByQty[qty].win += use.winrate;
+                }
+            }
+        });
+
+        return Object.keys(statsByQty).map(qty => ({
+            quantity: qty,
+            count: statsByQty[qty].count,
+            avgWinrate: statsByQty[qty].count > 0 ? (statsByQty[qty].win / statsByQty[qty].count).toFixed(1) : 0
+        }));
+    },
+
     getColorCode(s) {
         const map = { 'R': '#ef4444', 'P': '#a855f7', 'Y': '#eab308', 'G': '#22c55e' };
         return map[s] || '#64748b';
