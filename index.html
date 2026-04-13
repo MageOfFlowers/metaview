@@ -10,67 +10,68 @@
             --primary: #2563eb; --success: #10b981; --bg: #f1f5f9; --text: #1e293b; 
             --red: #ef4444; --purple: #a855f7; --yellow: #eab308; --green: #22c55e;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 1250px; margin: auto; }
-        
-        /* Tabs */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; }
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; background: #e2e8f0; font-weight: 600; }
+        .tab-btn { padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; background: #e2e8f0; font-weight: 600; transition: 0.3s; }
         .tab-btn.active { background: var(--primary); color: white; }
-
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        
-        /* Form Styling */
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
         .input-group { display: flex; flex-direction: column; gap: 5px; }
         label { font-size: 0.85rem; font-weight: 600; color: #64748b; }
-        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
-        button.submit-btn { background: var(--success); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; }
-        
-        /* Analysis UI - Giữ nguyên từ bản trước */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-        .chart-container { height: 300px; position: relative; }
+        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; }
+        input:focus { border-color: var(--primary); }
+        button.submit-btn { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 10px; width: 100%; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .chart-box { min-height: 300px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f1f5f9; }
-        .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-        .bg-R { background-color: var(--red); } .bg-P { background-color: var(--purple); }
-        .bg-Y { background-color: var(--yellow); } .bg-G { background-color: var(--green); }
+        th { background: #f8fafc; color: #64748b; font-size: 0.8rem; text-transform: uppercase; }
         .hidden { display: none; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; color: white; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📊 Card Game Portal</h1>
+    <h1>📊 Card Game Meta Portal</h1>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="showTab('analysis')">📈 Phân tích Meta</button>
-        <button class="tab-btn" onclick="showTab('admin')">⚙️ Quản lý (Admin)</button>
+        <button id="btn-ana" class="tab-btn active" onclick="showTab('analysis')">📈 Phân tích Meta</button>
+        <button id="btn-adm" class="tab-btn" onclick="showTab('admin')">⚙️ Quản lý (Admin)</button>
     </div>
 
     <div id="tab-analysis">
         <div class="card">
             <div class="form-grid">
                 <div class="input-group">
-                    <label>Lọc theo giải</label>
-                    <select id="filterComp" onchange="applyFilters()"><option value="all">Tất cả</option></select>
+                    <label>Lọc theo giải đấu</label>
+                    <select id="filterComp" onchange="applyFilters()"><option value="all">Tất cả giải</option></select>
                 </div>
                 <div class="input-group">
-                    <label>Tìm thẻ</label>
-                    <input type="text" id="searchCard" oninput="applyFilters()" placeholder="Tên thẻ...">
+                    <label>Tìm kiếm thẻ bài</label>
+                    <input type="text" id="searchCard" oninput="applyFilters()" placeholder="Nhập tên lá bài...">
                 </div>
             </div>
         </div>
 
         <div class="dashboard-grid">
-            <div class="card"><h3>Winrate Hệ Màu</h3><div class="chart-container"><canvas id="colorWinrateChart"></canvas></div></div>
-            <div class="card"><h3>Top Thẻ Bài</h3><div class="chart-container"><canvas id="cardUsageChart"></canvas></div></div>
+            <div class="card chart-box">
+                <h3>Winrate theo Hệ màu</h3>
+                <canvas id="colorWinrateChart"></canvas>
+            </div>
+            <div class="card chart-box">
+                <h3>Tỷ lệ sử dụng Thẻ bài (%)</h3>
+                <canvas id="cardUsageChart"></canvas>
+            </div>
         </div>
 
         <div class="card">
-            <h3>Chi tiết Thẻ bài</h3>
+            <h3>Chi tiết Meta Thẻ bài</h3>
             <table>
-                <thead><tr><th>Tên thẻ</th><th>Số Deck</th><th>Winrate TB</th></tr></thead>
+                <thead>
+                    <tr><th>Tên thẻ</th><th>Hệ</th><th>Số Deck sử dụng</th><th>Winrate TB</th></tr>
+                </thead>
                 <tbody id="meta-body"></tbody>
             </table>
         </div>
@@ -79,38 +80,34 @@
     <div id="tab-admin" class="hidden">
         <div class="dashboard-grid">
             <div class="card">
-                <h3>👤 Thêm User mới</h3>
+                <h3>👤 Thêm User</h3>
                 <div class="input-group">
-                    <label>Username</label>
+                    <label>Tên người chơi mới</label>
                     <input type="text" id="newUsername" placeholder="Ví dụ: MageOfFlowers">
                 </div>
                 <button class="submit-btn" onclick="addUser()">Lưu User</button>
             </div>
 
-            <div class="card" style="grid-column: span 2;">
-                <h3>🎴 Tạo bộ bài (Deck)</h3>
-                <div class="input-group">
-                    <label>Tên bộ bài</label>
-                    <input type="text" id="newDeckName" placeholder="Ví dụ: Red Aggro v1">
-                </div>
-                <div id="deck-builder" style="margin-top:15px;">
-                    <label>Thành phần lá bài:</label>
-                    <div id="card-inputs-list">
-                        </div>
-                    <button onclick="addCardRow()" style="margin-top:10px; font-size: 0.8rem;">+ Thêm lá bài</button>
-                </div>
-                <button class="submit-btn" style="background:var(--primary)" onclick="addDeck()">Tạo bộ bài & DeckInfo</button>
-            </div>
-
-            <div class="card">
-                <h3>🏆 Đăng ký Giải đấu</h3>
+            <div class="card" style="grid-column: span 1;">
+                <h3>🏆 Đăng ký kết quả Giải</h3>
                 <div class="form-grid" style="grid-template-columns: 1fr;">
                     <div class="input-group"><label>Giải đấu</label><select id="regComp"></select></div>
                     <div class="input-group"><label>Người chơi</label><select id="regUser"></select></div>
-                    <div class="input-group"><label>Bộ bài</label><select id="regDeck"></select></div>
-                    <div class="input-group"><label>Tỷ lệ thắng (%)</label><input type="number" id="regWinrate" value="50"></div>
+                    <div class="input-group"><label>Bộ bài sử dụng</label><select id="regDeck"></select></div>
+                    <div class="input-group"><label>Tỷ lệ thắng thực tế (%)</label><input type="number" id="regWinrate" value="50"></div>
                 </div>
                 <button class="submit-btn" onclick="registerCompetition()">Xác nhận tham gia</button>
+            </div>
+
+            <div class="card" style="grid-column: span 2;">
+                <h3>🎴 Tạo bộ bài (Deck) mới</h3>
+                <div class="input-group">
+                    <label>Tên bộ bài</label>
+                    <input type="text" id="newDeckName" style="margin-bottom: 10px;" placeholder="Ví dụ: Blue Control v2">
+                </div>
+                <div id="card-inputs-list"></div>
+                <button onclick="addCardRow()" style="margin-top:10px; cursor:pointer;">+ Thêm lá bài</button>
+                <button class="submit-btn" style="background:var(--primary)" onclick="addDeck()">Lưu bộ bài hệ thống</button>
             </div>
         </div>
     </div>
@@ -121,38 +118,33 @@
     let rawData = { cards: [], compUses: [], deckInfos: [], competitions: [], users: [], decks: [] };
     let charts = {};
 
-    // --- KHỞI TẠO & TẢI DỮ LIỆU ---
     async function fetchData() {
         try {
             const [resCards, resUses, resInfos, resComps, resUsers, resDecks] = await Promise.all([
-                fetch(`${API_BASE}/cards`),
-                fetch(`${API_BASE}/competition-use`),
-                fetch(`${API_BASE}/deck-infos`),
-                fetch(`${API_BASE}/competitions`),
-                fetch(`${API_BASE}/users`), // Bạn cần thêm @GetMapping("/users") ở Backend
-                fetch(`${API_BASE}/decksget`)   // Bạn cần thêm @GetMapping("/decks") ở Backend
+                fetch(`${API_BASE}/cards`).then(r => r.json()),
+                fetch(`${API_BASE}/competition-use`).then(r => r.json()),
+                fetch(`${API_BASE}/deck-infos`).then(r => r.json()),
+                fetch(`${API_BASE}/competitions`).then(r => r.json()),
+                fetch(`${API_BASE}/users`).then(r => r.json()),
+                fetch(`${API_BASE}/decks`).then(r => r.json())
             ]);
 
-            rawData = {
-                cards: await resCards.json(),
-                compUses: await resUses.json(),
-                deckInfos: await resInfos.json(),
-                competitions: await resComps.json(),
-                users: await resUsers.json(),
-                decks: await resDecks.json()
-            };
+            rawData = { cards: resCards, compUses: resUses, deckInfos: resInfos, competitions: resComps, users: resUsers, decks: resDecks };
 
             populateDropdowns();
             applyFilters();
-        } catch (err) { console.error("Lỗi fetch:", err); }
+        } catch (err) { 
+            console.error("Lỗi tải dữ liệu. Hãy chắc chắn Backend đã chạy!"); 
+        }
     }
 
     function populateDropdowns() {
         const fill = (id, data, textKey) => {
             const el = document.getElementById(id);
+            if(!el) return;
             el.innerHTML = (id === 'filterComp' ? '<option value="all">Tất cả giải</option>' : '');
             data.forEach(item => {
-                el.innerHTML += `<option value="${item.id}">${item[textKey] || item.name || 'ID '+item.id}</option>`;
+                el.innerHTML += `<option value="${item.id}">${item[textKey] || item.name}</option>`;
             });
         };
         fill('filterComp', rawData.competitions, 'name');
@@ -161,133 +153,146 @@
         fill('regDeck', rawData.decks, 'name');
     }
 
-    // --- QUẢN LÝ TABS ---
     function showTab(tab) {
         document.getElementById('tab-analysis').classList.toggle('hidden', tab !== 'analysis');
         document.getElementById('tab-admin').classList.toggle('hidden', tab !== 'admin');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
-        if(tab === 'admin') addCardRow(); // Mồi 1 dòng card khi vào admin
+        document.getElementById('btn-ana').classList.toggle('active', tab === 'analysis');
+        document.getElementById('btn-adm').classList.toggle('active', tab === 'admin');
+        if(tab === 'admin' && document.getElementById('card-inputs-list').innerHTML === "") addCardRow();
     }
 
-    // --- LOGIC GỌI API (POST) ---
-
-    // 1. Thêm User
+    // --- XỬ LÝ ADMIN ---
     async function addUser() {
         const username = document.getElementById('newUsername').value;
-        if(!username) return alert("Nhập username!");
-        
-        await fetch(`${API_BASE}/users?username=${username}`, { method: 'POST' });
-        alert("Thành công!");
+        if(!username) return alert("Vui lòng nhập tên!");
+        await fetch(`${API_BASE}/users?username=${encodeURIComponent(username)}`, { method: 'POST' });
+        alert("Đã thêm User!");
         fetchData();
     }
 
-    // 2. Thêm Deck (Phức tạp hơn vì gửi kèm JSON Body)
     function addCardRow() {
         const container = document.getElementById('card-inputs-list');
-        const row = document.createElement('div');
-        row.className = 'form-grid';
-        row.style.marginBottom = '5px';
-        row.innerHTML = `
+        const div = document.createElement('div');
+        div.className = 'form-grid';
+        div.style.marginBottom = '8px';
+        div.innerHTML = `
             <select class="deck-card-id">${rawData.cards.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select>
             <input type="number" class="deck-card-qty" value="1" min="1" max="4">
         `;
-        container.appendChild(row);
+        container.appendChild(div);
     }
 
     async function addDeck() {
         const name = document.getElementById('newDeckName').value;
-        const cardIds = document.querySelectorAll('.deck-card-id');
-        const cardQtys = document.querySelectorAll('.deck-card-qty');
-        
+        const ids = document.querySelectorAll('.deck-card-id');
+        const qtys = document.querySelectorAll('.deck-card-qty');
         const cards = [];
-        cardIds.forEach((el, i) => {
-            cards.push({ cardid: parseInt(el.value), quantity: parseInt(cardQtys[i].value) });
-        });
-
-        const dto = { name: name, cards: cards };
-
+        ids.forEach((el, i) => cards.push({ cardid: parseInt(el.value), quantity: parseInt(qtys[i].value) }));
+        
         await fetch(`${API_BASE}/decks`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dto)
+            body: JSON.stringify({ name, cards })
         });
-        alert("Đã tạo Deck!");
+        alert("Đã tạo Deck thành công!");
         fetchData();
     }
 
-    // 3. Đăng ký Giải đấu (CompetitionUse)
     async function registerCompetition() {
         const dto = {
             competitionid: parseInt(document.getElementById('regComp').value),
             userid: parseInt(document.getElementById('regUser').value),
             deckid: parseInt(document.getElementById('regDeck').value),
-            winrate: parseFloat(document.getElementById('regWinrate').value),
-            rank: 1 // Mặc định rank 1 hoặc thêm input nếu cần
+            winrate: parseFloat(document.getElementById('regWinrate').value)
         };
-
         await fetch(`${API_BASE}/competition-use`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dto)
         });
-        alert("Đã đăng ký!");
+        alert("Đăng ký giải đấu thành công!");
         fetchData();
     }
 
-    // --- LOGIC PHÂN TÍCH (Giữ nguyên từ bản trước) ---
-function applyFilters() {
-    const searchTerm = document.getElementById('searchCard').value.toLowerCase();
-    const tbody = document.getElementById('meta-body');
-    tbody.innerHTML = ''; // Xóa dữ liệu cũ
+    // --- PHÂN TÍCH & BIỂU ĐỒ ---
+    function applyFilters() {
+        const compId = document.getElementById('filterComp').value;
+        const search = document.getElementById('searchCard').value.toLowerCase();
+        
+        // Lọc CompUses
+        const filteredUses = compId === 'all' ? rawData.compUses : rawData.compUses.filter(u => u.competitionid == compId);
+        
+        // Tính toán Meta cho từng lá bài
+        const stats = {};
+        rawData.cards.forEach(c => stats[c.id] = { name: c.name, color: c.color, count: 0, totalWinrate: 0 });
 
-    // Lọc dữ liệu cards dựa trên ô tìm kiếm
-    const filteredCards = rawData.cards.filter(card => 
-        card.name.toLowerCase().includes(searchTerm)
-    );
+        filteredUses.forEach(use => {
+            const deckContent = rawData.deckInfos.filter(di => di.deckid === use.deckid);
+            deckContent.forEach(item => {
+                if(stats[item.cardid]) {
+                    stats[item.cardid].count++;
+                    stats[item.cardid].totalWinrate += use.winrate;
+                }
+            });
+        });
 
-    filteredCards.forEach(card => {
-        // Tính toán sơ bộ hoặc hiển thị dữ liệu gốc
-        const row = `
+        const tableData = Object.values(stats)
+            .filter(s => s.name.toLowerCase().includes(search))
+            .sort((a, b) => b.count - a.count);
+
+        updateUI(tableData);
+    }
+
+    function updateUI(data) {
+        const tbody = document.getElementById('meta-body');
+        tbody.innerHTML = data.map(s => `
             <tr>
-                <td>${card.name}</td>
-                <td>0</td> <td>0%</td>
+                <td><strong>${s.name}</strong></td>
+                <td><span class="badge" style="background:${getColorCode(s.color)}">${s.color}</span></td>
+                <td>${s.count}</td>
+                <td>${s.count > 0 ? (s.totalWinrate / s.count).toFixed(1) : 0}%</td>
             </tr>
-        `;
-        tbody.insertAdjacentHTML('beforeend', row);
-    });
+        `).join('');
 
-    // Gọi hàm vẽ biểu đồ (nếu đã viết)
-    if (typeof updateCharts === "function") {
-        updateCharts();
-    }
-}
-
-function updateCharts(labels, data) {
-    const ctx = document.getElementById('colorWinrateChart').getContext('2d');
-    
-    // Xóa chart cũ nếu đã tồn tại để tránh lỗi render đè
-    if (charts.colorWinrate) {
-        charts.colorWinrate.destroy();
+        updateCharts(data);
     }
 
-    charts.colorWinrate = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Winrate (%)',
-                data: data,
-                backgroundColor: ['#ef4444', '#a855f7', '#eab308', '#22c55e']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true, max: 100 } }
-        }
-    });
-}
+    function getColorCode(c) {
+        const map = { 'R': '#ef4444', 'P': '#a855f7', 'Y': '#eab308', 'G': '#22c55e' };
+        return map[c] || '#64748b';
+    }
+
+    function updateCharts(data) {
+        const top5 = data.slice(0, 5);
+        
+        // Chart 1: Usage
+        if(charts.usage) charts.usage.destroy();
+        charts.usage = new Chart(document.getElementById('cardUsageChart'), {
+            type: 'doughnut',
+            data: {
+                labels: top5.map(s => s.name),
+                datasets: [{ data: top5.map(s => s.count), backgroundColor: top5.map(s => getColorCode(s.color)) }]
+            },
+            options: { maintainAspectRatio: false }
+        });
+
+        // Chart 2: Color Winrate (Giả lập theo data hiện tại)
+        const colors = ['R', 'P', 'Y', 'G'];
+        const colorWinrates = colors.map(c => {
+            const items = data.filter(s => s.color === c && s.count > 0);
+            return items.length ? items.reduce((a,b) => a + (b.totalWinrate/b.count), 0) / items.length : 0;
+        });
+
+        if(charts.winrate) charts.winrate.destroy();
+        charts.winrate = new Chart(document.getElementById('colorWinrateChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Đỏ', 'Tím', 'Vàng', 'Xanh'],
+                datasets: [{ label: 'Winrate TB (%)', data: colorWinrates, backgroundColor: colors.map(c => getColorCode(c)) }]
+            },
+            options: { scales: { y: { beginAtZero: true, max: 100 } }, maintainAspectRatio: false }
+        });
+    }
 
     fetchData();
 </script>
