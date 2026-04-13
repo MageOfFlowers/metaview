@@ -35,7 +35,7 @@
     <div class="header-stats">
         <div class="stat-card">
             <h3 id="total-decks">0</h3>
-            <p>TỔNG SỐ BỘ BÀI</p>
+            <p>TỔNG LOẠI BỘ BÀI (INFOS)</p>
         </div>
         <div class="stat-card">
             <h3 id="total-matches">0</h3>
@@ -47,7 +47,7 @@
         <button onclick="fetchData()">🔄 Làm mới dữ liệu</button>
     </div>
 
-    <div id="loading" class="loading">Đang tải dữ liệu từ Cloud... (Có thể mất 30s nếu server đang ngủ)</div>
+    <div id="loading" class="loading">Đang tải dữ liệu từ Cloud... (Có thể mất 30s nếu server Render đang ngủ)</div>
 
     <table id="data-table" style="display:none">
         <thead>
@@ -55,7 +55,7 @@
                 <th>ID</th>
                 <th>Tên Thẻ Bài</th>
                 <th>Tỷ lệ sử dụng</th>
-                <th>Tỷ lệ thắng</th>
+                <th>Tỷ lệ thắng trung bình</th>
                 <th>Số lượng TB/Deck</th>
             </tr>
         </thead>
@@ -64,7 +64,6 @@
 </div>
 
 <script>
-    // THAY LINK NÀY BẰNG LINK RENDER CỦA BẠN
     const API_BASE = "https://metaanalyse.onrender.com/api"; 
 
     async function fetchData() {
@@ -78,31 +77,45 @@
         table.style.display = 'none';
 
         try {
-            const [resCards, resDecks, resUses, resInfos] = await Promise.all([
+            // LƯU Ý: Không fetch /api/decks vì backend của bạn để là @PostMapping
+            // Chúng ta sử dụng /deck-infos để lấy dữ liệu thay thế
+            const [resCards, resUses, resInfos] = await Promise.all([
                 fetch(`${API_BASE}/cards`),
-                fetch(`${API_BASE}/decks`),
                 fetch(`${API_BASE}/competition-use`),
                 fetch(`${API_BASE}/deck-infos`)
             ]);
 
+            // Kiểm tra nếu bất kỳ request nào thất bại
+            if (!resCards.ok || !resUses.ok || !resInfos.ok) {
+                throw new Error(`Server trả về lỗi: ${resCards.status} hoặc ${resUses.status}`);
+            }
+
             const cards = await resCards.json();
-            const decks = await resDecks.json();
             const compUses = await resUses.json();
             const deckInfos = await resInfos.json();
 
-            document.getElementById('total-decks').innerText = decks.length;
+            // Tính toán tổng số deck duy nhất dựa trên deck-infos
+            const uniqueDeckIds = [...new Set(deckInfos.map(di => di.deckid))];
+            
+            document.getElementById('total-decks').innerText = uniqueDeckIds.length;
             document.getElementById('total-matches').innerText = compUses.length;
 
             tbody.innerHTML = '';
+            
             cards.forEach(card => {
+                // Lọc những lần card này xuất hiện trong các deck
                 const occurrences = deckInfos.filter(di => di.cardid === card.id);
                 const deckIdsWithCard = [...new Set(occurrences.map(di => di.deckid))];
                 
                 if (deckIdsWithCard.length > 0) {
-                    const useRate = ((deckIdsWithCard.length / (decks.length || 1)) * 100).toFixed(1);
+                    // Tỷ lệ xuất hiện trong bao nhiêu % tổng số bộ bài
+                    const useRate = ((deckIdsWithCard.length / (uniqueDeckIds.length || 1)) * 100).toFixed(1);
+                    
+                    // Số lượng trung bình card này trong mỗi bộ bài có chứa nó
                     const totalQty = occurrences.reduce((sum, item) => sum + item.quantity, 0);
                     const avgQty = (totalQty / deckIdsWithCard.length).toFixed(1);
                     
+                    // Tính tỷ lệ thắng trung bình từ các giải đấu sử dụng deck chứa card này
                     const matchesWithCard = compUses.filter(cu => deckIdsWithCard.includes(cu.deckid));
                     const winrate = matchesWithCard.length > 0 
                         ? (matchesWithCard.reduce((sum, m) => sum + m.winrate, 0) / matchesWithCard.length).toFixed(1)
@@ -125,12 +138,21 @@
             table.style.display = 'table';
 
         } catch (err) {
+            console.error(err);
             loading.style.display = 'none';
             errorBox.style.display = 'block';
-            errorBox.innerHTML = `⚠️ Lỗi: Không thể kết nối tới Backend. <br> Hãy đảm bảo link <strong>${API_BASE}</strong> chính xác và Backend đã bật @CrossOrigin.`;
+            errorBox.innerHTML = `
+                ⚠️ <strong>Lỗi kết nối:</strong> Không thể lấy dữ liệu từ Backend.<br>
+                <small>Chi tiết: ${err.message}</small><br><br>
+                <strong>Cách khắc phục:</strong><br>
+                1. Đảm bảo bạn đã thêm <code>WebConfig</code> (CORS toàn cục) vào dự án Spring Boot.<br>
+                2. Kiểm tra log trên Render xem App có bị crash không.<br>
+                3. Nếu bạn vừa mở web, hãy đợi 30s để Render "đánh thức" Server.
+            `;
         }
     }
 
+    // Tự động gọi khi load trang
     fetchData();
 </script>
 </body>
