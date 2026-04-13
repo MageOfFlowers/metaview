@@ -9,60 +9,65 @@
 <body>
     <div class="container">
         <header>
-            <a href="index.html">← Quay lại</a>
-            <h1>📈 Phân tích Meta Card Game</h1>
+            <a href="index.html">← Trang chủ</a>
+            <h1>📈 Phân tích Meta</h1>
         </header>
 
         <div class="card">
-            <select id="filterComp"><option value="all">Tất cả giải đấu</option></select>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Lọc giải đấu</label>
+                    <select id="filterComp"><option value="all">Tất cả giải</option></select>
+                </div>
+                <div class="input-group">
+                    <label>Tìm thẻ bài</label>
+                    <input type="text" id="searchCard" placeholder="Nhập tên...">
+                </div>
+            </div>
         </div>
 
         <div class="dashboard-grid">
-            <div class="card"><canvas id="winrateChart"></canvas></div>
-            <div class="card"><canvas id="usageChart"></canvas></div>
+            <div class="card"><h3>Winrate Hệ Màu</h3><canvas id="colorChart"></canvas></div>
+            <div class="card"><h3>Top sử dụng</h3><canvas id="usageChart"></canvas></div>
         </div>
 
         <div class="card">
-            <table id="metaTable">
-                <thead>
-                    <tr><th>Thẻ bài</th><th>Hệ</th><th>Số Deck</th><th>Winrate</th></tr>
-                </thead>
-                <tbody></tbody>
+            <table>
+                <thead><tr><th>Tên thẻ</th><th>Hệ</th><th>Số Deck</th><th>Winrate</th></tr></thead>
+                <tbody id="meta-body"></tbody>
             </table>
         </div>
     </div>
 
     <script type="module">
+        import { request } from './js/api.js';
         import { MetaEngine } from './js/meta-engine.js';
-        const API_BASE = "https://metaanalyse.onrender.com/api";
+
         let rawData = {};
         let charts = {};
 
         async function init() {
-            // Tải dữ liệu thô
             const [cards, uses, infos, comps] = await Promise.all([
-                fetch(`${API_BASE}/cards`).then(r => r.json()),
-                fetch(`${API_BASE}/competition-use`).then(r => r.json()),
-                fetch(`${API_BASE}/deck-infos`).then(r => r.json()),
-                fetch(`${API_BASE}/competitions`).then(r => r.json())
+                request('/cards'), request('/competition-use'), request('/deck-infos'), request('/competitions')
             ]);
             rawData = { cards, compUses: uses, deckInfos: infos };
 
-            // Đổ dữ liệu vào select
             const select = document.getElementById('filterComp');
             comps.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name}</option>`);
             
             select.addEventListener('change', render);
+            document.getElementById('searchCard').addEventListener('input', render);
             render();
         }
 
         function render() {
             const compId = document.getElementById('filterComp').value;
+            const search = document.getElementById('searchCard').value.toLowerCase();
             const stats = MetaEngine.calculateCardStats(rawData, compId);
 
-            // 1. Cập nhật bảng
-            const tbody = document.querySelector('#metaTable tbody');
-            tbody.innerHTML = stats.map(s => `
+            const filtered = stats.filter(s => s.name.toLowerCase().includes(search));
+
+            document.getElementById('meta-body').innerHTML = filtered.map(s => `
                 <tr>
                     <td><strong>${s.name}</strong></td>
                     <td><span class="badge" style="background:${MetaEngine.getColorCode(s.color)}">${s.color}</span></td>
@@ -71,17 +76,17 @@
                 </tr>
             `).join('');
 
-            // 2. Cập nhật biểu đồ (Ví dụ Bar Chart Winrate)
-            if(charts.win) charts.win.destroy();
-            charts.win = new Chart(document.getElementById('winrateChart'), {
-                type: 'bar',
+            updateCharts(filtered);
+        }
+
+        function updateCharts(data) {
+            const ctx1 = document.getElementById('usageChart').getContext('2d');
+            if(charts.usage) charts.usage.destroy();
+            charts.usage = new Chart(ctx1, {
+                type: 'doughnut',
                 data: {
-                    labels: stats.slice(0, 5).map(s => s.name),
-                    datasets: [{
-                        label: 'Winrate (%)',
-                        data: stats.slice(0, 5).map(s => s.winrate),
-                        backgroundColor: stats.slice(0, 5).map(s => MetaEngine.getColorCode(s.color))
-                    }]
+                    labels: data.slice(0, 5).map(s => s.name),
+                    datasets: [{ data: data.slice(0, 5).map(s => s.count), backgroundColor: data.slice(0, 5).map(s => MetaEngine.getColorCode(s.color)) }]
                 }
             });
         }

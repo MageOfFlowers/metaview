@@ -1,14 +1,15 @@
 // js/api.js
-const API_BASE = "https://metaanalyse.onrender.com/api";
+export const API_BASE = "https://metaanalyse.onrender.com/api";
 
-async function callAPI(endpoint, method = 'GET', body = null) {
+export async function request(endpoint, method = 'GET', body = null) {
+    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
     const options = {
         method,
         headers: { 'Content-Type': 'application/json' }
     };
     if (body) options.body = JSON.stringify(body);
     
-    const response = await fetch(`${API_BASE}${endpoint}`, options);
-    if (!response.ok) throw new Error(`Lỗi API: ${response.status}`);
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(`Lỗi: ${response.status}`);
     return response.json();
 }

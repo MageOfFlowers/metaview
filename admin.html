@@ -1,19 +1,110 @@
-<script src="js/api.js"></script>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - Card Game</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html">← Trang chủ</a>
+            <h1>⚙️ Quản lý hệ thống</h1>
+        </header>
 
-<div class="card">
-    <h2>👤 Quản lý User</h2>
-    <input type="text" id="username" placeholder="Tên user...">
-    <button onclick="saveUser()">Thêm</button>
-</div>
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>👤 Thêm User mới</h3>
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="newUsername" placeholder="Ví dụ: MageOfFlowers">
+                </div>
+                <button class="btn-submit" onclick="addUser()">Lưu User</button>
+            </div>
 
-<div class="card">
-    <h2>🎴 Quản lý Deck</h2>
+            <div class="card">
+                <h3>🏆 Đăng ký Giải đấu</h3>
+                <div class="input-group"><label>Giải đấu</label><select id="regComp"></select></div>
+                <div class="input-group"><label>Người chơi</label><select id="regUser"></select></div>
+                <div class="input-group"><label>Bộ bài</label><select id="regDeck"></select></div>
+                <div class="input-group"><label>Winrate (%)</label><input type="number" id="regWinrate" value="50"></div>
+                <button class="btn-submit" onclick="register()">Xác nhận</button>
+            </div>
+
+            <div class="card" style="grid-column: span 2;">
+                <h3>🎴 Tạo bộ bài (Deck)</h3>
+                <div class="input-group">
+                    <label>Tên bộ bài</label>
+                    <input type="text" id="newDeckName" placeholder="Ví dụ: Red Aggro v1">
+                </div>
+                <div id="card-inputs-list"></div>
+                <button onclick="addCardRow()" style="margin: 10px 0; background: #e2e8f0; color: #1e293b;">+ Thêm lá bài</button>
+                <button class="btn-submit" style="background: var(--primary)" onclick="addDeck()">Lưu bộ bài</button>
+            </div>
+        </div>
     </div>
 
-<script>
-    async function saveUser() {
-        const name = document.getElementById('username').value;
-        await callAPI(`/users?username=${name}`, 'POST');
-        alert("Đã lưu!");
-    }
-</script>
+    <script type="module">
+        import { request } from './js/api.js';
+
+        let allCards = [];
+
+        async function init() {
+            const [users, decks, comps, cards] = await Promise.all([
+                request('/users'), request('/decks'), request('/competitions'), request('/cards')
+            ]);
+            allCards = cards;
+
+            fillSelect('regUser', users, 'username');
+            fillSelect('regDeck', decks, 'name');
+            fillSelect('regComp', comps, 'name');
+            addCardRow();
+        }
+
+        function fillSelect(id, data, key) {
+            const el = document.getElementById(id);
+            el.innerHTML = data.map(i => `<option value="${i.id}">${i[key]}</option>`).join('');
+        }
+
+        window.addCardRow = () => {
+            const container = document.getElementById('card-inputs-list');
+            const row = document.createElement('div');
+            row.className = 'form-grid';
+            row.style.marginBottom = '10px';
+            row.innerHTML = `
+                <select class="deck-card-id">${allCards.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select>
+                <input type="number" class="deck-card-qty" value="1" min="1" max="4">
+            `;
+            container.appendChild(row);
+        };
+
+        window.addUser = async () => {
+            const name = document.getElementById('newUsername').value;
+            await request(`/users?username=${encodeURIComponent(name)}`, 'POST');
+            alert("Đã thêm!"); location.reload();
+        };
+
+        window.addDeck = async () => {
+            const name = document.getElementById('newDeckName').value;
+            const ids = document.querySelectorAll('.deck-card-id');
+            const qtys = document.querySelectorAll('.deck-card-qty');
+            const cards = Array.from(ids).map((el, i) => ({ cardid: parseInt(el.value), quantity: parseInt(qtys[i].value) }));
+            await request('/decks', 'POST', { name, cards });
+            alert("Đã tạo Deck!"); location.reload();
+        };
+
+        window.register = async () => {
+            const body = {
+                competitionid: parseInt(document.getElementById('regComp').value),
+                userid: parseInt(document.getElementById('regUser').value),
+                deckid: parseInt(document.getElementById('regDeck').value),
+                winrate: parseFloat(document.getElementById('regWinrate').value)
+            };
+            await request('/competition-use', 'POST', body);
+            alert("Thành công!");
+        };
+
+        init();
+    </script>
+</body>
+</html>
