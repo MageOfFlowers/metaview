@@ -3,26 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Card Game Meta Analyzer</title>
+    <title>Meta Analyzer Pro - Chart Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: var(--primary); margin-bottom: 30px; }
-        .header-stats { display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
-        .stat-card { flex: 1; min-width: 200px; padding: 20px; background: #eff6ff; border-radius: 8px; text-align: center; border: 1px solid #bfdbfe; }
-        .stat-card h3 { margin: 0; font-size: 28px; color: var(--primary); }
-        .stat-card p { margin: 5px 0 0; font-size: 14px; font-weight: 600; color: #64748b; }
-        .controls { display: flex; justify-content: flex-end; margin-bottom: 15px; }
-        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f1f5f9; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        :root { --primary: #2563eb; --bg: #f1f5f9; --text: #1e293b; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; }
+        
+        /* Dashboard Layout */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        /* Filters */
+        .filter-section { display: flex; gap: 15px; background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        select, input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; min-width: 150px; }
+        
+        /* Chart Canvas */
+        .chart-container { position: relative; height: 300px; width: 100%; }
+        
+        h1 { color: var(--primary); }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f1f5f9; }
+        th { background: #f8fafc; color: #64748b; font-size: 12px; text-transform: uppercase; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
         .win-high { background: #dcfce7; color: #166534; }
         .win-low { background: #fee2e2; color: #991b1b; }
-        .error-msg { color: #dc2626; background: #fef2f2; padding: 15px; border-radius: 6px; border: 1px solid #fee2e2; margin-bottom: 20px; display: none; }
-        .loading { text-align: center; padding: 40px; color: #64748b; }
     </style>
 </head>
 <body>
@@ -30,129 +36,166 @@
 <div class="container">
     <h1>📊 Phân tích Meta Card Game</h1>
 
-    <div id="error-box" class="error-msg"></div>
-
-    <div class="header-stats">
-        <div class="stat-card">
-            <h3 id="total-decks">0</h3>
-            <p>TỔNG LOẠI BỘ BÀI (INFOS)</p>
+    <div class="filter-section">
+        <div class="filter-group">
+            <label>Tìm thẻ bài:</label>
+            <input type="text" id="searchCard" placeholder="Nhập tên..." oninput="applyFilters()">
         </div>
-        <div class="stat-card">
-            <h3 id="total-matches">0</h3>
-            <p>LƯỢT SỬ DỤNG TRONG GIẢI</p>
+        <div class="filter-group">
+            <label>Chọn giải đấu:</label>
+            <select id="filterComp" onchange="applyFilters()">
+                <option value="all">Tất cả giải đấu</option>
+            </select>
+        </div>
+        <button onclick="fetchData()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer;">🔄 Làm mới</button>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Tỷ lệ thắng theo Deck</h3>
+            <div class="chart-container">
+                <canvas id="deckWinrateChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Phân bổ thẻ bài trong Meta</h3>
+            <div class="chart-container">
+                <canvas id="cardUsageChart"></canvas>
+            </div>
         </div>
     </div>
 
-    <div class="controls">
-        <button onclick="fetchData()">🔄 Làm mới dữ liệu</button>
+    <div class="card">
+        <h3>Chi tiết thẻ bài</h3>
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th>Thẻ bài</th>
+                    <th>Số Deck sử dụng</th>
+                    <th>Số lượng TB</th>
+                    <th>Winrate TB</th>
+                </tr>
+            </thead>
+            <tbody id="meta-body"></tbody>
+        </table>
     </div>
-
-    <div id="loading" class="loading">Đang tải dữ liệu từ Cloud... (Có thể mất 30s nếu server Render đang ngủ)</div>
-
-    <table id="data-table" style="display:none">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Tên Thẻ Bài</th>
-                <th>Tỷ lệ sử dụng</th>
-                <th>Tỷ lệ thắng trung bình</th>
-                <th>Số lượng TB/Deck</th>
-            </tr>
-        </thead>
-        <tbody id="meta-body"></tbody>
-    </table>
 </div>
 
 <script>
-    const API_BASE = "https://metaanalyse.onrender.com/api"; 
+    const API_BASE = "https://metaanalyse.onrender.com/api";
+    let rawData = { cards: [], compUses: [], deckInfos: [], competitions: [] };
+    let charts = {};
 
     async function fetchData() {
-        const errorBox = document.getElementById('error-box');
-        const loading = document.getElementById('loading');
-        const table = document.getElementById('data-table');
-        const tbody = document.getElementById('meta-body');
-        
-        errorBox.style.display = 'none';
-        loading.style.display = 'block';
-        table.style.display = 'none';
-
         try {
-            // LƯU Ý: Không fetch /api/decks vì backend của bạn để là @PostMapping
-            // Chúng ta sử dụng /deck-infos để lấy dữ liệu thay thế
-            const [resCards, resUses, resInfos] = await Promise.all([
+            const [resCards, resUses, resInfos, resComps] = await Promise.all([
                 fetch(`${API_BASE}/cards`),
                 fetch(`${API_BASE}/competition-use`),
-                fetch(`${API_BASE}/deck-infos`)
+                fetch(`${API_BASE}/deck-infos`),
+                fetch(`${API_BASE}/competitions`)
             ]);
 
-            // Kiểm tra nếu bất kỳ request nào thất bại
-            if (!resCards.ok || !resUses.ok || !resInfos.ok) {
-                throw new Error(`Server trả về lỗi: ${resCards.status} hoặc ${resUses.status}`);
-            }
+            rawData.cards = await resCards.json();
+            rawData.compUses = await resUses.json();
+            rawData.deckInfos = await resInfos.json();
+            rawData.competitions = await resComps.json();
 
-            const cards = await resCards.json();
-            const compUses = await resUses.json();
-            const deckInfos = await resInfos.json();
-
-            // Tính toán tổng số deck duy nhất dựa trên deck-infos
-            const uniqueDeckIds = [...new Set(deckInfos.map(di => di.deckid))];
-            
-            document.getElementById('total-decks').innerText = uniqueDeckIds.length;
-            document.getElementById('total-matches').innerText = compUses.length;
-
-            tbody.innerHTML = '';
-            
-            cards.forEach(card => {
-                // Lọc những lần card này xuất hiện trong các deck
-                const occurrences = deckInfos.filter(di => di.cardid === card.id);
-                const deckIdsWithCard = [...new Set(occurrences.map(di => di.deckid))];
-                
-                if (deckIdsWithCard.length > 0) {
-                    // Tỷ lệ xuất hiện trong bao nhiêu % tổng số bộ bài
-                    const useRate = ((deckIdsWithCard.length / (uniqueDeckIds.length || 1)) * 100).toFixed(1);
-                    
-                    // Số lượng trung bình card này trong mỗi bộ bài có chứa nó
-                    const totalQty = occurrences.reduce((sum, item) => sum + item.quantity, 0);
-                    const avgQty = (totalQty / deckIdsWithCard.length).toFixed(1);
-                    
-                    // Tính tỷ lệ thắng trung bình từ các giải đấu sử dụng deck chứa card này
-                    const matchesWithCard = compUses.filter(cu => deckIdsWithCard.includes(cu.deckid));
-                    const winrate = matchesWithCard.length > 0 
-                        ? (matchesWithCard.reduce((sum, m) => sum + m.winrate, 0) / matchesWithCard.length).toFixed(1)
-                        : 0;
-
-                    const winClass = winrate >= 50 ? 'win-high' : 'win-low';
-                    
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${card.id}</td>
-                            <td><strong>${card.name || 'Thẻ bài ' + card.id}</strong></td>
-                            <td>${useRate}%</td>
-                            <td><span class="badge ${winClass}">${winrate}%</span></td>
-                            <td>${avgQty}</td>
-                        </tr>`;
-                }
+            // Cập nhật dropdown giải đấu
+            const compSelect = document.getElementById('filterComp');
+            compSelect.innerHTML = '<option value="all">Tất cả giải đấu</option>';
+            rawData.competitions.forEach(c => {
+                compSelect.innerHTML += `<option value="${c.id}">${c.name || 'Giải '+c.id}</option>`;
             });
 
-            loading.style.display = 'none';
-            table.style.display = 'table';
-
+            applyFilters();
         } catch (err) {
-            console.error(err);
-            loading.style.display = 'none';
-            errorBox.style.display = 'block';
-            errorBox.innerHTML = `
-                ⚠️ <strong>Lỗi kết nối:</strong> Không thể lấy dữ liệu từ Backend.<br>
-                <small>Chi tiết: ${err.message}</small><br><br>
-                <strong>Cách khắc phục:</strong><br>
-                1. Đảm bảo bạn đã thêm <code>WebConfig</code> (CORS toàn cục) vào dự án Spring Boot.<br>
-                2. Kiểm tra log trên Render xem App có bị crash không.<br>
-                3. Nếu bạn vừa mở web, hãy đợi 30s để Render "đánh thức" Server.
-            `;
+            alert("Lỗi kết nối Backend! Hãy kiểm tra CORS và link Render.");
         }
     }
 
-    // Tự động gọi khi load trang
+    function applyFilters() {
+        const searchTerm = document.getElementById('searchCard').value.toLowerCase();
+        const compId = document.getElementById('filterComp').value;
+
+        // 1. Lọc dữ liệu giải đấu
+        let filteredUses = rawData.compUses;
+        if (compId !== 'all') {
+            filteredUses = rawData.compUses.filter(u => String(u.competitionid) === compId);
+        }
+
+        const activeDeckIds = [...new Set(filteredUses.map(u => u.deckid))];
+        
+        // 2. Tính toán Meta cho từng thẻ
+        const tableData = rawData.cards
+            .filter(c => (c.name || '').toLowerCase().includes(searchTerm))
+            .map(card => {
+                const occurrences = rawData.deckInfos.filter(di => di.cardid === card.id && activeDeckIds.includes(di.deckid));
+                const deckCount = [...new Set(occurrences.map(di => di.deckid))].length;
+                const totalQty = occurrences.reduce((sum, di) => sum + di.quantity, 0);
+                
+                const cardMatches = filteredUses.filter(u => occurrences.some(di => di.deckid === u.deckid));
+                const avgWinrate = cardMatches.length > 0 
+                    ? (cardMatches.reduce((sum, m) => sum + m.winrate, 0) / cardMatches.length).toFixed(1)
+                    : 0;
+
+                return { ...card, deckCount, totalQty, avgWinrate };
+            })
+            .filter(c => c.deckCount > 0);
+
+        renderTable(tableData);
+        updateCharts(tableData, filteredUses);
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('meta-body');
+        tbody.innerHTML = data.map(c => `
+            <tr>
+                <td><strong>${c.name || 'Thẻ '+c.id}</strong></td>
+                <td>${c.deckCount}</td>
+                <td>${(c.totalQty / c.deckCount).toFixed(1)}</td>
+                <td><span class="badge ${c.avgWinrate >= 50 ? 'win-high' : 'win-low'}">${c.avgWinrate}%</span></td>
+            </tr>
+        `).join('');
+    }
+
+    function updateCharts(cardData, filteredUses) {
+        // Biểu đồ 1: Winrate theo Deck ID
+        const deckLabels = [...new Set(filteredUses.map(u => "Deck " + u.deckid))];
+        const deckWinrates = deckLabels.map(label => {
+            const id = parseInt(label.replace("Deck ", ""));
+            const match = filteredUses.find(u => u.deckid === id);
+            return match ? match.winrate : 0;
+        });
+
+        updateChart('deckWinrateChart', 'bar', deckLabels, deckWinrates, 'Tỷ lệ thắng (%)', '#2563eb');
+
+        // Biểu đồ 2: Tần suất sử dụng thẻ bài (Top 5)
+        const sortedCards = [...cardData].sort((a, b) => b.deckCount - a.deckCount).slice(0, 5);
+        updateChart('cardUsageChart', 'pie', sortedCards.map(c => c.name), sortedCards.map(c => c.deckCount), 'Số lượng Deck', ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']);
+    }
+
+    function updateChart(canvasId, type, labels, data, label, colors) {
+        if (charts[canvasId]) charts[canvasId].destroy();
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        charts[canvasId] = new Chart(ctx, {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    backgroundColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { legend: { display: type === 'pie' } }
+            }
+        });
+    }
+
     fetchData();
 </script>
 </body>
