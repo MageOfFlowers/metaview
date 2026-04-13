@@ -2,39 +2,44 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Meta Analysis</title>
+    <title>Phân tích Meta nâng cao</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </head>
 <body>
     <div class="container">
-        <header>
-            <a href="index.html">← Trang chủ</a>
-            <h1>📈 Phân tích Meta</h1>
-        </header>
+        <header><a href="index.html">← Trang chủ</a><h1>📈 Phân tích Meta</h1></header>
 
         <div class="card">
             <div class="form-grid">
-                <div class="input-group">
-                    <label>Lọc giải đấu</label>
-                    <select id="filterComp"><option value="all">Tất cả giải</option></select>
-                </div>
-                <div class="input-group">
-                    <label>Tìm thẻ bài</label>
-                    <input type="text" id="searchCard" placeholder="Nhập tên...">
-                </div>
+                <div class="input-group"><label>Giải đấu</label><select id="fComp"><option value="all">Tất cả</option></select></div>
+                <div class="input-group"><label>Từ ngày</label><input type="date" id="fStart"></div>
+                <div class="input-group"><label>Đến ngày</label><input type="date" id="fEnd"></div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid" id="quick-stats">
+            <div class="card" style="border-left: 5px solid var(--primary);">
+                <p>Card hot nhất</p><h2 id="top-card">-</h2>
+            </div>
+            <div class="card" style="border-left: 5px solid var(--success);">
+                <p>Màu Winrate cao nhất</p><h2 id="top-color">-</h2>
+            </div>
+            <div class="card" style="border-left: 5px solid var(--warning);">
+                <p>Tổng số trận</p><h2 id="total-match">0</h2>
             </div>
         </div>
 
         <div class="dashboard-grid">
-            <div class="card"><h3>Winrate Hệ Màu</h3><canvas id="colorChart"></canvas></div>
-            <div class="card"><h3>Top sử dụng</h3><canvas id="usageChart"></canvas></div>
+            <div class="card"><h3>Phân bổ Hệ màu</h3><canvas id="colorChart"></canvas></div>
+            <div class="card"><h3>Winrate theo Card</h3><canvas id="usageChart"></canvas></div>
         </div>
 
         <div class="card">
-            <table>
-                <thead><tr><th>Tên thẻ</th><th>Hệ</th><th>Số Deck</th><th>Winrate</th></tr></thead>
-                <tbody id="meta-body"></tbody>
+            <h3>Chi tiết Card Meta</h3>
+            <table id="metaTable">
+                <thead><tr><th>Card</th><th>Hệ</th><th>Số Deck</th><th>Winrate TB</th></tr></thead>
+                <tbody></tbody>
             </table>
         </div>
     </div>
@@ -47,46 +52,59 @@
         let charts = {};
 
         async function init() {
-            const [cards, uses, infos, comps] = await Promise.all([
+            const [c, u, i, comps] = await Promise.all([
                 request('/cards'), request('/competition-use'), request('/deck-infos'), request('/competitions')
             ]);
-            rawData = { cards, compUses: uses, deckInfos: infos };
-
-            const select = document.getElementById('filterComp');
-            comps.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            rawData = { cards: c, compUses: u, deckInfos: i };
             
-            select.addEventListener('change', render);
-            document.getElementById('searchCard').addEventListener('input', render);
+            const sel = document.getElementById('fComp');
+            comps.forEach(item => sel.innerHTML += `<option value="${item.id}">${item.name}</option>`);
+            
+            [sel, document.getElementById('fStart'), document.getElementById('fEnd')].forEach(el => 
+                el.addEventListener('change', render)
+            );
             render();
         }
 
         function render() {
-            const compId = document.getElementById('filterComp').value;
-            const search = document.getElementById('searchCard').value.toLowerCase();
-            const stats = MetaEngine.calculateCardStats(rawData, compId);
+            const filters = {
+                compId: document.getElementById('fComp').value,
+                startDate: document.getElementById('fStart').value,
+                endDate: document.getElementById('fEnd').value
+            };
 
-            const filtered = stats.filter(s => s.name.toLowerCase().includes(search));
+            const stats = MetaEngine.calculateStats(rawData, filters);
+            
+            // 1. Cập nhật Quick Stats
+            if(stats.cards.length > 0) {
+                document.getElementById('top-card').innerText = stats.cards[0].name;
+                document.getElementById('total-match').innerText = stats.usesCount;
+            }
 
-            document.getElementById('meta-body').innerHTML = filtered.map(s => `
+            // 2. Cập nhật bảng
+            const tbody = document.querySelector('#metaTable tbody');
+            tbody.innerHTML = stats.cards.map(s => `
                 <tr>
                     <td><strong>${s.name}</strong></td>
                     <td><span class="badge" style="background:${MetaEngine.getColorCode(s.color)}">${s.color}</span></td>
-                    <td>${s.count}</td>
-                    <td>${s.winrate}%</td>
+                    <td>${s.useCount}</td>
+                    <td>${s.avgWinrate}%</td>
                 </tr>
             `).join('');
 
-            updateCharts(filtered);
+            updateCharts(stats);
         }
 
-        function updateCharts(data) {
-            const ctx1 = document.getElementById('usageChart').getContext('2d');
-            if(charts.usage) charts.usage.destroy();
-            charts.usage = new Chart(ctx1, {
-                type: 'doughnut',
+        function updateCharts(stats) {
+            const ctx1 = document.getElementById('colorChart').getContext('2d');
+            const colorData = Object.keys(stats.colors).map(k => stats.colors[k].count);
+            
+            if(charts.c) charts.c.destroy();
+            charts.c = new Chart(ctx1, {
+                type: 'pie',
                 data: {
-                    labels: data.slice(0, 5).map(s => s.name),
-                    datasets: [{ data: data.slice(0, 5).map(s => s.count), backgroundColor: data.slice(0, 5).map(s => MetaEngine.getColorCode(s.color)) }]
+                    labels: ['Đỏ', 'Tím', 'Vàng', 'Xanh'],
+                    datasets: [{ data: colorData, backgroundColor: ['#ef4444', '#a855f7', '#eab308', '#22c55e'] }]
                 }
             });
         }
