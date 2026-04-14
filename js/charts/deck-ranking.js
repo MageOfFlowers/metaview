@@ -6,13 +6,17 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
     if (currentChart) currentChart.destroy();
 
     const ctx = canvas.getContext('2d');
-    const { compUses, deckInfos, cards, decks } = rawData;
+    
+    // Đảm bảo các thuộc tính tồn tại, nếu không có thì gán mảng rỗng
+    const compUses = rawData.compUses || [];
+    const deckInfos = rawData.deckInfos || [];
+    const cards = rawData.cards || [];
+    const decks = rawData.decks || []; // Lỗi xảy ra tại đây nếu decks không phải Array
 
-    // 1. Tính toán thống kê
     const deckStats = {};
     compUses.forEach(use => {
-        // Chỉ tính toán nếu Deck này tồn tại trong danh sách đã lọc (rawData.decks)
-        const isMatch = decks.some(d => d.id == use.deckid);
+        // Kiểm tra an toàn: chỉ chạy .some nếu decks là mảng
+        const isMatch = Array.isArray(decks) && decks.some(d => d.id == use.deckid);
         if (!isMatch) return;
 
         if (!deckStats[use.deckid]) {
@@ -23,21 +27,19 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
         deckStats[use.deckid].count++;
     });
 
-    // 2. Sắp xếp lại thứ tự và giới hạn hiển thị
+    // Sắp xếp và giới hạn
     const sortedDecks = Object.values(deckStats)
         .map(d => {
-            const deckInfo = decks.find(item => item.id == d.id);
+            const deckInfo = Array.isArray(decks) ? decks.find(item => item.id == d.id) : null;
             return {
                 ...d,
                 displayName: deckInfo ? deckInfo.name : `Deck #${d.id}`,
                 avgRank: parseFloat((d.totalRank / d.count).toFixed(1)),
-                avgWin: (d.totalWin / d.count).toFixed(1),
+                avgWin: parseFloat((d.totalWin / d.count).toFixed(1)),
                 composition: deckInfos.filter(di => di.deckid === d.id)
             };
         })
-        // CẬP NHẬT THỨ TỰ: Rank nhỏ lên trước (hạng cao)
-        .sort((a, b) => a.avgRank - b.avgRank || b.avgWin - a.avgWin)
-        // GIỚI HẠN HIỂN THỊ
+        .sort((a, b) => a.avgRank - b.avgRank)
         .slice(0, limit);
     const datasets = allCardIds.map(cid => {
         const cardInfo = cards.find(c => c.id == cid);
