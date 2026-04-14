@@ -15,22 +15,21 @@ export const MetaEngine = {
     },
 
     calculateStats(rawData, filters = {}) {
-    let { compUses, deckInfos, cards, competitions } = rawData; // Đảm bảo có competitions
+    let { compUses, deckInfos, cards, competitions } = rawData; // Thêm competitions vào đầu vào
     const { compId, startDate, endDate, mode = 'deck', region = 'all' } = filters;
 
-    // 1. Xác định danh sách ID giải đấu hợp lệ dựa trên Region
+    // 1. Xác định danh sách các ID giải đấu thuộc Region đã chọn
     let validCompIds = [];
-    if (region !== 'all') {
-        validCompIds = (competitions || [])
+    if (region !== 'all' && competitions) {
+        validCompIds = competitions
             .filter(c => c.region === region)
             .map(c => c.id);
     }
 
     let filteredUses = compUses.filter(use => {
-        // Lọc theo Giải đấu cụ thể
         const matchComp = compId === 'all' || use.competitionid == compId;
         
-        // Lọc theo Khu vực (Nếu không chọn 'all', chỉ lấy use thuộc giải đấu trong khu vực đó)
+        // Lọc theo Region: Nếu không chọn 'all', chỉ lấy những 'use' thuộc giải đấu hợp lệ
         const matchRegion = region === 'all' || validCompIds.includes(use.competitionid);
 
         const useDate = new Date(use.createdAt);

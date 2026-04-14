@@ -61,26 +61,36 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
         };
     });
 
-    return new Chart(ctx, {
+   return new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: sortedDecks.map(d => `${d.displayName} (Rank: ${d.avgRank})`),
+            labels: sortedDecks.map(d => `${d.displayName} (Avg Rank: ${d.avgRank})`),
             datasets: datasets
         },
         options: {
-    indexAxis: 'y',
-    // Tìm đoạn cấu hình plugins trong js/charts/deck-ranking.js
-plugins: {
-    tooltip: {
-        callbacks: {
-            label: function(context) {
-                return ` ${context.dataset.label}: ${context.raw} bản`;
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { 
+                    stacked: true, // Xếp chồng
+                    title: { display: true, text: 'Số lượng Card trong Deck' } 
+                },
+                y: { 
+                    stacked: true // Xếp chồng
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.dataset.label}: ${context.raw} bản`;
+                        }
+                    }
+                },
+                // QUAN TRỌNG: Ẩn phần chú thích liệt kê tên thẻ bài ở trên
+                legend: { display: false }
             }
-            // Đã xóa afterLabel hiển thị URL
         }
-    },
-    legend: { display: false }
-}
-}
     });
 }
