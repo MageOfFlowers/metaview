@@ -18,10 +18,11 @@
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-bottom: 20px; }
         .clickable-row { cursor: pointer; transition: background 0.2s; }
         .clickable-row:hover { background-color: #f1f5f9 !important; }
-        .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .hidden { display: none; }
         .filter-sm { padding: 5px 10px; font-size: 0.85rem; border-radius: 6px; border: 1px solid var(--border); }
         .container { padding: 20px; max-width: 1200px; margin: auto; }
+        .btn-close { margin-top: 15px; background: #64748b; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -36,29 +37,10 @@
         <div class="form-grid">
             <div class="input-group">
                 <label>Giải đấu</label>
-                <select id="filterComp" onchange="triggerRender()">
-                    <option value="all">Tất cả giải đấu</option>
-                </select>
+                <select id="filterComp" onchange="triggerRender()"><option value="all">Tất cả giải đấu</option></select>
             </div>
-            <div class="input-group">
-                <label>Từ ngày</label>
-                <input type="date" id="filterStart" onchange="triggerRender()">
-            </div>
-            <div class="input-group">
-                <label>Đến ngày</label>
-                <input type="date" id="filterEnd" onchange="triggerRender()">
-            </div>
-            <div class="input-group">
-                <label>Chế độ tính toán</label>
-                <select id="calcMode" onchange="triggerRender()">
-                    <option value="deck">Số lượng Deck có mặt</option>
-                    <option value="total">Tổng số bản copy (Total Cards)</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>Tìm thẻ bài</label>
-                <input type="text" id="searchCard" placeholder="Nhập tên card..." oninput="triggerRender()">
-            </div>
+            <div class="input-group"><label>Từ ngày</label><input type="date" id="filterStart" onchange="triggerRender()"></div>
+            <div class="input-group"><label>Đến ngày</label><input type="date" id="filterEnd" onchange="triggerRender()"></div>
         </div>
     </div>
 
@@ -66,36 +48,54 @@
         <div class="card">
             <div class="flex-header">
                 <h3>Tỷ lệ sử dụng</h3>
-                <select id="usageViewMode" class="filter-sm" onchange="triggerUsageRender()">
-                    <option value="color">Theo Màu sắc</option>
-                    <option value="rarity">Theo Độ hiếm</option>
-                </select>
+                <div style="display: flex; gap: 5px;">
+                    <select id="calcMode" class="filter-sm" onchange="triggerRender()">
+                        <option value="deck">Theo số lượng Deck</option>
+                        <option value="total">Tổng bản copy</option>
+                    </select>
+                    <select id="usageViewMode" class="filter-sm" onchange="triggerUsageRender()">
+                        <option value="color">Màu sắc</option>
+                        <option value="rarity">Độ hiếm</option>
+                    </select>
+                </div>
             </div>
             <div style="height: 300px;"><canvas id="usageTypeChart"></canvas></div>
         </div>
         
         <div class="card">
             <div class="flex-header">
-                <h3>Top 10 Winrate</h3>
-                <select id="filterWinrateColor" class="filter-sm" onchange="triggerWinrateOnlyRender()">
-                    <option value="all">Tất cả màu</option>
-                    <option value="R">Đỏ (R)</option>
-                    <option value="Y">Vàng (Y)</option>
-                    <option value="G">Xanh (G)</option>
-                    <option value="P">Tím (P)</option>
-                </select>
+                <h3>Top Card</h3>
+                <div style="display: flex; gap: 5px;">
+                    <select id="topCardMode" class="filter-sm" onchange="triggerWinrateOnlyRender()">
+                        <option value="winrate">Tỉ lệ thắng</option>
+                        <option value="rank">Xếp hạng sử dụng</option>
+                    </select>
+                    <select id="filterWinrateColor" class="filter-sm" onchange="triggerWinrateOnlyRender()">
+                        <option value="all">Tất cả màu</option>
+                        <option value="R">Đỏ (R)</option>
+                        <option value="Y">Vàng (Y)</option>
+                        <option value="G">Xanh (G)</option>
+                        <option value="P">Tím (P)</option>
+                    </select>
+                </div>
             </div>
             <div style="height: 300px;"><canvas id="winrateBarChart"></canvas></div>
         </div>
     </div>
 
     <div class="card" style="margin-bottom: 20px;">
-        <h3>🏆 Xếp hạng Deck & Cấu trúc (Theo Rank)</h3>
+        <div class="flex-header">
+            <h3>🏆 Xếp hạng Deck & Cấu trúc (Theo Rank)</h3>
+            <input type="text" id="searchDeck" class="filter-sm" placeholder="Tìm tên deck..." oninput="triggerRender()">
+        </div>
         <div style="height: 400px;"><canvas id="deckRankingChart"></canvas></div>
     </div>
 
     <div class="card">
-        <h3>Danh sách Meta Thẻ bài</h3>
+        <div class="flex-header">
+            <h3>Danh sách Meta Thẻ bài</h3>
+            <input type="text" id="searchCard" class="filter-sm" placeholder="Tìm nhanh thẻ bài..." oninput="renderTableOnly()">
+        </div>
         <table>
             <thead>
                 <tr>
@@ -111,8 +111,12 @@
         </table>
     </div>
 
-    <div id="quantity-analysis" class="card hidden" style="margin-top: 20px; border: 2px solid var(--primary);">
-        <h3 id="qty-title">Phân tích chi tiết</h3>
+    <div id="quantity-analysis" class="card hidden" style="margin-top: 20px; border: 2px solid var(--primary); background: #f8fafc;">
+        <div class="flex-header">
+            <h3 id="qty-title" style="color: var(--primary);">Phân tích chi tiết</h3>
+            <span style="font-size: 0.9rem; color: #64748b;">(Dữ liệu dựa trên số lượng bản copy trong bộ bài)</span>
+        </div>
+        
         <div class="dashboard-grid">
             <div class="card">
                 <div style="height: 250px;"><canvas id="qtyWinrateChart"></canvas></div>
@@ -122,27 +126,42 @@
                     <thead>
                         <tr>
                             <th>Số lượng</th>
-                            <th>Số lần</th>
-                            <th>Winrate</th>
+                            <th>Số bộ bài</th>
+                            <th>Winrate TB</th>
                         </tr>
                     </thead>
                     <tbody id="qty-table-body"></tbody>
                 </table>
             </div>
         </div>
+
         <div id="deck-comp-container"></div>
         
-        <button onclick="document.getElementById('quantity-analysis').classList.add('hidden')" 
-                style="margin-top: 15px; background: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
-            Đóng bảng phân tích
-        </button>
+        <div style="text-align: right;">
+            <button class="btn-close" onclick="document.getElementById('quantity-analysis').classList.add('hidden')">
+                Đóng phân tích chi tiết
+            </button>
+        </div>
     </div>
 </div>
 
 <script type="module">
-    import { initAnalysis } from './js/analysis-main.js';
+    // Import các hàm xử lý từ module chính
+    import { 
+        initAnalysis, 
+        triggerRender, 
+        triggerUsageRender, 
+        triggerWinrateOnlyRender, 
+        renderTableOnly 
+    } from './js/analysis-main.js';
 
-    // Đảm bảo DOM đã sẵn sàng trước khi khởi tạo
+    // Gán các hàm vào window để HTML có thể gọi qua các sự kiện onchange/oninput
+    window.triggerRender = triggerRender;
+    window.triggerUsageRender = triggerUsageRender;
+    window.triggerWinrateOnlyRender = triggerWinrateOnlyRender;
+    window.renderTableOnly = renderTableOnly;
+
+    // Khởi chạy ứng dụng
     document.addEventListener('DOMContentLoaded', () => {
         initAnalysis();
     });

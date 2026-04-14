@@ -54,40 +54,6 @@ export async function initAnalysis() {
     }
 }
 
-/**
- * Hàm render tổng: Chạy khi đổi Giải đấu, Ngày tháng hoặc Chế độ tính
- */
-export function render() {
-    if (!rawData.cards || rawData.cards.length === 0) return;
-
-    const filters = {
-        compId: document.getElementById('filterComp').value,
-        startDate: document.getElementById('filterStart').value,
-        endDate: document.getElementById('filterEnd').value,
-        mode: document.getElementById('calcMode').value
-    };
-
-    // 1. Tính toán lại dữ liệu thống kê dựa trên filter chính
-    currentStats = MetaEngine.calculateStats(rawData, filters);
-    
-    if (!currentStats) return;
-
-    // 2. Cập nhật giao diện tiêu đề bảng
-    const header = document.getElementById('usage-column-header');
-    if (header) {
-        header.innerText = filters.mode === 'total' ? 'Tổng số bản copy' : 'Số lượt dùng';
-    }
-
-    // 3. Vẽ các biểu đồ
-    triggerUsageRender();       // Biểu đồ tròn (Tỷ lệ sử dụng)
-    triggerWinrateOnlyRender(); // Biểu đồ cột (Top 10 Winrate)
-    
-    // Biểu đồ Ranking (Xếp hạng Deck)
-    charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank);
-
-    // 4. Vẽ bảng danh sách thẻ bài
-    renderTable();
-}
 
 /**
  * Chỉ vẽ lại biểu đồ Tỷ lệ sử dụng (khi đổi view Màu sắc/Độ hiếm)
@@ -102,12 +68,48 @@ export function triggerUsageRender() {
 /**
  * Chỉ vẽ lại biểu đồ Winrate (khi đổi filter màu của Winrate)
  */
+export function renderTableOnly() {
+    renderTable();
+}
+
+export function render() {
+    if (!rawData.cards || rawData.cards.length === 0) return;
+
+    const filters = {
+        compId: document.getElementById('filterComp').value,
+        startDate: document.getElementById('filterStart').value,
+        endDate: document.getElementById('filterEnd').value,
+        mode: document.getElementById('calcMode').value,
+        deckSearch: document.getElementById('searchDeck').value.toLowerCase() // Filter mới cho Deck
+    };
+
+    currentStats = MetaEngine.calculateStats(rawData, filters);
+    
+    const header = document.getElementById('usage-column-header');
+    if (header) header.innerText = filters.mode === 'total' ? 'Tổng số bản copy' : 'Số lượt dùng';
+
+    triggerUsageRender();
+    triggerWinrateOnlyRender();
+    
+    // Lọc dữ liệu deck trước khi vẽ Ranking
+    let filteredDecks = rawData;
+    if (filters.deckSearch) {
+        filteredDecks = {
+            ...rawData,
+            decks: rawData.decks.filter(d => d.name.toLowerCase().includes(filters.deckSearch))
+        };
+    }
+
+    charts.deckRank = renderDeckRanking('deckRankingChart', filteredDecks, charts.deckRank);
+    renderTable();
+}
+
 export function triggerWinrateOnlyRender() {
     if (!currentStats || !currentStats.cards) return;
 
     const colorFilter = document.getElementById('filterWinrateColor').value;
+    const viewMode = document.getElementById('topCardMode').value; // winrate hoặc rank
     
-    // Lọc dữ liệu từ kết quả đã tính toán sẵn
     let displayData = [...currentStats.cards];
 
     if (colorFilter !== 'all') {
@@ -116,48 +118,16 @@ export function triggerWinrateOnlyRender() {
         );
     }
 
-    // Luôn lấy Top 10 Winrate cao nhất của tập đã lọc
-    displayData.sort((a, b) => parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate));
-    const top10 = displayData.slice(0, 10);
-
-    // Vẽ biểu đồ
-    charts.winrate = renderWinrateChart('winrateBarChart', top10, charts.winrate);
-}
-
-/**
- * Vẽ bảng danh sách meta thẻ bài
- */
-function renderTable() {
-    const tbody = document.getElementById('meta-body');
-    const searchInput = document.getElementById('searchCard');
-    const searchValue = searchInput ? searchInput.value.toLowerCase() : "";
-
-    if (!tbody || !currentStats) return;
-
-    // Lọc theo từ khóa tìm kiếm
-    const filtered = currentStats.cards.filter(c => 
-        c.name && c.name.toLowerCase().includes(searchValue)
-    );
-
-    if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Không có dữ liệu phù hợp</td></tr>';
-        return;
+    // Sắp xếp dựa trên chế độ xem
+    if (viewMode === 'winrate') {
+        displayData.sort((a, b) => parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate));
+    } else {
+        // Giả sử useCount đại diện cho độ phổ biến/xếp hạng sử dụng
+        displayData.sort((a, b) => b.useCount - a.useCount);
     }
 
-    tbody.innerHTML = filtered.map(s => `
-        <tr onclick="window.analyzeQuantity(${s.id}, '${s.name.replace(/'/g, "\\'")}')" class="clickable-row">
-            <td>
-                <span class="card-tooltip">
-                    <strong>${s.name} 🔍</strong>
-                    <img src="${s.url || 'https://via.placeholder.com/200x280'}" class="tooltip-img">
-                </span>
-            </td>
-            <td><span class="badge" style="background:${MetaEngine.getColorCode(s.color)}">${s.color || ''}</span></td>
-            <td><span class="badge" style="background:${MetaEngine.getRarityColor(s.rarity)}">${s.rarity || ''}</span></td>
-            <td>${s.useCount}</td>
-            <td>${s.avgWinrate}%</td>
-        </tr>
-    `).join('');
+    const top10 = displayData.slice(0, 10);
+    charts.winrate = renderWinrateChart('winrateBarChart', top10, charts.winrate);
 }
 
 /**
