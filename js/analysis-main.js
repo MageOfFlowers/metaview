@@ -1,95 +1,82 @@
 import { request } from './api.js';
 import { MetaEngine } from './meta-engine.js';
-import { renderRarityChart } from './charts/color-chart.js';
 import { renderWinrateChart } from './charts/winrate-chart.js';
 import { renderDeckRanking } from './charts/deck-ranking.js';
 import { renderDeckComposition } from './charts/deck-analysis.js';
 
 let rawData = { cards: [], compUses: [], deckInfos: [], decks: [] };
-let charts = { color: null, winrate: null, qty: null, deckRank: null };
+let currentStats = null; 
+let charts = { usage: null, winrate: null, qty: null, deckRank: null };
 
 export async function initAnalysis() {
-    try {
-        const [cards, uses, infos, comps, decks] = await Promise.all([
-            request('/cards'),
-            request('/competition-use'),
-            request('/deck-infos'),
-            request('/competitions'),
-            request('/decks')
-        ]);
+    const [cards, uses, infos, comps, decks] = await Promise.all([
+        request('/cards'), request('/competition-use'), request('/deck-infos'), request('/competitions'), request('/decks')
+    ]);
+    rawData = { cards: cards || [], compUses: uses || [], deckInfos: infos || [], decks: decks || [] };
 
-        rawData = { 
-            cards: cards || [], 
-            compUses: uses || [], 
-            deckInfos: infos || [],
-            decks: decks || []
-        };
+    const fComp = document.getElementById('filterComp');
+    if (comps) comps.forEach(c => {
+        const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; fComp.appendChild(opt);
+    });
 
-        const fComp = document.getElementById('filterComp');
-        if (comps) {
-            comps.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.name;
-                fComp.appendChild(opt);
-            });
-        }
-
-        // Đưa các hàm này ra global để HTML gọi được
-        window.triggerRender = render; 
-        window.analyzeQuantity = analyzeQuantity;
-
-        // Lắng nghe các sự kiện thay đổi filter cơ bản
-        ['filterComp', 'searchCard'].forEach(id => {
-            document.getElementById(id).addEventListener('input', render);
-        });
-
-        render();
-    } catch (err) {
-        console.error("Lỗi khởi tạo:", err);
-    }
+    window.analyzeQuantity = analyzeQuantity;
+    triggerRender();
 }
 
-// Hàm render chính
-function render() {
+export function triggerRender() {
     const filters = {
         compId: document.getElementById('filterComp').value,
+        startDate: document.getElementById('filterStart').value,
+        endDate: document.getElementById('filterEnd').value,
         mode: document.getElementById('calcMode').value,
-        winrateColor: document.getElementById('filterWinrateColor').value,
         search: document.getElementById('searchCard').value.toLowerCase()
     };
 
-    const stats = MetaEngine.calculateStats(rawData, filters);
-    
-    // Cập nhật text tiêu đề cột dựa trên chế độ
-    document.getElementById('usage-column-header').innerText = 
-        filters.mode === 'total' ? 'Tổng số bản copy' : 'Số Deck sử dụng';
+    currentStats = MetaEngine.calculateStats(rawData, filters);
+    document.getElementById('usage-column-header').innerText = filters.mode === 'total' ? 'Tổng số bản copy' : 'Số Deck sử dụng';
 
-    // 1. Biểu đồ Rarity
-    charts.color = renderRarityChart('rarityUsageChart', stats, charts.color);
-
-    // 2. Biểu đồ Winrate với Filter màu
-    let winrateCards = stats.cards;
-    if (filters.winrateColor !== 'all') {
-        winrateCards = winrateCards.filter(c => c.color === filters.winrateColor);
-    }
-    charts.winrate = renderWinrateChart('winrateBarChart', winrateCards, charts.winrate);
-
-    // 3. Biểu đồ Deck Ranking
+    triggerUsageRender();
+    triggerWinrateOnlyRender();
     charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank);
+    renderTable(filters.search);
+}
 
-    // 4. Bảng danh sách
+export function triggerUsageRender() {
+    const viewMode = document.getElementById('usageViewMode').value;
+    const ctx = document.getElementById('usageTypeChart').getContext('2d');
+    if (charts.usage) charts.usage.destroy();
+
+    let labels, data, colors;
+    if (viewMode === 'color') {
+        labels = Object.keys(currentStats.colors);
+        data = Object.values(currentStats.colors);
+        colors = labels.map(l => MetaEngine.getColorCode(l));
+    } else {
+        labels = Object.keys(currentStats.rarities).sort((a,b) => (MetaEngine.RARITY_ORDER[a]||99) - (MetaEngine.RARITY_ORDER[b]||99));
+        data = labels.map(l => currentStats.rarities[l]);
+        colors = labels.map(l => MetaEngine.getRarityColor(l));
+    }
+
+    charts.usage = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: colors }] },
+        options: { maintainAspectRatio: false }
+    });
+}
+
+export function triggerWinrateOnlyRender() {
+    const color = document.getElementById('filterWinrateColor').value;
+    let data = currentStats.cards;
+    if (color !== 'all') data = data.filter(c => c.color === color);
+    charts.winrate = renderWinrateChart('winrateBarChart', data, charts.winrate);
+}
+
+function renderTable(search) {
     const tbody = document.getElementById('meta-body');
-    const filteredCards = stats.cards.filter(c => c.name.toLowerCase().includes(filters.search));
-    
-    tbody.innerHTML = filteredCards.map(s => `
+    const filtered = currentStats.cards.filter(c => c.name.toLowerCase().includes(search));
+    tbody.innerHTML = filtered.map(s => `
         <tr onclick="window.analyzeQuantity(${s.id}, '${s.name}')" class="clickable-row">
-            <td>
-                <span class="card-tooltip">
-                    <strong>${s.name} 🔍</strong>
-                    <img src="${s.url || 'https://via.placeholder.com/200x280'}" class="tooltip-img">
-                </span>
-            </td>
+            <td><span class="card-tooltip"><strong>${s.name} 🔍</strong><img src="${s.url || ''}" class="tooltip-img"></span></td>
             <td><span class="badge" style="background:${MetaEngine.getColorCode(s.color)}">${s.color}</span></td>
             <td><span class="badge" style="background:${MetaEngine.getRarityColor(s.rarity)}">${s.rarity}</span></td>
             <td>${s.useCount}</td>
@@ -98,40 +85,17 @@ function render() {
     `).join('');
 }
 
-// Hàm phân tích chi tiết khi click dòng
 function analyzeQuantity(cardId, cardName) {
     const qtyStats = MetaEngine.calculateQuantityStats(rawData, cardId);
-    const section = document.getElementById('quantity-analysis');
-    section.classList.remove('hidden');
+    document.getElementById('quantity-analysis').classList.remove('hidden');
     document.getElementById('qty-title').innerText = `Phân tích: ${cardName}`;
+    document.getElementById('qty-table-body').innerHTML = qtyStats.map(q => `<tr><td><strong>${q.quantity} bản</strong></td><td>${q.count} deck</td><td>${q.avgWinrate}%</td></tr>`).join('');
 
-    // Render bảng Qty
-    document.getElementById('qty-table-body').innerHTML = qtyStats.map(q => `
-        <tr>
-            <td><strong>${q.quantity} bản</strong></td>
-            <td>${q.count} deck</td>
-            <td>${q.avgWinrate}%</td>
-        </tr>
-    `).join('');
-
-    // Vẽ biểu đồ Qty
-    const ctxQty = document.getElementById('qtyWinrateChart').getContext('2d');
+    const ctx = document.getElementById('qtyWinrateChart').getContext('2d');
     if(charts.qty) charts.qty.destroy();
-    charts.qty = new Chart(ctxQty, {
+    charts.qty = new Chart(ctx, {
         type: 'bar',
-        data: {
-            labels: qtyStats.map(q => `${q.quantity} bản`),
-            datasets: [{
-                label: 'Winrate trung bình',
-                data: qtyStats.map(q => q.avgWinrate),
-                backgroundColor: '#2563eb'
-            }]
-        }
+        data: { labels: qtyStats.map(q => `${q.quantity} bản`), datasets: [{ label: 'Winrate trung bình', data: qtyStats.map(q => q.avgWinrate), backgroundColor: '#2563eb' }] }
     });
-
     renderDeckComposition('deck-comp-container', cardId, rawData);
-    section.scrollIntoView({ behavior: 'smooth' });
 }
-
-// Export hàm render để bên ngoài có thể dùng nếu cần qua import
-export { render as triggerRender };
