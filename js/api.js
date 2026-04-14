@@ -6,13 +6,21 @@ export async function request(endpoint, method = 'GET', body = null) {
             method,
             headers: { 'Content-Type': 'application/json' }
         };
-        if (body) options.body = JSON.stringify(body);
+        
+        // Chỉ thêm body nếu phương thức không phải GET và có dữ liệu body thực sự
+        if (body && method !== 'GET') {
+            options.body = JSON.stringify(body);
+        }
         
         const response = await fetch(`${API_BASE}${endpoint}`, options);
-        if (!response.ok) return null;
+        
+        if (!response.ok) {
+            console.error(`Server trả về lỗi: ${response.status}`);
+            return null;
+        }
         return await response.json();
     } catch (error) {
-        console.error("Lỗi gọi API:", error);
+        console.error("Lỗi kết nối mạng hoặc Server:", error);
         return null;
     }
 }
