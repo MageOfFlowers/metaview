@@ -3,6 +3,7 @@ import { MetaEngine } from './meta-engine.js';
 import { renderWinrateChart } from './charts/winrate-chart.js';
 import { renderDeckRanking } from './charts/deck-ranking.js';
 import { renderDeckComposition } from './charts/deck-analysis.js';
+import { renderUsageChart } from './charts/usage-charts.js'
 
 let rawData = { cards: [], compUses: [], deckInfos: [], decks: [] };
 let currentStats = null; 
@@ -168,7 +169,7 @@ function render() {
     }
 
     // 2. Vẽ các biểu đồ (giữ nguyên logic của bạn)
-    charts.color = renderRarityChart('rarityUsageChart', stats, charts.color);
+    charts.color = renderUsageChart('renderUsageChart', stats, charts.color);
     
     let winrateCards = [...stats.cards];
     if (filters.winrateColor !== 'all') {
