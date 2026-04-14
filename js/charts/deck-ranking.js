@@ -69,19 +69,18 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
         },
         options: {
     indexAxis: 'y',
-    plugins: {
-        tooltip: {
-            callbacks: {
-                label: function(context) {
-                    return ` ${context.dataset.label}: ${context.raw} bản`;
-                },
-                // Thêm URL vào cuối tooltip
-                afterLabel: function(context) {
-                    return `Link ảnh: ${context.dataset.cardUrl || 'N/A'}`;
-                }
+    // Tìm đoạn cấu hình plugins trong js/charts/deck-ranking.js
+plugins: {
+    tooltip: {
+        callbacks: {
+            label: function(context) {
+                return ` ${context.dataset.label}: ${context.raw} bản`;
             }
+            // Đã xóa afterLabel hiển thị URL
         }
-    }
+    },
+    legend: { display: false }
+}
 }
     });
 }
