@@ -9,21 +9,42 @@ let currentStats = null;
 let charts = { usage: null, winrate: null, qty: null, deckRank: null };
 
 export async function initAnalysis() {
-    const [cards, uses, infos, comps, decks] = await Promise.all([
-        request('/cards'), request('/competition-use'), request('/deck-infos'), request('/competitions'), request('/decks')
-    ]);
-    rawData = { cards: cards || [], compUses: uses || [], deckInfos: infos || [], decks: decks || [] };
+    try {
+        const [cards, uses, infos, comps, decks] = await Promise.all([
+            request('/cards'),
+            request('/competition-use'),
+            request('/deck-infos'),
+            request('/competitions'),
+            request('/decksget') // Lưu ý: API của bạn là /decksget để lấy list
+        ]);
 
-    const fComp = document.getElementById('filterComp');
-    if (comps) comps.forEach(c => {
-        const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; fComp.appendChild(opt);
-    });
+        rawData = { 
+            cards: cards || [], 
+            compUses: uses || [], 
+            deckInfos: infos || [],
+            decks: decks || []
+        };
 
-    window.triggerRender = triggerRender;
-    window.triggerUsageRender = triggerUsageRender;
-    window.triggerWinrateOnlyRender = triggerWinrateOnlyRender; 
-    window.analyzeQuantity = analyzeQuantity;
-    triggerRender();
+        // Đổ dữ liệu vào Select Giải đấu
+        const fComp = document.getElementById('filterComp');
+        if (comps && fComp) {
+            fComp.innerHTML = '<option value="all">Tất cả giải đấu</option>';
+            comps.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                fComp.appendChild(opt);
+            });
+        }
+
+        // Đưa hàm ra global ĐÚNG CÁCH
+        window.triggerRender = render; 
+        window.analyzeQuantity = analyzeQuantity;
+
+        render(); // Chạy lần đầu
+    } catch (err) {
+        console.error("Lỗi khởi tạo:", err);
+    }
 }
 
 export function triggerRender() {
@@ -122,4 +143,66 @@ function analyzeQuantity(cardId, cardName) {
         data: { labels: qtyStats.map(q => `${q.quantity} bản`), datasets: [{ label: 'Winrate trung bình', data: qtyStats.map(q => q.avgWinrate), backgroundColor: '#2563eb' }] }
     });
     renderDeckComposition('deck-comp-container', cardId, rawData);
+}
+
+function render() {
+    // Kiểm tra nếu dữ liệu thô chưa có thì thoát
+    if (!rawData.cards || rawData.cards.length === 0) return;
+
+    const filters = {
+        compId: document.getElementById('filterComp').value,
+        mode: document.getElementById('calcMode').value,
+        winrateColor: document.getElementById('filterWinrateColor').value,
+        search: document.getElementById('searchCard').value.toLowerCase()
+    };
+
+    // Tính toán stats từ MetaEngine
+    const stats = MetaEngine.calculateStats(rawData, filters);
+    
+    if (!stats) return;
+
+    // 1. Cập nhật tiêu đề cột
+    const header = document.getElementById('usage-column-header');
+    if (header) {
+        header.innerText = filters.mode === 'total' ? 'Tổng số bản copy' : 'Số Deck sử dụng';
+    }
+
+    // 2. Vẽ các biểu đồ (giữ nguyên logic của bạn)
+    charts.color = renderRarityChart('rarityUsageChart', stats, charts.color);
+    
+    let winrateCards = [...stats.cards];
+    if (filters.winrateColor !== 'all') {
+        winrateCards = winrateCards.filter(c => c.color === filters.winrateColor);
+    }
+    charts.winrate = renderWinrateChart('winrateBarChart', winrateCards, charts.winrate);
+    charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank);
+
+    // 3. FIX LỖI HIỂN THỊ BẢNG:
+    const tbody = document.getElementById('meta-body');
+    if (!tbody) return;
+
+    // Lọc theo từ khóa tìm kiếm
+    const filteredCards = stats.cards.filter(c => 
+        c.name && c.name.toLowerCase().includes(filters.search)
+    );
+
+    if (filteredCards.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Không tìm thấy dữ liệu phù hợp</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = filteredCards.map(s => `
+        <tr onclick="window.analyzeQuantity(${s.id}, '${s.name}')" class="clickable-row">
+            <td>
+                <span class="card-tooltip">
+                    <strong>${s.name} 🔍</strong>
+                    <img src="${s.url || 'https://via.placeholder.com/200x280'}" class="tooltip-img">
+                </span>
+            </td>
+            <td><span class="badge" style="background:${MetaEngine.getColorCode(s.color)}">${s.color || ''}</span></td>
+            <td><span class="badge" style="background:${MetaEngine.getRarityColor(s.rarity)}">${s.rarity || ''}</span></td>
+            <td>${s.useCount}</td>
+            <td>${s.avgWinrate}%</td>
+        </tr>
+    `).join('');
 }
