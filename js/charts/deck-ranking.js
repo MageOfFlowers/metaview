@@ -68,21 +68,20 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
             datasets: datasets
         },
         options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { stacked: true, title: { display: true, text: 'Tổng số lá bài' } },
-                y: { stacked: true }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw} bản`
-                    }
+    indexAxis: 'y',
+    plugins: {
+        tooltip: {
+            callbacks: {
+                label: function(context) {
+                    return ` ${context.dataset.label}: ${context.raw} bản`;
                 },
-                legend: { display: false }
+                // Thêm URL vào cuối tooltip
+                afterLabel: function(context) {
+                    return `Link ảnh: ${context.dataset.cardUrl || 'N/A'}`;
+                }
             }
         }
+    }
+}
     });
 }
