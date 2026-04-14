@@ -117,18 +117,19 @@
     }
 
     try {
-            const res = await request(`/usersadd?username=${encodeURIComponent(username)}`, 'POST');
-            if (res) {
-                alert("Tạo người dùng thành công!");
-                document.getElementById('newUserName').value = "";
-                // Gọi lại hàm init để cập nhật danh sách user ở phần Đăng ký giải đấu
-                if (typeof init === "function") init();
-            } else {
-                alert("Lỗi: Không thể tạo người dùng.");
-            }
-        } catch (e) {
-            alert("Lỗi kết nối API.");
+        // Gửi username trực tiếp trên URL theo đúng cấu trúc @RequestParam của API
+        const url = `/usersadd?username=${encodeURIComponent(username)}`;
+        const res = await request(url, 'POST'); 
+
+        if (res) {
+            alert("Tạo người dùng thành công!");
+            document.getElementById('newUserName').value = ""; // Reset input
+            if (typeof init === "function") init(); // Tải lại danh sách nếu cần
         }
+    } catch (error) {
+        console.error("Lỗi tạo user:", error);
+        alert("Lỗi kết nối API: Vui lòng kiểm tra lại Server.");
+    }
 };
 
         init();
