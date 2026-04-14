@@ -16,13 +16,6 @@
         <label>Tên người chơi</label>
         <input type="text" id="userName" placeholder="Nhập tên người dùng...">
     </div>
-    <div class="input-group">
-        <label>Vai trò</label>
-        <select id="userRole">
-            <option value="user">User (Người chơi)</option>
-            <option value="admin">Admin (Quản trị)</option>
-        </select>
-    </div>
     <button class="btn-submit" id="save-user-btn">Lưu người dùng</button>
 </div>
             <div class="card">
@@ -117,35 +110,25 @@
         };
         document.getElementById('save-user-btn').onclick = async () => {
     const name = document.getElementById('userName').value.trim();
-    const role = document.getElementById('userRole').value;
 
     if (!name) {
         alert("Vui lòng nhập tên người dùng!");
         return;
     }
 
-    const body = {
-        name: name,
-        role: role
-    };
-
     try {
-        // Giả định endpoint API là /users
-        const res = await request('/users', 'POST', body);
-        
-        if (res) {
-            alert("Tạo người dùng thành công!");
-            document.getElementById('userName').value = ""; // Reset input
-            
-            // Nếu có hàm load danh sách user để đổ vào các select box thì gọi ở đây
-            if (typeof init === "function") init(); 
-        } else {
-            alert("Có lỗi xảy ra khi tạo người dùng.");
+            const res = await request(`/usersadd?username=${encodeURIComponent(username)}`, 'POST');
+            if (res) {
+                alert("Tạo người dùng thành công!");
+                document.getElementById('newUserName').value = "";
+                // Gọi lại hàm init để cập nhật danh sách user ở phần Đăng ký giải đấu
+                if (typeof init === "function") init();
+            } else {
+                alert("Lỗi: Không thể tạo người dùng.");
+            }
+        } catch (e) {
+            alert("Lỗi kết nối API.");
         }
-    } catch (error) {
-        console.error("Lỗi:", error);
-        alert("Không thể kết nối đến máy chủ.");
-    }
 };
 
         init();

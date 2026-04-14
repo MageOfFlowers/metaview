@@ -82,15 +82,18 @@ export function triggerWinrateOnlyRender() {
 
     // Lọc theo màu nếu người dùng chọn R, G, P, hoặc Y
     if (colorFilter !== 'all') {
-        displayData = displayData.filter(c => String(c.color).toUpperCase() === colorFilter.toUpperCase());
+        displayData = displayData.filter(c => {
+            if (!c.color) return false;
+            return c.color.toString().toUpperCase() === colorFilter.toUpperCase();
+        });
     }
 
-    // Luôn sắp xếp lại theo Winrate cao nhất sau khi lọc màu
-    displayData.sort((a, b) => b.avgWinrate - a.avgWinrate);
+    displayData.sort((a, b) => parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate));
+    const top10Data = displayData.slice(0, 10);
 
-    // Vẽ lại biểu đồ cột Winrate
-    // Đảm bảo hàm renderWinrateChart nhận vào mảng card đã lọc
-    charts.winrate = renderWinrateChart('winrateBarChart', displayData, charts.winrate);
+    // 5. Vẽ lại biểu đồ Winrate
+    // charts.winrate là biến lưu trữ instance Chart.js để destroy() trước khi vẽ mới
+    charts.winrate = renderWinrateChart('winrateBarChart', top10Data, charts.winrate);
 }
 function renderTable(search) {
     const tbody = document.getElementById('meta-body');
