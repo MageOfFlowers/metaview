@@ -72,22 +72,26 @@ export function triggerUsageRender() {
 }
 
 export function triggerWinrateOnlyRender() {
-    if (!currentStats) return;
+    // Nếu chưa có dữ liệu tổng thì không làm gì cả
+    if (!currentStats || !currentStats.cards) return;
 
     const colorFilter = document.getElementById('filterWinrateColor').value;
     
-    // Lấy dữ liệu từ currentStats (đã được lọc theo ngày/giải trước đó)
+    // Tạo bản sao dữ liệu từ currentStats (đã được lọc theo ngày/giải trước đó)
     let displayData = [...currentStats.cards];
 
-    // Nếu chọn màu cụ thể, lọc thêm theo màu
+    // Lọc theo màu nếu người dùng chọn R, G, P, hoặc Y
     if (colorFilter !== 'all') {
-        displayData = displayData.filter(c => c.color === colorFilter);
+        displayData = displayData.filter(c => String(c.color).toUpperCase() === colorFilter.toUpperCase());
     }
 
-    // Gọi hàm vẽ biểu đồ cột (chỉ vẽ lại biểu đồ này)
+    // Luôn sắp xếp lại theo Winrate cao nhất sau khi lọc màu
+    displayData.sort((a, b) => b.avgWinrate - a.avgWinrate);
+
+    // Vẽ lại biểu đồ cột Winrate
+    // Đảm bảo hàm renderWinrateChart nhận vào mảng card đã lọc
     charts.winrate = renderWinrateChart('winrateBarChart', displayData, charts.winrate);
 }
-
 function renderTable(search) {
     const tbody = document.getElementById('meta-body');
     const filtered = currentStats.cards.filter(c => c.name.toLowerCase().includes(search));
