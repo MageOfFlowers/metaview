@@ -56,7 +56,32 @@ export async function initAnalysis() {
 export function triggerRender() {
     render();
 }
+function renderTable() {
+    const tableBody = document.getElementById('meta-body');
+    if (!tableBody || !currentStats || !currentStats.cards) return;
 
+    const searchTerm = document.getElementById('searchCard').value.toLowerCase();
+    
+    // Lọc theo từ khóa tìm kiếm
+    const filteredCards = currentStats.cards.filter(c => 
+        c.name.toLowerCase().includes(searchTerm)
+    );
+
+    tableBody.innerHTML = filteredCards.map(card => `
+        <tr class="clickable-row" onclick="analyzeQuantity(${card.id}, '${card.name}')">
+            <td>
+                <span class="card-tooltip">
+                    ${card.name}
+                    <img src="${card.url || 'placeholder.jpg'}" class="tooltip-img">
+                </span>
+            </td>
+            <td>${card.color || '-'}</td>
+            <td>${card.rarity || '-'}</td>
+            <td>${card.useCount}</td>
+            <td>${card.avgWinrate}%</td>
+        </tr>
+    `).join('');
+}
 /**
  * Chỉ vẽ lại biểu đồ Tỷ lệ sử dụng (khi đổi view Màu sắc/Độ hiếm)
  */
