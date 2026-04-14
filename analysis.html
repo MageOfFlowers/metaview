@@ -16,11 +16,12 @@
         }
         .card-tooltip:hover .tooltip-img { visibility: visible; opacity: 1; }
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-bottom: 20px; }
-        .clickable-row { cursor: pointer; }
+        .clickable-row { cursor: pointer; transition: background 0.2s; }
         .clickable-row:hover { background-color: #f1f5f9 !important; }
         .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .hidden { display: none; }
         .filter-sm { padding: 5px 10px; font-size: 0.85rem; border-radius: 6px; border: 1px solid var(--border); }
+        .container { padding: 20px; max-width: 1200px; margin: auto; }
     </style>
 </head>
 <body>
@@ -35,10 +36,18 @@
         <div class="form-grid">
             <div class="input-group">
                 <label>Giải đấu</label>
-                <select id="filterComp" onchange="triggerRender()"><option value="all">Tất cả giải đấu</option></select>
+                <select id="filterComp" onchange="triggerRender()">
+                    <option value="all">Tất cả giải đấu</option>
+                </select>
             </div>
-            <div class="input-group"><label>Từ ngày</label><input type="date" id="filterStart" onchange="triggerRender()"></div>
-            <div class="input-group"><label>Đến ngày</label><input type="date" id="filterEnd" onchange="triggerRender()"></div>
+            <div class="input-group">
+                <label>Từ ngày</label>
+                <input type="date" id="filterStart" onchange="triggerRender()">
+            </div>
+            <div class="input-group">
+                <label>Đến ngày</label>
+                <input type="date" id="filterEnd" onchange="triggerRender()">
+            </div>
             <div class="input-group">
                 <label>Chế độ tính toán</label>
                 <select id="calcMode" onchange="triggerRender()">
@@ -70,7 +79,10 @@
                 <h3>Top 10 Winrate</h3>
                 <select id="filterWinrateColor" class="filter-sm" onchange="triggerWinrateOnlyRender()">
                     <option value="all">Tất cả màu</option>
-                    <option value="R">Đỏ (R)</option><option value="Y">Vàng (Y)</option><option value="G">Xanh (G)</option><option value="P">Tím (P)</option>
+                    <option value="R">Đỏ (R)</option>
+                    <option value="Y">Vàng (Y)</option>
+                    <option value="G">Xanh (G)</option>
+                    <option value="P">Tím (P)</option>
                 </select>
             </div>
             <div style="height: 300px;"><canvas id="winrateBarChart"></canvas></div>
@@ -86,34 +98,55 @@
         <h3>Danh sách Meta Thẻ bài</h3>
         <table>
             <thead>
-                <tr><th>Tên thẻ bài</th><th>Hệ</th><th>Độ hiếm</th><th id="usage-column-header">Số lượt dùng</th><th>Winrate</th></tr>
+                <tr>
+                    <th>Tên thẻ bài</th>
+                    <th>Hệ</th>
+                    <th>Độ hiếm</th>
+                    <th id="usage-column-header">Số lượt dùng</th>
+                    <th>Winrate</th>
+                </tr>
             </thead>
-            <tbody id="meta-body"></tbody>
+            <tbody id="meta-body">
+                </tbody>
         </table>
     </div>
 
     <div id="quantity-analysis" class="card hidden" style="margin-top: 20px; border: 2px solid var(--primary);">
         <h3 id="qty-title">Phân tích chi tiết</h3>
         <div class="dashboard-grid">
-            <div class="card"><canvas id="qtyWinrateChart"></canvas></div>
+            <div class="card">
+                <div style="height: 250px;"><canvas id="qtyWinrateChart"></canvas></div>
+            </div>
             <div class="card">
                 <table>
-                    <thead><tr><th>Số lượng</th><th>Số lần</th><th>Winrate</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Số lượng</th>
+                            <th>Số lần</th>
+                            <th>Winrate</th>
+                        </tr>
+                    </thead>
                     <tbody id="qty-table-body"></tbody>
                 </table>
             </div>
         </div>
         <div id="deck-comp-container"></div>
-        <button onclick="document.getElementById('quantity-analysis').classList.add('hidden')" style="margin-top: 15px; background: var(--text-muted); color: white;">Đóng</button>
+        
+        <button onclick="document.getElementById('quantity-analysis').classList.add('hidden')" 
+                style="margin-top: 15px; background: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+            Đóng bảng phân tích
+        </button>
     </div>
 </div>
 
 <script type="module">
-    import { initAnalysis, triggerRender, triggerUsageRender, triggerWinrateOnlyRender } from './js/analysis-main.js';
-    window.triggerRender = triggerRender;
-    window.triggerUsageRender = triggerUsageRender;
-    window.triggerWinrateOnlyRender = triggerWinrateOnlyRender;
-    initAnalysis();
+    import { initAnalysis } from './js/analysis-main.js';
+
+    // Đảm bảo DOM đã sẵn sàng trước khi khởi tạo
+    document.addEventListener('DOMContentLoaded', () => {
+        initAnalysis();
+    });
 </script>
+
 </body>
 </html>

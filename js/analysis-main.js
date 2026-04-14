@@ -163,7 +163,7 @@ function renderTable() {
 /**
  * Hàm phân tích chi tiết khi click vào một dòng trong bảng
  */
-function analyzeQuantity(cardId, cardName) {
+export function analyzeQuantity(cardId, cardName) {
     const qtyStats = MetaEngine.calculateQuantityStats(rawData, cardId);
     const section = document.getElementById('quantity-analysis');
     
