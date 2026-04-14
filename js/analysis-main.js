@@ -45,6 +45,7 @@ export async function initAnalysis() {
         window.triggerRender = render; 
         window.triggerUsageRender = triggerUsageRender;
         window.triggerWinrateOnlyRender = triggerWinrateOnlyRender;
+        window.renderTableOnly = renderTableOnly;
         window.analyzeQuantity = analyzeQuantity;
 
         // Chạy render lần đầu
@@ -154,28 +155,33 @@ export function render() {
 export function triggerWinrateOnlyRender() {
     if (!currentStats || !currentStats.cards) return;
 
+    // Lấy giá trị từ 2 filter mới
     const colorFilter = document.getElementById('filterWinrateColor').value;
-    const viewMode = document.getElementById('topCardMode').value; // winrate hoặc rank
+    const viewMode = document.getElementById('topCardMode').value; // 'winrate' hoặc 'rank'
     
     let displayData = [...currentStats.cards];
 
+    // 1. Lọc theo màu sắc
     if (colorFilter !== 'all') {
         displayData = displayData.filter(c => 
             c.color && c.color.toString().toUpperCase() === colorFilter.toUpperCase()
         );
     }
 
-    // Sắp xếp dựa trên chế độ xem
+    // 2. Sắp xếp dựa trên Chế độ xem (viewMode)
     if (viewMode === 'winrate') {
+        // Sắp xếp theo Tỉ lệ thắng giảm dần
         displayData.sort((a, b) => parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate));
     } else {
-        // Giả sử useCount đại diện cho độ phổ biến/xếp hạng sử dụng
+        // Sắp xếp theo Xếp hạng sử dụng (Độ phổ biến) giảm dần
         displayData.sort((a, b) => b.useCount - a.useCount);
     }
 
+    // 3. Lấy Top 10 và vẽ biểu đồ
     const top10 = displayData.slice(0, 10);
     charts.winrate = renderWinrateChart('winrateBarChart', top10, charts.winrate);
 }
+
 
 /**
  * Hàm phân tích chi tiết khi click vào một dòng trong bảng
