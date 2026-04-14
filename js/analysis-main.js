@@ -15,7 +15,7 @@ export async function initAnalysis() {
             request('/competition-use'),
             request('/deck-infos'),
             request('/competitions'),
-            request('/decks')
+            request('/decksget')
         ]);
 
         rawData = { 
