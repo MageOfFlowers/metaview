@@ -8,36 +8,60 @@ export function renderWinrateChart(canvasId, cardStats, currentChart = null) {
     }
 
     const ctx = canvas.getContext('2d');
-    
-    // Kiểm tra chế độ xem dựa trên dữ liệu thực tế được truyền vào
-    // Nếu phần tử đầu tiên có avgWinrate > 0 và đang chọn mode winrate
-    const viewMode = document.getElementById('topCardMode').value;
-    const isWinrate = viewMode === 'winrate';
-    const label = isWinrate ? 'Tỷ lệ thắng (%)' : 'Số lượt sử dụng';
+    const viewMode = document.getElementById('topCardMode').value; // 'winrate', 'rank', hoặc 'both'
+
+    const datasets = [];
+
+    // Cấu hình cột Winrate
+    if (viewMode === 'winrate' || viewMode === 'both') {
+        datasets.push({
+            label: 'Tỷ lệ thắng (%)',
+            data: cardStats.map(c => parseFloat(c.avgWinrate)),
+            backgroundColor: '#10b981',
+            borderRadius: 4,
+            yAxisID: 'y' // Trục tọa độ mặc định
+        });
+    }
+
+    // Cấu hình cột Số lượt dùng (Rank)
+    if (viewMode === 'rank' || viewMode === 'both') {
+        datasets.push({
+            label: 'Số lượt sử dụng',
+            data: cardStats.map(c => c.useCount),
+            backgroundColor: '#2563eb',
+            borderRadius: 4,
+            yAxisID: viewMode === 'both' ? 'y1' : 'y' // Dùng trục phụ nếu hiển thị cả hai
+        });
+    }
 
     return new Chart(ctx, {
         type: 'bar',
         data: {
             labels: cardStats.map(c => c.name),
-            datasets: [{
-                label: label,
-                data: cardStats.map(c => isWinrate ? c.avgWinrate : c.useCount),
-                backgroundColor: isWinrate ? '#10b981' : '#2563eb', // Xanh lá cho Winrate, Xanh dương cho Rank
-                borderRadius: 4
-            }]
+            datasets: datasets
         },
         options: {
-            indexAxis: 'y',
-            scales: { 
-                x: { 
-                    beginAtZero: true,
-                    max: isWinrate ? 100 : undefined // Chỉ giới hạn 100 nếu là % winrate
-                } 
-            },
-            maintainAspectRatio: false,
+            indexAxis: 'y', // Biểu đồ ngang
             responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                },
+                y1: {
+                    display: viewMode === 'both',
+                    position: 'right',
+                    grid: { drawOnChartArea: false }, // Không vẽ lưới chồng lên nhau
+                    beginAtZero: true
+                },
+                x: {
+                    beginAtZero: true,
+                    max: (viewMode === 'winrate') ? 100 : undefined
+                }
+            },
             plugins: {
-                legend: { display: true, position: 'top' }
+                legend: { display: true, position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
             }
         }
     });

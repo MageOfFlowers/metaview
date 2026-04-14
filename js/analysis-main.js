@@ -106,35 +106,35 @@ export function render() {
     charts.deckRank = renderDeckRanking('deckRankingChart', { ...rawData, decks: filteredDecksList }, charts.deckRank, 10);
 }
 
-// Tìm hàm này trong js/analysis-main.js và thay thế
-// Thay thế hàm cũ trong js/analysis-main.js
+// Thay thế hàm triggerWinrateOnlyRender trong js/analysis-main.js
 export function triggerWinrateOnlyRender() {
     if (!currentStats || !currentStats.cards) return;
 
     const colorFilter = document.getElementById('filterWinrateColor').value;
-    const viewMode = document.getElementById('topCardMode').value; // 'winrate' hoặc 'rank'
+    const viewMode = document.getElementById('topCardMode').value; 
     
-    // 1. Lọc theo màu sắc
     let displayData = [...currentStats.cards];
+
+    // 1. Lọc theo màu sắc
     if (colorFilter !== 'all') {
         displayData = displayData.filter(c => 
             c.color && c.color.toString().toUpperCase() === colorFilter.toUpperCase()
         );
     }
 
-    // 2. SẮP XẾP CHÍNH XÁC THEO FILTER
+    // 2. Sắp xếp dữ liệu
     displayData.sort((a, b) => {
         if (viewMode === 'winrate') {
             return parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate);
-        } else {
+        } else if (viewMode === 'rank') {
             return b.useCount - a.useCount;
+        } else {
+            // Chế độ 'both': Ưu tiên sắp xếp theo Winrate, nếu bằng nhau thì theo lượt dùng
+            return parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate) || b.useCount - a.useCount;
         }
     });
 
-    // 3. Lấy Top 10
     const top10 = displayData.slice(0, 10);
-
-    // 4. Cập nhật biểu đồ
     charts.winrate = renderWinrateChart('winrateBarChart', top10, charts.winrate);
 }
 export function analyzeQuantity(cardId, cardName) {
