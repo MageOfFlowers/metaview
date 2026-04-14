@@ -75,6 +75,7 @@ function render() {
         document.getElementById('quick-total-usage').innerText = stats.usesCount;
         document.getElementById('quick-top-card').innerText = stats.cards[0].name;
     }
+    charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank);
 }
 
 // Hàm xử lý khi click vào một lá bài
@@ -111,6 +112,6 @@ window.analyzeQuantity = (cardId, cardName) => {
 
     // 3. Hiển thị danh sách tất cả bài trong Deck (Component tách riêng)
     renderDeckComposition('deck-comp-container', cardId, rawData);
-charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank);
+
     section.scrollIntoView({ behavior: 'smooth' });
 };
