@@ -106,7 +106,7 @@ export function render() {
     charts.deckRank = renderDeckRanking('deckRankingChart', { ...rawData, decks: filteredDecksList }, charts.deckRank, 10);
 }
 
-// Thay thế hàm triggerWinrateOnlyRender trong js/analysis-main.js
+// js/analysis-main.js
 export function triggerWinrateOnlyRender() {
     if (!currentStats || !currentStats.cards) return;
 
@@ -115,26 +115,28 @@ export function triggerWinrateOnlyRender() {
     
     let displayData = [...currentStats.cards];
 
-    // 1. Lọc theo màu sắc
+    // Lọc theo màu sắc
     if (colorFilter !== 'all') {
         displayData = displayData.filter(c => 
             c.color && c.color.toString().toUpperCase() === colorFilter.toUpperCase()
         );
     }
 
-    // 2. Sắp xếp dữ liệu
+    // Sắp xếp dữ liệu
     displayData.sort((a, b) => {
         if (viewMode === 'winrate') {
             return parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate);
         } else if (viewMode === 'rank') {
             return b.useCount - a.useCount;
         } else {
-            // Chế độ 'both': Ưu tiên sắp xếp theo Winrate, nếu bằng nhau thì theo lượt dùng
+            // Chế độ 'both': Ưu tiên Winrate cao, nếu bằng thì tính theo lượt dùng
             return parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate) || b.useCount - a.useCount;
         }
     });
 
     const top10 = displayData.slice(0, 10);
+    
+    // Gọi hàm vẽ biểu đồ
     charts.winrate = renderWinrateChart('winrateBarChart', top10, charts.winrate);
 }
 export function analyzeQuantity(cardId, cardName) {
