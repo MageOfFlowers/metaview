@@ -7,30 +7,31 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
 
     const ctx = canvas.getContext('2d');
     
-    // Đảm bảo các thuộc tính tồn tại, nếu không có thì gán mảng rỗng
     const compUses = rawData.compUses || [];
     const deckInfos = rawData.deckInfos || [];
     const cards = rawData.cards || [];
-    const decks = rawData.decks || []; // Lỗi xảy ra tại đây nếu decks không phải Array
+    const decks = rawData.decks || [];
 
-    const deckStats = {};
+    // Tính toán thống kê Deck
+    const deckStatsMap = {};
+    const deckMap = new Map(decks.map(d => [String(d.id), d]));
+
     compUses.forEach(use => {
-        // Kiểm tra an toàn: chỉ chạy .some nếu decks là mảng
-        const isMatch = Array.isArray(decks) && decks.some(d => d.id == use.deckid);
-        if (!isMatch) return;
+        const deckIdStr = String(use.deckid);
+        if (!deckMap.has(deckIdStr)) return;
 
-        if (!deckStats[use.deckid]) {
-            deckStats[use.deckid] = { id: use.deckid, totalWin: 0, count: 0, totalRank: 0 };
+        if (!deckStatsMap[deckIdStr]) {
+            deckStatsMap[deckIdStr] = { id: use.deckid, totalWin: 0, count: 0, totalRank: 0 };
         }
-        deckStats[use.deckid].totalWin += use.winrate;
-        deckStats[use.deckid].totalRank += (use.rank || 99);
-        deckStats[use.deckid].count++;
+        deckStatsMap[deckIdStr].totalWin += (use.winrate || 0);
+        deckStatsMap[deckIdStr].totalRank += (use.rank || 99);
+        deckStatsMap[deckIdStr].count++;
     });
 
-    // Sắp xếp và giới hạn
-    const sortedDecks = Object.values(deckStats)
+    // Sắp xếp và lấy Top
+    const sortedDecks = Object.values(deckStatsMap)
         .map(d => {
-            const deckInfo = Array.isArray(decks) ? decks.find(item => item.id == d.id) : null;
+            const deckInfo = deckMap.get(String(d.id));
             return {
                 ...d,
                 displayName: deckInfo ? deckInfo.name : `Deck #${d.id}`,
@@ -41,8 +42,13 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
         })
         .sort((a, b) => a.avgRank - b.avgRank)
         .slice(0, limit);
-    const datasets = allCardIds.map(cid => {
-        const cardInfo = cards.find(c => c.id == cid);
+
+    // Lấy danh sách duy nhất các Card IDs xuất hiện trong các Top Deck này để tạo Dataset
+    const allCardIdsInTop = [...new Set(sortedDecks.flatMap(d => d.composition.map(c => c.cardid)))];
+    const cardInfoMap = new Map(cards.map(c => [c.id, c]));
+
+    const datasets = allCardIdsInTop.map(cid => {
+        const cardInfo = cardInfoMap.get(cid);
         return {
             label: cardInfo ? cardInfo.name : `Card ${cid}`,
             data: sortedDecks.map(d => {
@@ -50,14 +56,15 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
                 return item ? item.quantity : 0;
             }),
             backgroundColor: MetaEngine.getColorCode(cardInfo ? cardInfo.color : 'G'),
-            cardUrl: cardInfo ? cardInfo.url : ''
+            borderWidth: 1,
+            borderColor: '#ffffff'
         };
     });
 
     return new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: sortedDecks.map(d => `${d.displayName} (Avg Rank: ${d.avgRank})`),
+            labels: sortedDecks.map(d => `${d.displayName} (Rank: ${d.avgRank})`),
             datasets: datasets
         },
         options: {
@@ -65,15 +72,13 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                x: { stacked: true, title: { display: true, text: 'Số lượng Card trong Deck' } },
+                x: { stacked: true, title: { display: true, text: 'Tổng số lá bài' } },
                 y: { stacked: true }
             },
             plugins: {
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
-                            return ` ${context.dataset.label}: ${context.raw} bản`;
-                        }
+                        label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw} bản`
                     }
                 },
                 legend: { display: false }
