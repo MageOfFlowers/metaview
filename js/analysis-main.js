@@ -56,7 +56,7 @@ export async function initAnalysis() {
 export function triggerRender() {
     render();
 }
-function renderTable() {
+export function renderTable() {
     const tableBody = document.getElementById('meta-body');
     if (!tableBody || !currentStats || !currentStats.cards) return;
 
