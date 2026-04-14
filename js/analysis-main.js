@@ -3,9 +3,10 @@ import { MetaEngine } from './meta-engine.js';
 import { renderColorChart } from './charts/color-chart.js';
 import { renderWinrateChart } from './charts/winrate-chart.js';
 import { renderDeckComposition } from './charts/deck-analysis.js';
+import { renderDeckRanking } from './charts/deck-ranking.js';
 
 let rawData = { cards: [], compUses: [], deckInfos: [] };
-let charts = { color: null, winrate: null, qty: null };
+let charts = { color: null, winrate: null, qty: null, deckRank: null };
 
 export async function initAnalysis() {
     try {
@@ -110,6 +111,6 @@ window.analyzeQuantity = (cardId, cardName) => {
 
     // 3. Hiển thị danh sách tất cả bài trong Deck (Component tách riêng)
     renderDeckComposition('deck-comp-container', cardId, rawData);
-
+charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank);
     section.scrollIntoView({ behavior: 'smooth' });
 };
