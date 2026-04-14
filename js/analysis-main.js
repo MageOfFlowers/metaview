@@ -10,7 +10,7 @@ let charts = { usage: null, winrate: null, qty: null, deckRank: null };
 
 export async function initAnalysis() {
     const [cards, uses, infos, comps, decks] = await Promise.all([
-        request('/cards'), request('/competition-use'), request('/deck-infos'), request('/competitions'), request('/decks')
+        request('/cards'), request('/competition-use'), request('/deck-infos'), request('/competitions'), request('/decksget')
     ]);
     rawData = { cards: cards || [], compUses: uses || [], deckInfos: infos || [], decks: decks || [] };
 
