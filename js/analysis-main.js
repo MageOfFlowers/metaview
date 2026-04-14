@@ -26,7 +26,8 @@ export async function initAnalysis() {
             cards: cards || [], 
             compUses: uses || [], 
             deckInfos: infos || [],
-            decks: decks || []
+            decks: decks || [],
+            competitions: comps || [],
         };
 
         const fComp = document.getElementById('filterComp');
