@@ -53,7 +53,9 @@ export async function initAnalysis() {
         console.error("Lỗi khởi tạo ứng dụng:", err);
     }
 }
-
+export function triggerRender() {
+    render();
+}
 
 /**
  * Chỉ vẽ lại biểu đồ Tỷ lệ sử dụng (khi đổi view Màu sắc/Độ hiếm)
