@@ -1,6 +1,6 @@
 import { request } from './api.js';
 import { MetaEngine } from './meta-engine.js';
-import { renderColorChart } from './charts/color-chart.js';
+import { renderRarityChart } from './charts/color-chart.js';
 import { renderWinrateChart } from './charts/winrate-chart.js';
 import { renderDeckComposition } from './charts/deck-analysis.js';
 import { renderDeckRanking } from './charts/deck-ranking.js';
@@ -47,17 +47,22 @@ export async function initAnalysis() {
 function render() {
     const filters = {
         compId: document.getElementById('filterComp').value,
-        startDate: document.getElementById('filterStart').value,
-        endDate: document.getElementById('filterEnd').value,
+        mode: document.getElementById('calcMode').value, // Lấy chế độ: deck/total
+        winrateColor: document.getElementById('filterWinrateColor').value, // Filter màu cho Winrate
         search: document.getElementById('searchCard').value.toLowerCase()
     };
 
     const stats = MetaEngine.calculateStats(rawData, filters);
     
-    // Render biểu đồ thông qua các module đã tách
-    charts.color = renderColorChart('colorUsageChart', stats, charts.color);
-    charts.winrate = renderWinrateChart('winrateBarChart', stats.cards, charts.winrate);
+    // 1. Render Rarity Chart thay vì Color Chart
+    charts.color = renderRarityChart('colorUsageChart', stats, charts.color);
 
+    // 2. Render Winrate Chart với Filter màu
+    let winrateCards = stats.cards;
+    if (filters.winrateColor !== 'all') {
+        winrateCards = winrateCards.filter(c => c.color === filters.winrateColor);
+    }
+    charts.winrate = renderWinrateChart('winrateBarChart', winrateCards, charts.winrate);
     // Render bảng danh sách Meta
     const tbody = document.getElementById('meta-body');
     const filteredCards = stats.cards.filter(c => c.name.toLowerCase().includes(filters.search));

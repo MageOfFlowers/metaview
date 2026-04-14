@@ -3,19 +3,19 @@ export const MetaEngine = {
     // Tính toán thống kê tổng hợp
     calculateStats(rawData, filters = {}) {
         let { compUses, deckInfos, cards } = rawData;
-        const { compId, startDate, endDate } = filters;
+        const { compId, startDate, endDate, mode = 'deck' } = filters; // mode: 'deck' hoặc 'total'
 
-        // 1. Lọc theo Giải và Thời gian
         let filteredUses = compUses.filter(use => {
             const matchComp = compId === 'all' || use.competitionid == compId;
-            const useDate = new Date(use.createdAt || Date.now()); // Giả định có field createdAt
+            const useDate = new Date(use.createdAt || Date.now());
             const matchDate = (!startDate || useDate >= new Date(startDate)) && 
                               (!endDate || useDate <= new Date(endDate));
             return matchComp && matchDate;
         });
 
         const cardStats = {};
-        const colorStats = { 'R': { win: 0, count: 0 }, 'P': { win: 0, count: 0 }, 'Y': { win: 0, count: 0 }, 'G': { win: 0, count: 0 } };
+        // Rarity stats thay vì Color stats
+        const rarityStats = { 'C': 0, 'U': 0, 'R': 0, 'SR': 0, 'UR': 0 };
         
         cards.forEach(c => cardStats[c.id] = { ...c, useCount: 0, totalWin: 0 });
 
@@ -23,14 +23,15 @@ export const MetaEngine = {
             const cardsInDeck = deckInfos.filter(di => di.deckid === use.deckid);
             cardsInDeck.forEach(item => {
                 if (cardStats[item.cardid]) {
-                    cardStats[item.cardid].useCount++;
-                    cardStats[item.cardid].totalWin += use.winrate;
+                    // Chế độ 'total': cộng dồn số lượng card (quantity)
+                    // Chế độ 'deck': chỉ cộng 1 (số lượng deck có mặt)
+                    const countToAdd = mode === 'total' ? item.quantity : 1;
                     
-                    // Thống kê màu
-                    const color = cardStats[item.cardid].color;
-                    if(colorStats[color]) {
-                        colorStats[color].count++;
-                        colorStats[color].win += use.winrate;
+                    cardStats[item.cardid].useCount += countToAdd;
+                    cardStats[item.cardid].totalWin += (use.winrate * (mode === 'total' ? item.quantity : 1));
+                    
+                    if (rarityStats[cardStats[item.cardid].rarity] !== undefined) {
+                        rarityStats[cardStats[item.cardid].rarity] += countToAdd;
                     }
                 }
             });
@@ -41,7 +42,13 @@ export const MetaEngine = {
             avgWinrate: c.useCount > 0 ? (c.totalWin / c.useCount).toFixed(1) : 0
         })).sort((a, b) => b.useCount - a.useCount);
 
-        return { cards: finalCards, colors: colorStats, usesCount: filteredUses.length };
+        return { cards: finalCards, rarities: rarityStats, usesCount: filteredUses.length };
+    },
+    
+    // Hàm hỗ trợ lấy màu theo độ hiếm
+    getRarityColor(rarity) {
+        const colors = { 'C': '#94a3b8', 'U': '#22c55e', 'R': '#2563eb', 'SR': '#a855f7', 'UR': '#f59e0b' };
+        return colors[rarity] || '#ccc';
     },
 
     calculateQuantityStats(rawData, cardId) {

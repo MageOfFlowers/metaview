@@ -6,6 +6,44 @@
     <title>Meta Analysis - Card Game Portal</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+        /* Tooltip ảnh thẻ bài */
+        .card-tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            text-decoration: underline dotted;
+        }
+        .card-tooltip .tooltip-img {
+            visibility: hidden;
+            width: 180px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .card-tooltip:hover .tooltip-img {
+            visibility: visible;
+            opacity: 1;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .clickable-row { cursor: pointer; }
+        .clickable-row:hover { background: #f1f5f9 !important; }
+        .hidden { display: none; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    </style>
 </head>
 <body>
 
@@ -22,12 +60,11 @@
                 <select id="filterComp"><option value="all">Tất cả giải đấu</option></select>
             </div>
             <div class="input-group">
-                <label>Từ ngày</label>
-                <input type="date" id="filterStart">
-            </div>
-            <div class="input-group">
-                <label>Đến ngày</label>
-                <input type="date" id="filterEnd">
+                <label>Chế độ phân tích</label>
+                <select id="calcMode">
+                    <option value="deck">Theo số lượng Deck (Độ phổ biến)</option>
+                    <option value="total">Theo tổng số bản copy (Số lượng card)</option>
+                </select>
             </div>
             <div class="input-group">
                 <label>Tìm thẻ bài</label>
@@ -37,86 +74,79 @@
     </div>
 
     <div class="dashboard-grid">
-        <div class="card stat-box" style="border-top: 4px solid var(--primary);">
-            <p>Thẻ bài Meta nhất</p>
-            <h2 id="quick-top-card">-</h2>
-        </div>
-        <div class="card stat-box" style="border-top: 4px solid var(--warning);">
-            <p>Tổng số lượt sử dụng</p>
-            <h2 id="quick-total-usage">0</h2>
-        </div>
-    </div>
-    <div class="dashboard-grid" style="margin-top: 20px;">
-    <div class="card" style="grid-column: span 2;">
-        <h3>🏆 Xếp hạng Deck & Cấu trúc kết hợp</h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">
-            * Biểu đồ thể hiện sự kết hợp các lá bài trong Top 5 Deck có Winrate cao nhất.
-        </p>
-        <div style="height: 400px;">
-            <canvas id="deckRankingChart"></canvas>
-        </div>
-    </div>
-</div>
-
-    <div class="dashboard-grid">
         <div class="card">
-            <h3>Tỷ lệ sử dụng theo Hệ màu</h3>
-            <div style="height: 300px;"><canvas id="colorUsageChart"></canvas></div>
+            <h3>Tỷ lệ sử dụng theo Độ hiếm (Rarity)</h3>
+            <div style="height: 300px;"><canvas id="rarityUsageChart"></canvas></div>
         </div>
+        
         <div class="card">
-            <h3>Top 10 Thẻ bài Winrate</h3>
+            <div class="flex-between">
+                <h3>Top 10 Winrate</h3>
+                <select id="filterWinrateColor" style="padding: 4px; font-size: 0.8rem; border-radius: 4px;">
+                    <option value="all">Tất cả màu</option>
+                    <option value="R">Đỏ (R)</option>
+                    <option value="Y">Vàng (Y)</option>
+                    <option value="G">Xanh (G)</option>
+                    <option value="P">Tím (P)</option>
+                </select>
+            </div>
             <div style="height: 300px;"><canvas id="winrateBarChart"></canvas></div>
         </div>
     </div>
 
+    <div class="card" style="margin-bottom: 20px;">
+        <h3>🏆 Xếp hạng Deck & Cấu trúc kết hợp (Theo Rank)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
+            * Xếp hạng dựa trên Rank trung bình trong giải đấu. Mỗi đoạn màu trên thanh ngang đại diện cho 1 loại Card.
+        </p>
+        <div style="height: 400px;"><canvas id="deckRankingChart"></canvas></div>
+    </div>
+
     <div class="card">
         <h3>Danh sách Meta Thẻ bài</h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
-            * Rê chuột vào tên thẻ để xem ảnh. Click vào dòng để xem chi tiết Deck.
-        </p>
         <table>
             <thead>
                 <tr>
                     <th>Tên thẻ bài</th>
                     <th>Hệ</th>
-                    <th>Số Deck sử dụng</th>
-                    <th>Winrate trung bình</th>
+                    <th>Độ hiếm</th>
+                    <th id="usage-column-header">Số lượt dùng</th>
+                    <th>Winrate</th>
                 </tr>
             </thead>
             <tbody id="meta-body"></tbody>
         </table>
     </div>
 
-    <div id="quantity-analysis" class="card hidden" style="background: #f8fafc; border: 2px solid var(--primary);">
-        <h3 id="qty-title">Phân tích chi tiết</h3>
-        
+    <div id="quantity-analysis" class="card hidden" style="margin-top: 20px; border: 2px solid var(--primary); background: #fdfdfd;">
+        <h3 id="qty-title">Chi tiết thẻ bài</h3>
         <div class="dashboard-grid">
-            <div class="card">
-                <canvas id="qtyWinrateChart"></canvas>
-            </div>
+            <div class="card"><canvas id="qtyWinrateChart"></canvas></div>
             <div class="card">
                 <table class="simple-table">
-                    <thead>
-                        <tr><th>Số lượng</th><th>Số lần</th><th>Winrate</th></tr>
-                    </thead>
+                    <thead><tr><th>Số lượng</th><th>Số lần</th><th>Winrate</th></tr></thead>
                     <tbody id="qty-table-body"></tbody>
                 </table>
             </div>
         </div>
-
+        
         <div id="deck-comp-container"></div>
 
-        <button onclick="document.getElementById('quantity-analysis').classList.add('hidden')" 
-                style="background: var(--text-muted); color: white; margin-top: 20px;">
-            Đóng phân tích
-        </button>
+        <button onclick="document.getElementById('quantity-analysis').classList.add('hidden')" style="margin-top:15px; background: var(--text-muted); color: white;">Đóng</button>
     </div>
 </div>
 
 <script type="module">
-    import { initAnalysis } from './js/analysis-main.js';
-    // Đảm bảo DOM đã sẵn sàng trước khi chạy
-    document.addEventListener('DOMContentLoaded', initAnalysis);
+    import { initAnalysis, triggerRender } from './js/analysis-main.js';
+
+    // Khởi tạo hệ thống
+    document.addEventListener('DOMContentLoaded', () => {
+        initAnalysis();
+
+        // Gán sự kiện cho các filter đặc thù
+        document.getElementById('calcMode').addEventListener('change', triggerRender);
+        document.getElementById('filterWinrateColor').addEventListener('change', triggerRender);
+    });
 </script>
 
 </body>

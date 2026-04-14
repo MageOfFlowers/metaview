@@ -1,19 +1,23 @@
-// js/charts/color-chart.js
 import { MetaEngine } from '../meta-engine.js';
 
-export function renderColorChart(canvasId, stats) {
+export function renderRarityChart(canvasId, stats, currentChart = null) {
     const ctx = document.getElementById(canvasId).getContext('2d');
-    const colors = ['R', 'P', 'Y', 'G'];
-    
+    if (currentChart) currentChart.destroy();
+
+    const rarityKeys = Object.keys(stats.rarities);
+
     return new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Đỏ (R)', 'Tím (P)', 'Vàng (Y)', 'Xanh (G)'],
+            labels: rarityKeys,
             datasets: [{
-                data: colors.map(c => stats.colors[c].count),
-                backgroundColor: colors.map(c => MetaEngine.getColorCode(c))
+                data: rarityKeys.map(k => stats.rarities[k]),
+                backgroundColor: rarityKeys.map(k => MetaEngine.getRarityColor(k))
             }]
         },
-        options: { maintainAspectRatio: false }
+        options: {
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
     });
 }

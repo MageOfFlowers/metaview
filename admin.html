@@ -40,7 +40,7 @@
         async function init() {
             // Load toàn bộ dữ liệu cần thiết trước
             const [users, decks, comps, cards] = await Promise.all([
-                request('/users'), request('/decks'), request('/competitions'), request('/cards')
+                request('/users'), request('/decksget'), request('/competitions'), request('/cards')
             ]);
             
             allCards = cards || []; // Gán vào biến global để addRow dùng
