@@ -9,6 +9,9 @@ let rawData = { cards: [], compUses: [], deckInfos: [], decks: [] };
 let currentStats = null; 
 let charts = { usage: null, winrate: null, qty: null, deckRank: null };
 
+/**
+ * Khởi tạo dữ liệu khi vào trang
+ */
 export async function initAnalysis() {
     try {
         const [cards, uses, infos, comps, decks] = await Promise.all([
@@ -32,9 +35,9 @@ export async function initAnalysis() {
                 comps.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         }
 
-        // Đưa hàm ra global scope
+        // Đưa các hàm ra global scope để HTML (onclick, onchange) có thể thấy
         Object.assign(window, {
-            triggerRender: render,
+            triggerRender: render, // Gán render thành triggerRender cho HTML
             triggerUsageRender,
             triggerWinrateOnlyRender,
             renderTableOnly,
@@ -47,6 +50,9 @@ export async function initAnalysis() {
     }
 }
 
+// Export các hàm để file HTML có thể import nếu cần
+export function triggerRender() { render(); }
+
 export function triggerUsageRender() {
     if (!currentStats) return;
     const viewMode = document.getElementById('usageViewMode').value;
@@ -56,7 +62,6 @@ export function triggerUsageRender() {
 export function renderTableOnly() {
     const tableBody = document.getElementById('meta-body');
     if (!tableBody || !currentStats?.cards) return;
-
     const searchTerm = document.getElementById('searchCard').value.toLowerCase();
     const filteredCards = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
 
@@ -78,7 +83,6 @@ export function renderTableOnly() {
 
 export function render() {
     if (!rawData.cards?.length) return;
-
     const filters = {
         compId: document.getElementById('filterComp').value,
         startDate: document.getElementById('filterStart').value,
@@ -88,7 +92,6 @@ export function render() {
     };
 
     currentStats = MetaEngine.calculateStats(rawData, filters);
-    
     const header = document.getElementById('usage-column-header');
     if (header) header.innerText = filters.mode === 'total' ? 'Tổng số bản copy' : 'Số lượt dùng';
 
@@ -96,70 +99,45 @@ export function render() {
     triggerWinrateOnlyRender();
     renderTableOnly();
     
-    // Filter decks for ranking
     const filteredDecksList = filters.deckSearch 
         ? rawData.decks.filter(d => d.name.toLowerCase().includes(filters.deckSearch))
         : rawData.decks;
 
-    charts.deckRank = renderDeckRanking('deckRankingChart', {
-        ...rawData,
-        decks: filteredDecksList
-    }, charts.deckRank, 10);
+    charts.deckRank = renderDeckRanking('deckRankingChart', { ...rawData, decks: filteredDecksList }, charts.deckRank, 10);
 }
 
 export function triggerWinrateOnlyRender() {
     if (!currentStats?.cards) return;
-
     const colorFilter = document.getElementById('filterWinrateColor').value;
     const viewMode = document.getElementById('topCardMode').value; 
-    
     let displayData = [...currentStats.cards];
-
     if (colorFilter !== 'all') {
         displayData = displayData.filter(c => c.color?.toString().toUpperCase() === colorFilter.toUpperCase());
     }
-
     displayData.sort((a, b) => viewMode === 'winrate' ? b.avgWinrate - a.avgWinrate : b.useCount - a.useCount);
-
-    const top10 = displayData.slice(0, 10);
-    charts.winrate = renderWinrateChart('winrateBarChart', top10, charts.winrate);
+    charts.winrate = renderWinrateChart('winrateBarChart', displayData.slice(0, 10), charts.winrate);
 }
 
 export function analyzeQuantity(cardId, cardName) {
     const qtyStats = MetaEngine.calculateQuantityStats(rawData, cardId);
     const section = document.getElementById('quantity-analysis');
     if (!section) return;
-
     section.classList.remove('hidden');
     document.getElementById('qty-title').innerText = `Phân tích: ${cardName}`;
-
     document.getElementById('qty-table-body').innerHTML = qtyStats.map(q => `
-        <tr>
-            <td><strong>${q.quantity} bản</strong></td>
-            <td>${q.count} deck</td>
-            <td>${q.avgWinrate}%</td>
-        </tr>
+        <tr><td><strong>${q.quantity} bản</strong></td><td>${q.count} deck</td><td>${q.avgWinrate}%</td></tr>
     `).join('');
 
     const ctxQty = document.getElementById('qtyWinrateChart').getContext('2d');
     if (charts.qty) charts.qty.destroy();
-    
     charts.qty = new Chart(ctxQty, {
         type: 'bar',
         data: {
             labels: qtyStats.map(q => `${q.quantity} bản`),
-            datasets: [{
-                label: 'Winrate trung bình (%)',
-                data: qtyStats.map(q => q.avgWinrate),
-                backgroundColor: '#2563eb'
-            }]
+            datasets: [{ label: 'Winrate TB (%)', data: qtyStats.map(q => q.avgWinrate), backgroundColor: '#2563eb' }]
         },
-        options: {
-            scales: { y: { beginAtZero: true, max: 100 } },
-            maintainAspectRatio: false
-        }
+        options: { scales: { y: { beginAtZero: true, max: 100 } }, maintainAspectRatio: false }
     });
-
     renderDeckComposition('deck-comp-container', cardId, rawData);
     section.scrollIntoView({ behavior: 'smooth' });
 }

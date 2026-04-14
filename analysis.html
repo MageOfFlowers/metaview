@@ -146,24 +146,11 @@
 </div>
 
 <script type="module">
-    // Import tất cả các hàm đã export từ file JS
-    import { 
-        initAnalysis, 
-        triggerRender, 
-        triggerUsageRender, 
-        triggerWinrateOnlyRender, 
-        renderTableOnly,
-        analyzeQuantity 
-    } from './js/analysis-main.js';
+    // Chỉ cần import hàm khởi tạo
+    import { initAnalysis } from './js/analysis-main.js';
 
-    // Đẩy các hàm ra phạm vi toàn cục (window) để các sự kiện onchange/oninput/onclick hoạt động
-    window.triggerRender = triggerRender;
-    window.triggerUsageRender = triggerUsageRender;
-    window.triggerWinrateOnlyRender = triggerWinrateOnlyRender;
-    window.renderTableOnly = renderTableOnly;
-    window.analyzeQuantity = analyzeQuantity; 
-
-    // Khởi chạy khi trang load xong
+    // Khởi chạy khi trang load
+    // Hàm này sẽ tự động gán triggerRender, analyzeQuantity... vào window
     document.addEventListener('DOMContentLoaded', () => {
         initAnalysis();
     });
