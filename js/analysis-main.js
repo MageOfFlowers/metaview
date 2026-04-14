@@ -169,7 +169,8 @@ function render() {
     }
 
     // 2. Vẽ các biểu đồ (giữ nguyên logic của bạn)
-    charts.color = renderUsageChart('renderUsageChart', stats, charts.color);
+    const viewMode = document.getElementById('usageViewMode') ? document.getElementById('usageViewMode').value : 'color';
+charts.color = renderUsageChart('usageTypeChart', stats, viewMode, charts.color);
     
     let winrateCards = [...stats.cards];
     if (filters.winrateColor !== 'all') {
