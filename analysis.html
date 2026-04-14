@@ -146,26 +146,27 @@
 </div>
 
 <script type="module">
-    // 1. Import tất cả các hàm cần thiết
+    // Import tất cả các hàm đã export từ file JS
     import { 
         initAnalysis, 
         triggerRender, 
         triggerUsageRender, 
         triggerWinrateOnlyRender, 
-        renderTableOnly 
+        renderTableOnly,
+        analyzeQuantity 
     } from './js/analysis-main.js';
 
-    // 2. Gán chúng vào window để các thuộc tính onchange/onclick trong HTML có thể truy cập
+    // Đẩy các hàm ra phạm vi toàn cục (window) để các sự kiện onchange/oninput/onclick hoạt động
     window.triggerRender = triggerRender;
     window.triggerUsageRender = triggerUsageRender;
     window.triggerWinrateOnlyRender = triggerWinrateOnlyRender;
     window.renderTableOnly = renderTableOnly;
+    window.analyzeQuantity = analyzeQuantity; 
 
-    // 3. Khởi chạy ứng dụng khi DOM sẵn sàng
+    // Khởi chạy khi trang load xong
     document.addEventListener('DOMContentLoaded', () => {
         initAnalysis();
     });
 </script>
-
 </body>
 </html>
