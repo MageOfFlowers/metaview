@@ -85,6 +85,7 @@ export function render() {
     if (!rawData.cards?.length) return;
     const filters = {
         compId: document.getElementById('filterComp').value,
+        region: document.getElementById('filterRegion').value, // Lấy giá trị region
         startDate: document.getElementById('filterStart').value,
         endDate: document.getElementById('filterEnd').value,
         mode: document.getElementById('calcMode').value,

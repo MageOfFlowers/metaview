@@ -42,6 +42,14 @@
             <div class="input-group"><label>Từ ngày</label><input type="date" id="filterStart" onchange="triggerRender()"></div>
             <div class="input-group"><label>Đến ngày</label><input type="date" id="filterEnd" onchange="triggerRender()"></div>
         </div>
+        <div class="input-group">
+    <label>Khu vực</label>
+    <select id="filterRegion" onchange="triggerRender()">
+        <option value="all">Tổng cộng (Cả nước)</option>
+        <option value="S">Miền Nam (S)</option>
+        <option value="N">Miền Bắc (N)</option>
+    </select>
+</div>
     </div>
 
     <div class="dashboard-grid">

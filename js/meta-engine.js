@@ -15,16 +15,30 @@ export const MetaEngine = {
     },
 
     calculateStats(rawData, filters = {}) {
-        let { compUses, deckInfos, cards } = rawData;
-        const { compId, startDate, endDate, mode = 'deck' } = filters;
+    let { compUses, deckInfos, cards, competitions } = rawData; // Đảm bảo có competitions
+    const { compId, startDate, endDate, mode = 'deck', region = 'all' } = filters;
 
-        let filteredUses = compUses.filter(use => {
-            const matchComp = compId === 'all' || use.competitionid == compId;
-            const useDate = new Date(use.createdAt);
-            const matchDate = (!startDate || useDate >= new Date(startDate)) && 
-                              (!endDate || useDate <= new Date(endDate));
-            return matchComp && matchDate;
-        });
+    // 1. Xác định danh sách ID giải đấu hợp lệ dựa trên Region
+    let validCompIds = [];
+    if (region !== 'all') {
+        validCompIds = (competitions || [])
+            .filter(c => c.region === region)
+            .map(c => c.id);
+    }
+
+    let filteredUses = compUses.filter(use => {
+        // Lọc theo Giải đấu cụ thể
+        const matchComp = compId === 'all' || use.competitionid == compId;
+        
+        // Lọc theo Khu vực (Nếu không chọn 'all', chỉ lấy use thuộc giải đấu trong khu vực đó)
+        const matchRegion = region === 'all' || validCompIds.includes(use.competitionid);
+
+        const useDate = new Date(use.createdAt);
+        const matchDate = (!startDate || useDate >= new Date(startDate)) && 
+                          (!endDate || useDate <= new Date(endDate));
+        
+        return matchComp && matchRegion && matchDate;
+    });
 
         const cardStats = {};
         const colorStats = { 'R': 0, 'P': 0, 'Y': 0, 'G': 0 };
