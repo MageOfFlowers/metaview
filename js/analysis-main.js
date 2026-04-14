@@ -113,26 +113,25 @@ export function triggerWinrateOnlyRender() {
     const colorFilter = document.getElementById('filterWinrateColor').value;
     const viewMode = document.getElementById('topCardMode').value; 
     
-    let displayData = [...currentStats.cards];
-
     // 1. Lọc theo màu
+    let displayData = [...currentStats.cards];
     if (colorFilter !== 'all') {
         displayData = displayData.filter(c => 
             c.color && c.color.toString().toUpperCase() === colorFilter.toUpperCase()
         );
     }
 
-    // 2. Sắp xếp (Quyết định thứ tự các dòng trên biểu đồ)
+    // 2. Sắp xếp giảm dần dựa trên chế độ đang chọn
     displayData.sort((a, b) => {
-        if (viewMode === 'winrate') return parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate);
-        if (viewMode === 'rank') return b.useCount - a.useCount;
-        // Mode 'both': Ưu tiên card có Winrate cao lên đầu
-        return parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate) || b.useCount - a.useCount;
+        if (viewMode === 'winrate') {
+            return parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate);
+        } else {
+            return b.useCount - a.useCount;
+        }
     });
 
+    // 3. Lấy Top 10 và vẽ biểu đồ
     const top10 = displayData.slice(0, 10);
-    
-    // 3. Render duy nhất 1 lần
     charts.winrate = renderWinrateChart('winrateBarChart', top10, charts.winrate);
 }
 export function analyzeQuantity(cardId, cardName) {
