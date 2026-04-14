@@ -116,19 +116,21 @@
         return;
     }
 
+    const endpoint = `/users?username=${encodeURIComponent(username)}`;
+
     try {
-        // Gửi username trực tiếp trên URL theo đúng cấu trúc @RequestParam của API
-        const url = `/usersadd?username=${encodeURIComponent(username)}`;
-        const res = await request(url, 'POST'); 
+        // Gọi API với method POST và body là null để không xung đột với RequestParam
+        const res = await request(endpoint, 'POST', null);
 
         if (res) {
             alert("Tạo người dùng thành công!");
-            document.getElementById('newUserName').value = ""; // Reset input
-            if (typeof init === "function") init(); // Tải lại danh sách nếu cần
+            document.getElementById('newUserName').value = "";
+            if (typeof init === "function") init(); 
+        } else {
+            alert("Lỗi: Server không phản hồi hoặc tên người dùng đã tồn tại.");
         }
-    } catch (error) {
-        console.error("Lỗi tạo user:", error);
-        alert("Lỗi kết nối API: Vui lòng kiểm tra lại Server.");
+    } catch (e) {
+        alert("Không thể kết nối đến server. Hãy kiểm tra lại backend.");
     }
 };
 
