@@ -15,8 +15,11 @@ export function renderWinrateChart(canvasId, cardStats, currentChart = null) {
             label: 'Tỷ lệ thắng (%)',
             data: cardStats.map(c => parseFloat(c.avgWinrate)),
             backgroundColor: '#10b981',
+            borderColor: '#059669',
+            borderWidth: 1,
             borderRadius: 4,
-            xAxisID: 'xWinrate' // Chỉ định trục X riêng cho Winrate
+            categoryPercentage: 0.8, // Điều chỉnh độ rộng nhóm
+            barPercentage: 0.9      // Điều chỉnh độ rộng cột trong nhóm
         });
     }
 
@@ -26,8 +29,11 @@ export function renderWinrateChart(canvasId, cardStats, currentChart = null) {
             label: 'Số lượt sử dụng',
             data: cardStats.map(c => c.useCount),
             backgroundColor: '#2563eb',
+            borderColor: '#1d4ed8',
+            borderWidth: 1,
             borderRadius: 4,
-            xAxisID: 'xUsage' // Chỉ định trục X riêng cho Usage
+            categoryPercentage: 0.8,
+            barPercentage: 0.9
         });
     }
 
@@ -38,33 +44,26 @@ export function renderWinrateChart(canvasId, cardStats, currentChart = null) {
             datasets: datasets
         },
         options: {
-            indexAxis: 'y',
+            indexAxis: 'y', // Biểu đồ ngang
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                xWinrate: {
-                    type: 'linear',
-                    position: 'bottom',
+                x: {
                     beginAtZero: true,
-                    max: 100,
-                    display: viewMode === 'winrate' || viewMode === 'both',
-                    title: { display: true, text: 'Tỷ lệ thắng (%)' }
+                    // Nếu ở mode 'both', không giới hạn max để cột Usage có thể dài hơn 100
+                    max: viewMode === 'winrate' ? 100 : undefined,
+                    title: { display: true, text: 'Giá trị' }
                 },
-                xUsage: {
-                    type: 'linear',
-                    position: 'top', // Đưa trục Usage lên trên để tránh đè nhau
-                    beginAtZero: true,
-                    display: viewMode === 'rank' || viewMode === 'both',
-                    grid: { drawOnChartArea: false }, // Tránh rối mắt bởi nhiều đường lưới
-                    title: { display: true, text: 'Số lượt sử dụng' }
+                y: {
+                    ticks: { autoSkip: false } // Đảm bảo hiện đủ tên card
                 }
             },
             plugins: {
+                legend: { display: true, position: 'top' },
                 tooltip: {
-                    mode: 'index',
+                    mode: 'index', // Hiện cả 2 giá trị khi di chuột vào một card
                     intersect: false
-                },
-                legend: { display: true, position: 'top' }
+                }
             }
         }
     });
