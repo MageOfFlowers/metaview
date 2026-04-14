@@ -9,18 +9,20 @@ export function renderWinrateChart(canvasId, cardStats, currentChart = null) {
 
     const ctx = canvas.getContext('2d');
     
-    // Kiểm tra xem đang hiển thị Winrate hay Usage để đặt label cho đúng
-    const isWinrateMode = cardStats.length > 0 && cardStats[0].avgWinrate !== undefined;
-    const datasetLabel = isWinrateMode ? 'Tỉ lệ thắng (%)' : 'Số lượt sử dụng';
+    // Kiểm tra chế độ xem dựa trên dữ liệu thực tế được truyền vào
+    // Nếu phần tử đầu tiên có avgWinrate > 0 và đang chọn mode winrate
+    const viewMode = document.getElementById('topCardMode').value;
+    const isWinrate = viewMode === 'winrate';
+    const label = isWinrate ? 'Tỷ lệ thắng (%)' : 'Số lượt sử dụng';
 
     return new Chart(ctx, {
         type: 'bar',
         data: {
             labels: cardStats.map(c => c.name),
             datasets: [{
-                label: datasetLabel,
-                data: cardStats.map(c => isWinrateMode ? c.avgWinrate : c.useCount),
-                backgroundColor: '#2563eb',
+                label: label,
+                data: cardStats.map(c => isWinrate ? c.avgWinrate : c.useCount),
+                backgroundColor: isWinrate ? '#10b981' : '#2563eb', // Xanh lá cho Winrate, Xanh dương cho Rank
                 borderRadius: 4
             }]
         },
@@ -29,8 +31,7 @@ export function renderWinrateChart(canvasId, cardStats, currentChart = null) {
             scales: { 
                 x: { 
                     beginAtZero: true,
-                    // Nếu là winrate thì giới hạn max 100 cho đẹp
-                    max: isWinrateMode ? 100 : undefined 
+                    max: isWinrate ? 100 : undefined // Chỉ giới hạn 100 nếu là % winrate
                 } 
             },
             maintainAspectRatio: false,

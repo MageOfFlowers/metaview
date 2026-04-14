@@ -107,37 +107,34 @@ export function render() {
 }
 
 // Tìm hàm này trong js/analysis-main.js và thay thế
+// Thay thế hàm cũ trong js/analysis-main.js
 export function triggerWinrateOnlyRender() {
     if (!currentStats || !currentStats.cards) return;
 
     const colorFilter = document.getElementById('filterWinrateColor').value;
     const viewMode = document.getElementById('topCardMode').value; // 'winrate' hoặc 'rank'
     
-    // 1. Tạo bản sao dữ liệu để tránh ảnh hưởng dữ liệu gốc
+    // 1. Lọc theo màu sắc
     let displayData = [...currentStats.cards];
-
-    // 2. Lọc theo màu sắc trước
     if (colorFilter !== 'all') {
         displayData = displayData.filter(c => 
             c.color && c.color.toString().toUpperCase() === colorFilter.toUpperCase()
         );
     }
 
-    // 3. SẮP XẾP: Đây là bước quan trọng nhất để biểu đồ đúng thứ tự
+    // 2. SẮP XẾP CHÍNH XÁC THEO FILTER
     displayData.sort((a, b) => {
         if (viewMode === 'winrate') {
-            // Sắp xếp giảm dần theo Winrate
             return parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate);
         } else {
-            // Sắp xếp giảm dần theo Số lượt dùng (Rank)
             return b.useCount - a.useCount;
         }
     });
 
-    // 4. Lấy Top 10 sau khi đã sắp xếp
+    // 3. Lấy Top 10
     const top10 = displayData.slice(0, 10);
 
-    // 5. Render lại biểu đồ với mảng đã chuẩn hóa
+    // 4. Cập nhật biểu đồ
     charts.winrate = renderWinrateChart('winrateBarChart', top10, charts.winrate);
 }
 export function analyzeQuantity(cardId, cardName) {
