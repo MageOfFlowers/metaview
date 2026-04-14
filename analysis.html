@@ -146,7 +146,7 @@
 </div>
 
 <script type="module">
-    // Import các hàm xử lý từ module chính
+    // 1. Import tất cả các hàm cần thiết
     import { 
         initAnalysis, 
         triggerRender, 
@@ -155,13 +155,13 @@
         renderTableOnly 
     } from './js/analysis-main.js';
 
-    // Gán các hàm vào window để HTML có thể gọi qua các sự kiện onchange/oninput
+    // 2. Gán chúng vào window để các thuộc tính onchange/onclick trong HTML có thể truy cập
     window.triggerRender = triggerRender;
     window.triggerUsageRender = triggerUsageRender;
     window.triggerWinrateOnlyRender = triggerWinrateOnlyRender;
     window.renderTableOnly = renderTableOnly;
 
-    // Khởi chạy ứng dụng
+    // 3. Khởi chạy ứng dụng khi DOM sẵn sàng
     document.addEventListener('DOMContentLoaded', () => {
         initAnalysis();
     });
