@@ -108,6 +108,8 @@ export function render() {
         deckSearch: document.getElementById('searchDeck').value.toLowerCase() // Filter mới cho Deck
     };
 
+    
+
     currentStats = MetaEngine.calculateStats(rawData, filters);
     
     const header = document.getElementById('usage-column-header');
@@ -125,7 +127,10 @@ export function render() {
         };
     }
 
-    charts.deckRank = renderDeckRanking('deckRankingChart', filteredDecks, charts.deckRank);
+    charts.deckRank = renderDeckRanking('deckRankingChart', {
+        ...rawData,
+        decks: filteredDecks
+    }, charts.deckRank, 10);
     const tableBody = document.getElementById('meta-body');
     if (!tableBody || !currentStats || !currentStats.cards) return;
 
@@ -169,12 +174,14 @@ export function triggerWinrateOnlyRender() {
 
     // 2. Sắp xếp theo chế độ (Winrate hoặc Rank/Sử dụng)
     if (viewMode === 'winrate') {
-        displayData.sort((a, b) => parseFloat(b.avgWinrate) - parseFloat(a.avgWinrate));
+        displayData.sort((a, b) => b.avgWinrate - a.avgWinrate);
     } else {
         displayData.sort((a, b) => b.useCount - a.useCount);
     }
 
+    // GIỚI HẠN 10 CARD
     const top10 = displayData.slice(0, 10);
+    charts.winrate = renderWinrateChart('winrateBarChart', top10, charts.winrate);
 
     // 3. TRUYỀN charts.winrate VÀO VÀ CẬP NHẬT LẠI BIẾN NÀY
     charts.winrate = renderWinrateChart('winrateBarChart', top10, charts.winrate);

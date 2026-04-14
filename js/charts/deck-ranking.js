@@ -1,52 +1,44 @@
 import { MetaEngine } from '../meta-engine.js';
 
-export function renderDeckRanking(canvasId, rawData, currentChart = null) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
+export function renderDeckRanking(canvasId, rawData, currentChart = null, limit = 10) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
     if (currentChart) currentChart.destroy();
 
+    const ctx = canvas.getContext('2d');
     const { compUses, deckInfos, cards, decks } = rawData;
 
-    // 1. Tính toán Thống kê cho từng Deck
+    // 1. Tính toán thống kê
     const deckStats = {};
     compUses.forEach(use => {
+        // Chỉ tính toán nếu Deck này tồn tại trong danh sách đã lọc (rawData.decks)
+        const isMatch = decks.some(d => d.id == use.deckid);
+        if (!isMatch) return;
+
         if (!deckStats[use.deckid]) {
-            deckStats[use.deckid] = { 
-                id: use.deckid, 
-                totalWin: 0, 
-                count: 0, 
-                totalRank: 0 
-            };
+            deckStats[use.deckid] = { id: use.deckid, totalWin: 0, count: 0, totalRank: 0 };
         }
         deckStats[use.deckid].totalWin += use.winrate;
-        deckStats[use.deckid].totalRank += (use.rank || 99); // Nếu không có rank thì mặc định là thấp
+        deckStats[use.deckid].totalRank += (use.rank || 99);
         deckStats[use.deckid].count++;
     });
 
-    // 2. Xử lý danh sách và Sắp xếp theo Rank (Rank thấp là hạng cao)
+    // 2. Sắp xếp lại thứ tự và giới hạn hiển thị
     const sortedDecks = Object.values(deckStats)
         .map(d => {
-            const avgRank = (d.totalRank / d.count).toFixed(1);
-            const avgWin = (d.totalWin / d.count).toFixed(1);
-            
-            // Tìm tên Deck trong danh sách decks, nếu không có mới dùng ID
-            const deckInfo = decks ? decks.find(item => item.id == d.id) : null;
-            const displayName = (deckInfo && deckInfo.name) ? deckInfo.name : `Deck #${d.id}`;
-            
+            const deckInfo = decks.find(item => item.id == d.id);
             return {
                 ...d,
-                displayName,
-                avgRank: parseFloat(avgRank),
-                avgWin,
+                displayName: deckInfo ? deckInfo.name : `Deck #${d.id}`,
+                avgRank: parseFloat((d.totalRank / d.count).toFixed(1)),
+                avgWin: (d.totalWin / d.count).toFixed(1),
                 composition: deckInfos.filter(di => di.deckid === d.id)
             };
         })
-        // Sắp xếp: Ưu tiên Rank nhỏ (1, 2, 3...), sau đó đến Winrate cao
+        // CẬP NHẬT THỨ TỰ: Rank nhỏ lên trước (hạng cao)
         .sort((a, b) => a.avgRank - b.avgRank || b.avgWin - a.avgWin)
-        .slice(0, 10); // Lấy Top 10 Deck xuất sắc nhất
-
-    // 3. Chuẩn bị dữ liệu cho Stacked Bar Chart
-    const allCardIds = [...new Set(sortedDecks.flatMap(d => d.composition.map(c => c.cardid)))];
-    
+        // GIỚI HẠN HIỂN THỊ
+        .slice(0, limit);
     const datasets = allCardIds.map(cid => {
         const cardInfo = cards.find(c => c.id == cid);
         return {
