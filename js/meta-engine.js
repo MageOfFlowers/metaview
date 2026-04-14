@@ -15,13 +15,11 @@ export const MetaEngine = {
     },
 
     calculateStats(rawData, filters = {}) {
-    let { compUses, deckInfos, cards, competitions } = rawData; // Thêm competitions vào đầu vào
-    const { compId, startDate, endDate, mode = 'deck', region = 'all' } = filters;
-
-    // 1. Xác định danh sách các ID giải đấu thuộc Region đã chọn
-    let validCompIds = [];
+    let { compUses, deckInfos, cards, competitions } = rawData; // Thêm competitions
+    const { compId, startDate, endDate, mode = 'deck', region = 'all' } = filters;    // 1. Xác định danh sách các ID giải đấu thuộc Region đã chọn
+    let validCompIdsByRegion = [];
     if (region !== 'all' && competitions) {
-        validCompIds = competitions
+        validCompIdsByRegion = competitions
             .filter(c => c.region === region)
             .map(c => c.id);
     }
@@ -30,9 +28,7 @@ export const MetaEngine = {
         const matchComp = compId === 'all' || use.competitionid == compId;
         
         // Lọc theo Region: Nếu không chọn 'all', chỉ lấy những 'use' thuộc giải đấu hợp lệ
-        const matchRegion = region === 'all' || validCompIds.includes(use.competitionid);
-
-        const useDate = new Date(use.createdAt);
+        const matchRegion = region === 'all' || validCompIdsByRegion.includes(Number(use.competitionid));        const useDate = new Date(use.createdAt);
         const matchDate = (!startDate || useDate >= new Date(startDate)) && 
                           (!endDate || useDate <= new Date(endDate));
         
