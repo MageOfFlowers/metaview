@@ -19,6 +19,9 @@ export async function initAnalysis() {
         const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; fComp.appendChild(opt);
     });
 
+    window.triggerRender = triggerRender;
+    window.triggerUsageRender = triggerUsageRender;
+    window.triggerWinrateOnlyRender = triggerWinrateOnlyRender; 
     window.analyzeQuantity = analyzeQuantity;
     triggerRender();
 }
@@ -28,17 +31,21 @@ export function triggerRender() {
         compId: document.getElementById('filterComp').value,
         startDate: document.getElementById('filterStart').value,
         endDate: document.getElementById('filterEnd').value,
-        mode: document.getElementById('calcMode').value,
-        search: document.getElementById('searchCard').value.toLowerCase()
+        mode: document.getElementById('calcMode').value
     };
 
+    // 1. Tính toán lại dữ liệu dựa trên filter tổng
     currentStats = MetaEngine.calculateStats(rawData, filters);
-    document.getElementById('usage-column-header').innerText = filters.mode === 'total' ? 'Tổng số bản copy' : 'Số Deck sử dụng';
 
-    triggerUsageRender();
-    triggerWinrateOnlyRender();
+    // 2. Cập nhật giao diện tiêu đề bảng
+    document.getElementById('usage-column-header').innerText = 
+        filters.mode === 'total' ? 'Tổng số bản copy' : 'Số Deck sử dụng';
+
+    // 3. Render các thành phần (Sử dụng dữ liệu trong currentStats)
+    triggerUsageRender();       // Vẽ biểu đồ tròn
+    triggerWinrateOnlyRender(); // Vẽ biểu đồ Winrate (Lần đầu là "Tất cả")
     charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank);
-    renderTable(filters.search);
+    renderTable();              // Vẽ bảng danh sách
 }
 
 export function triggerUsageRender() {
@@ -65,10 +72,20 @@ export function triggerUsageRender() {
 }
 
 export function triggerWinrateOnlyRender() {
-    const color = document.getElementById('filterWinrateColor').value;
-    let data = currentStats.cards;
-    if (color !== 'all') data = data.filter(c => c.color === color);
-    charts.winrate = renderWinrateChart('winrateBarChart', data, charts.winrate);
+    if (!currentStats) return;
+
+    const colorFilter = document.getElementById('filterWinrateColor').value;
+    
+    // Lấy dữ liệu từ currentStats (đã được lọc theo ngày/giải trước đó)
+    let displayData = [...currentStats.cards];
+
+    // Nếu chọn màu cụ thể, lọc thêm theo màu
+    if (colorFilter !== 'all') {
+        displayData = displayData.filter(c => c.color === colorFilter);
+    }
+
+    // Gọi hàm vẽ biểu đồ cột (chỉ vẽ lại biểu đồ này)
+    charts.winrate = renderWinrateChart('winrateBarChart', displayData, charts.winrate);
 }
 
 function renderTable(search) {
