@@ -10,15 +10,20 @@ let charts = { color: null, winrate: null, qty: null, deckRank: null };
 
 export async function initAnalysis() {
     try {
-        const [cards, uses, infos, comps] = await Promise.all([
+        const [cards, uses, infos, comps, decks] = await Promise.all([
             request('/cards'),
             request('/competition-use'),
             request('/deck-infos'),
-            request('/competitions')
+            request('/competitions'),
+            request('/decks')
         ]);
 
-        rawData = { cards: cards || [], compUses: uses || [], deckInfos: infos || [] };
-
+        rawData = { 
+            cards: cards || [], 
+            compUses: uses || [], 
+            deckInfos: infos || [],
+            decks: decks || [] // Lưu vào đây
+        };
         const fComp = document.getElementById('filterComp');
         if (comps) {
             comps.forEach(c => {
