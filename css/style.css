@@ -41,45 +41,41 @@ body {
     margin-bottom: 20px;
 }
 
-/* FIX TOOLTIP: Tuyệt chiêu position fixed để không bao giờ bị che */
-/* FIX TRIỆT ĐỂ TOOLTIP BỊ CHE TRONG BẢNG */
+/* FIX TOOLTIP: Hiện ngay tại dòng, không bị bảng che */
 .card-tooltip {
     position: relative;
+    display: inline-block;
     color: var(--primary);
     font-weight: 600;
     cursor: help;
-    display: inline-block;
 }
 
-/* Ảnh card giờ sẽ cố định so với màn hình để không bị bảng cắt mất */
 .card-tooltip .tooltip-img {
-    display: none; /* Mặc định ẩn */
-    position: fixed; /* QUAN TRỌNG: Chuyển từ absolute sang fixed */
-    z-index: 999999 !important; /* Luôn trên cùng */
-    width: 200px;
+    display: none;
+    position: fixed; /* Vẫn dùng fixed để thoát khỏi bảng */
+    z-index: 999999;
+    width: 180px;
     height: auto;
     border: 3px solid var(--primary);
     border-radius: 10px;
     background: #000;
-    box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     pointer-events: none;
     
-    /* Vị trí: Hiện ở giữa màn hình bên phải hoặc trái tùy bạn chỉnh */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    /* Mặc định ảnh sẽ hiện bên phải con trỏ một chút và dịch lên trên */
+    margin-left: 20px; 
+    margin-top: -100px; 
 }
 
+/* Khi hover, chúng ta sẽ điều khiển vị trí bằng JavaScript hoặc dùng CSS Hover đơn giản */
 .card-tooltip:hover .tooltip-img {
-    display: block; /* Hiện khi di chuột vào tên thẻ bài */
+    display: block;
 }
 
-/* Đảm bảo bảng vẫn cuộn được trên mobile nhưng không cắt nội dung bay ra ngoài */
+/* Đảm bảo bảng danh sách không cắt cụt nội dung */
 .table-responsive {
-    width: 100%;
     overflow-x: auto;
-    overflow-y: visible !important; /* Cho phép nội dung nổi lên trên */
-    -webkit-overflow-scrolling: touch;
+    overflow-y: visible !important;
 }
 
 table {
