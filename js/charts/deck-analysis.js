@@ -1,37 +1,42 @@
 import { MetaEngine } from '../meta-engine.js';
 
+// Cập nhật js/charts/deck-analysis.js
 export function renderDeckComposition(containerId, cardId, rawData) {
     const container = document.getElementById(containerId);
-    const { compUses, deckInfos, cards } = rawData;
+    if (!container) return; // Bảo vệ nếu không tìm thấy container
 
-    // Tìm các bộ bài có chứa lá bài này để lấy danh sách các lá bài đi kèm phổ biến nhất
-    // Hoặc đơn giản là hiển thị cấu trúc của các Deck tiêu biểu chứa lá bài này
+    const { deckInfos, cards } = rawData;
+
     const relevantDeckIds = [...new Set(deckInfos
         .filter(di => di.cardid == cardId)
         .map(di => di.deckid))];
 
-    if (relevantDeckIds.length === 0) return;
+    if (relevantDeckIds.length === 0) {
+        container.innerHTML = ""; // Xóa nội dung cũ nếu không có dữ liệu
+        return;
+    }
 
-    // Lấy thông tin lá bài trong những deck đó (Ví dụ lấy deck đầu tiên tìm thấy để mô phỏng)
     const sampleDeckId = relevantDeckIds[0];
     const deckComposition = deckInfos.filter(di => di.deckid === sampleDeckId);
 
     let html = `
-        <div class="card" style="margin-top: 20px; border-left: 5px solid var(--success);">
-            <h4>Cấu trúc bộ bài mẫu chứa lá bài này</h4>
-            <div class="deck-list-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+        <div class="card" style="margin-top: 20px; border-left: 5px solid var(--success); background: #fdfdfd;">
+            <h4 style="margin-bottom:10px;">Cấu trúc bộ bài mẫu chứa lá bài này</h4>
+            <div class="deck-list-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
     `;
 
     deckComposition.forEach(item => {
         const cardInfo = cards.find(c => c.id == item.cardid);
         if (cardInfo) {
             html += `
-                <div style="padding: 8px; background: #fff; border: 1px solid #eee; border-radius: 6px; display: flex; justify-content: space-between;">
-                    <span class="card-tooltip">
+                <div style="padding: 10px; background: #fff; border: 1px solid var(--border); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="card-tooltip">
                         ${cardInfo.name}
-                        <img src="${cardInfo.url || 'placeholder.jpg'}" class="tooltip-img" alt="${cardInfo.name}">
-                    </span>
-                    <span class="badge" style="background: var(--text-muted)">x${item.quantity}</span>
+                        <div class="tooltip-wrapper">
+                            <img src="${cardInfo.url || 'placeholder.jpg'}" class="tooltip-img">
+                        </div>
+                    </div>
+                    <span class="badge" style="background: var(--primary); color: white; padding: 2px 8px; border-radius: 12px;">x${item.quantity}</span>
                 </div>
             `;
         }

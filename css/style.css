@@ -54,41 +54,50 @@ table { width: 100%; border-collapse: collapse; min-width: 600px; }
 th { text-align: left; padding: 12px; background: #f1f5f9; color: var(--text-muted); font-size: 0.8rem; }
 td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 
+/* Tìm và thay thế đoạn liên quan đến tooltip trong style.css */
+
 .card-tooltip {
     position: relative;
     display: inline-block;
+    color: var(--primary);
+    font-weight: 600;
     cursor: help;
-    z-index: 10; /* Thấp hơn ảnh tooltip */
 }
 
-.card-tooltip .tooltip-img {
+/* Container chứa ảnh để kiểm soát vị trí */
+.tooltip-wrapper {
     visibility: hidden;
-    width: 180px;
-    background-color: #000;
-    border: 2px solid var(--primary);
-    border-radius: 8px;
     position: absolute;
-    z-index: 9999 !important; /* Ưu tiên tuyệt đối */
-    bottom: 125%;
+    bottom: 100%; /* Đẩy lên trên chữ */
     left: 50%;
     transform: translateX(-50%);
+    z-index: 10000 !important; /* Đảm bảo cao hơn mọi card khác */
     opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* Tránh cản trở chuột */
+    padding-bottom: 10px; /* Khoảng cách an toàn */
 }
 
-.card-tooltip:hover .tooltip-img {
+.card-tooltip:hover .tooltip-wrapper {
     visibility: visible;
     opacity: 1;
 }
 
-/* FIX: Hỗ trợ cuộn ngang bảng trên Mobile */
+.tooltip-img {
+    width: 180px;
+    height: auto;
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    background-color: #000;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    display: block;
+}
+
+/* Cập nhật Table Responsive để không bóp nghẹt Tooltip */
 .table-responsive {
-    width: 100%;
     overflow-x: auto;
+    overflow-y: visible !important; /* QUAN TRỌNG: Cho phép tooltip bay ra ngoài bảng */
     -webkit-overflow-scrolling: touch;
-    margin-bottom: 10px;
 }
 
 table {
