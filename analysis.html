@@ -6,146 +6,122 @@
     <title>Meta Analysis - Card Game Portal</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-    <style>
-        /* Tối ưu riêng cho các thành phần biểu đồ phức tạp */
-        .chart-wrapper { position: relative; height: 300px; width: 100%; }
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 15px; border-radius: 8px; border: 1px solid var(--border); }
-        
-        /* Chỉnh lại header linh hoạt */
-        .flex-header { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-        @media (min-width: 768px) {
-            .flex-header { flex-direction: row; justify-content: space-between; align-items: center; }
-        }
-
-        .filter-controls { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
-        @media (min-width: 768px) { .filter-controls { width: auto; } }
-
-        .filter-sm { flex: 1; min-width: 120px; padding: 6px 10px; font-size: 0.85rem; }
-    </style>
 </head>
 <body>
 
 <div class="container">
-    <header>
-        <a href="index.html" class="back-link">← Trang chủ</a>
+    <header style="margin-bottom: 20px;">
+        <a href="index.html" style="text-decoration: none; color: var(--primary);">← Trang chủ</a>
         <h1>📈 Phân tích Meta</h1>
     </header>
 
     <div class="card">
-        <div class="form-grid">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
             <div class="input-group">
-                <label>Giải đấu</label>
-                <select id="filterComp" onchange="triggerRender()"><option value="all">Tất cả giải đấu</option></select>
+                <label style="font-size:0.8rem; color:var(--text-muted);">Giải đấu</label>
+                <select id="filterComp" style="width:100%; padding:8px;" onchange="triggerRender()"></select>
             </div>
-            <div class="input-group"><label>Khu vực</label>
-                <select id="filterRegion" onchange="triggerRender()">
-                    <option value="all">Tổng cộng (Cả nước)</option>
-                    <option value="S">Miền Nam (S)</option>
-                    <option value="N">Miền Bắc (N)</option>
+            <div class="input-group">
+                <label style="font-size:0.8rem; color:var(--text-muted);">Khu vực</label>
+                <select id="filterRegion" style="width:100%; padding:8px;" onchange="triggerRender()">
+                    <option value="all">Cả nước</option>
+                    <option value="S">Miền Nam</option>
+                    <option value="N">Miền Bắc</option>
                 </select>
             </div>
-            <div class="input-group"><label>Từ ngày</label><input type="date" id="filterStart" onchange="triggerRender()"></div>
-            <div class="input-group"><label>Đến ngày</label><input type="date" id="filterEnd" onchange="triggerRender()"></div>
+            <div class="input-group">
+                <label style="font-size:0.8rem; color:var(--text-muted);">Từ ngày</label>
+                <input type="date" id="filterStart" style="width:100%; padding:8px;" onchange="triggerRender()">
+            </div>
+            <div class="input-group">
+                <label style="font-size:0.8rem; color:var(--text-muted);">Đến ngày</label>
+                <input type="date" id="filterEnd" style="width:100%; padding:8px;" onchange="triggerRender()">
+            </div>
         </div>
     </div>
 
     <div class="dashboard-grid">
         <div class="card">
-            <div class="flex-header">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
                 <h3>Tỷ lệ sử dụng</h3>
-                <div class="filter-controls">
+                <div style="display: flex; gap: 5px;">
                     <select id="calcMode" class="filter-sm" onchange="triggerRender()">
-                        <option value="deck">Theo số lượng Deck</option>
+                        <option value="deck">Theo Deck</option>
                         <option value="total">Tổng bản copy</option>
                     </select>
                     <select id="usageViewMode" class="filter-sm" onchange="triggerUsageRender()">
-                        <option value="color">Màu sắc</option>
+                        <option value="color">Màu</option>
                         <option value="rarity">Độ hiếm</option>
                     </select>
                 </div>
             </div>
-            <div class="chart-wrapper"><canvas id="usageTypeChart"></canvas></div>
+            <div style="height: 300px;"><canvas id="usageTypeChart"></canvas></div>
         </div>
         
         <div class="card">
-            <div class="flex-header">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
                 <h3>Top Card</h3>
-                <div class="filter-controls">
+                <div style="display: flex; gap: 5px;">
                     <select id="topCardMode" class="filter-sm" onchange="triggerWinrateOnlyRender()">
-                        <option value="winrate">Tỉ lệ thắng</option>
-                        <option value="rank">Xếp hạng sử dụng</option>
+                        <option value="winrate">Winrate</option>
+                        <option value="rank">Sử dụng</option>
                     </select>
                     <select id="filterWinrateColor" class="filter-sm" onchange="triggerWinrateOnlyRender()">
                         <option value="all">Tất cả màu</option>
-                        <option value="R">Đỏ (R)</option>
-                        <option value="Y">Vàng (Y)</option>
-                        <option value="G">Xanh (G)</option>
-                        <option value="P">Tím (P)</option>
+                        <option value="R">Đỏ</option><option value="Y">Vàng</option><option value="G">Xanh</option><option value="P">Tím</option>
                     </select>
                 </div>
             </div>
-            <div class="chart-wrapper"><canvas id="winrateBarChart"></canvas></div>
+            <div style="height: 300px;"><canvas id="winrateBarChart"></canvas></div>
         </div>
     </div>
 
     <div class="card">
-        <div class="flex-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3>🏆 Xếp hạng Deck</h3>
-            <input type="text" id="searchDeck" class="filter-sm" placeholder="Tìm tên deck..." oninput="triggerRender()">
+            <input type="text" id="searchDeck" class="filter-sm" placeholder="Tìm deck..." oninput="triggerRender()">
         </div>
-        <div class="chart-wrapper" style="height: 400px;"><canvas id="deckRankingChart"></canvas></div>
+        <div style="height: 400px;"><canvas id="deckRankingChart"></canvas></div>
     </div>
 
     <div class="card">
-        <div class="flex-header">
-            <h3>Danh sách Thẻ bài</h3>
-            <input type="text" id="searchCard" class="filter-sm" placeholder="Tìm nhanh thẻ bài..." oninput="renderTableOnly()">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3>Danh sách Meta</h3>
+            <input type="text" id="searchCard" class="filter-sm" placeholder="Tìm thẻ..." oninput="renderTableOnly()">
         </div>
         <div class="table-responsive">
             <table>
                 <thead>
-                    <tr>
-                        <th>Tên thẻ</th>
-                        <th>Hệ</th>
-                        <th>Độ hiếm</th>
-                        <th id="usage-column-header">Sử dụng</th>
-                        <th>Winrate</th>
-                    </tr>
+                    <tr><th>Tên thẻ</th><th>Hệ</th><th>Độ hiếm</th><th id="usage-column-header">Sử dụng</th><th>Winrate</th></tr>
                 </thead>
                 <tbody id="meta-body"></tbody>
             </table>
         </div>
     </div>
 
-    <div id="quantity-analysis" class="card hidden" style="border: 2px solid var(--primary); background: #f8fafc;">
-        <div class="flex-header">
-            <h3 id="qty-title" style="color: var(--primary);">Phân tích chi tiết</h3>
-            <button class="btn-close" onclick="document.getElementById('quantity-analysis').classList.add('hidden')" style="padding: 5px 15px; background: #64748b; color: white; border-radius: 4px;">Đóng</button>
+    <div id="quantity-analysis" class="card hidden" style="border: 2px solid var(--primary);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 id="qty-title">Phân tích chi tiết</h3>
+            <button onclick="document.getElementById('quantity-analysis').classList.add('hidden')" style="padding: 5px 10px; cursor: pointer;">Đóng</button>
         </div>
-        
         <div class="dashboard-grid">
-            <div class="chart-wrapper"><canvas id="qtyWinrateChart"></canvas></div>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Số lượng</th>
-                            <th>Số bộ bài</th>
-                            <th>Winrate TB</th>
-                        </tr>
-                    </thead>
-                    <tbody id="qty-table-body"></tbody>
-                </table>
+            <div class="card"><div style="height: 250px;"><canvas id="qtyWinrateChart"></canvas></div></div>
+            <div class="card">
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Số lượng</th><th>Số bộ bài</th><th>Winrate TB</th></tr></thead>
+                        <tbody id="qty-table-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
+        <div id="deck-comp-container"></div>
     </div>
 </div>
 
 <script type="module">
     import { initAnalysis } from './js/analysis-main.js';
-    document.addEventListener('DOMContentLoaded', () => {
-        initAnalysis();
-    });
+    document.addEventListener('DOMContentLoaded', initAnalysis);
 </script>
 </body>
 </html>
