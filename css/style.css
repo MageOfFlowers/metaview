@@ -11,8 +11,8 @@
     --radius: 12px;
 }
 
+/* Base Reset */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 body {
     font-family: 'Segoe UI', system-ui, sans-serif;
     background-color: var(--bg);
@@ -20,12 +20,11 @@ body {
     line-height: 1.6;
     padding: 10px;
 }
-
 @media (min-width: 768px) { body { padding: 24px; } }
 
 .container { max-width: 1200px; margin: 0 auto; }
 
-/* Grid hệ thống */
+/* Dashboard Grid */
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -42,79 +41,56 @@ body {
     margin-bottom: 20px;
 }
 
-/* Bảng Responsive */
+/* FIX TOOLTIP: Tuyệt chiêu position fixed để không bao giờ bị che */
+.card-tooltip {
+    position: relative;
+    color: var(--primary);
+    font-weight: 600;
+    cursor: help;
+    display: inline-block;
+}
+
+/* Chỗ chứa ảnh - dùng fixed để thoát khỏi overflow của table */
+.card-tooltip .tooltip-img {
+    display: none; /* Mặc định ẩn */
+    position: fixed; /* QUAN TRỌNG: Cố định so với màn hình */
+    z-index: 999999 !important; 
+    width: 200px;
+    height: auto;
+    border: 3px solid var(--primary);
+    border-radius: 10px;
+    background: #000;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+    pointer-events: none;
+    /* Vị trí xuất hiện sẽ được xử lý bằng CSS hover đơn giản */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); 
+}
+
+/* Hiển thị khi di chuột vào */
+.card-tooltip:hover .tooltip-img {
+    display: block;
+}
+
+/* Bảng Responsive trên Mobile */
 .table-responsive {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    margin-top: 10px;
-}
-
-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-th { text-align: left; padding: 12px; background: #f1f5f9; color: var(--text-muted); font-size: 0.8rem; }
-td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-
-/* Tìm và thay thế đoạn liên quan đến tooltip trong style.css */
-
-.card-tooltip {
-    position: relative;
-    display: inline-block;
-    color: var(--primary);
-    font-weight: 600;
-    cursor: help;
-}
-
-/* Container chứa ảnh để kiểm soát vị trí */
-.tooltip-wrapper {
-    visibility: hidden;
-    position: absolute;
-    bottom: 100%; /* Đẩy lên trên chữ */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10000 !important; /* Đảm bảo cao hơn mọi card khác */
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none; /* Tránh cản trở chuột */
-    padding-bottom: 10px; /* Khoảng cách an toàn */
-}
-
-.card-tooltip:hover .tooltip-wrapper {
-    visibility: visible;
-    opacity: 1;
-}
-
-.tooltip-img {
-    width: 180px;
-    height: auto;
-    border: 2px solid var(--primary);
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background-color: #000;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    display: block;
-}
-
-/* Cập nhật Table Responsive để không bóp nghẹt Tooltip */
-.table-responsive {
-    overflow-x: auto;
-    overflow-y: visible !important; /* QUAN TRỌNG: Cho phép tooltip bay ra ngoài bảng */
-    -webkit-overflow-scrolling: touch;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 600px; /* Ép bảng rộng ra để không bị dồn chữ trên mobile */
+    min-width: 600px; /* Đảm bảo không bị dồn chữ */
 }
 
-/* Grid linh hoạt */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 20px;
-}
+th { text-align: left; padding: 12px; background: #f1f5f9; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
+td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 
-@media (max-width: 768px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-}
+/* Utility */
+.hidden { display: none !important; }
+.badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: 700; background: var(--primary); }
