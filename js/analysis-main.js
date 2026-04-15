@@ -72,20 +72,19 @@ export function renderTableOnly() {
     const body = document.getElementById('meta-body');
     if (!body || !currentStats?.cards) return;
 
-    // Lấy giá trị từ ô tìm kiếm
     const searchInput = document.getElementById('searchCard');
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
-
-    // Lọc danh sách thẻ bài
     const data = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
 
-    // Render HTML vào bảng Danh sách Meta
     body.innerHTML = data.map(card => `
-        <tr style="cursor:pointer" onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')">
+        <tr style="cursor:pointer" 
+            onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')"
+            onmousemove="moveTooltip(event)" 
+        >
             <td>
                 <div class="card-tooltip">
                     ${card.name}
-                    <img src="${card.url || 'placeholder.jpg'}" class="tooltip-img" alt="${card.name}">
+                    <img src="${card.url || 'placeholder.jpg'}" class="tooltip-img">
                 </div>
             </td>
             <td>${card.color || '-'}</td>
@@ -95,6 +94,22 @@ export function renderTableOnly() {
         </tr>
     `).join('');
 }
+
+/**
+ * Hàm bổ trợ: Di chuyển tooltip theo con trỏ chuột
+ * Giúp ảnh hiện ngay cạnh chữ chứ không bị nhảy vào giữa màn hình
+ */
+window.moveTooltip = function(e) {
+    const tooltips = document.querySelectorAll('.tooltip-img');
+    tooltips.forEach(img => {
+        // Kiểm tra nếu ảnh đang hiển thị (trên dòng đang hover)
+        if (img.parentElement.parentElement.parentElement.matches(':hover')) {
+            // Đặt vị trí ảnh cách con trỏ chuột 20px
+            img.style.left = (e.clientX + 20) + 'px';
+            img.style.top = (e.clientY - 100) + 'px';
+        }
+    });
+};
 
 export function analyzeQuantity(cardId, cardName) {
     const qtyStats = MetaEngine.calculateQuantityStats(rawData, cardId);
