@@ -1,92 +1,75 @@
-/* css/style.css */
 :root {
     --primary: #2563eb;
-    --primary-hover: #1d4ed8;
     --success: #10b981;
     --bg: #f8fafc;
     --card-bg: #ffffff;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
     --border: #e2e8f0;
+    --text-main: #1e293b;
     --radius: 12px;
 }
 
-/* Base Reset */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    background-color: var(--bg);
-    color: var(--text-main);
-    line-height: 1.6;
-    padding: 10px;
-}
-@media (min-width: 768px) { body { padding: 24px; } }
+body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text-main); padding: 10px; }
+.container { max-width: 1200px; margin: 0 auto; }
 
-.container {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 10px; /* Thêm khoảng trống 2 bên để không sát mép màn hình */
-}
-
-/* Fix lỗi tràn Card */
 .card {
     background: var(--card-bg);
-    padding: 15px;
+    padding: 16px;
     border-radius: var(--radius);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    margin-bottom: 15px;
-    width: 100%; /* Đảm bảo card không vượt quá chiều rộng màn hình */
-    overflow: hidden; /* Ngăn nội dung bên trong làm tràn card */
+    margin-bottom: 20px;
+    width: 100%;
+    overflow: hidden; /* Chống tràn nội dung card */
 }
 
-/* Grid linh hoạt: Mobile 1 cột, PC 2 cột */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: 1fr; /* Mặc định 1 cột */
-    gap: 15px;
-}
-
-@media (min-width: 992px) {
-    .dashboard-grid {
-        grid-template-columns: repeat(2, 1fr); /* Chỉ PC mới chia 2 cột */
-    }
-}
-
-/* CSS tối giản cho Tooltip bám theo chuột */
-.card-tooltip {
-    position: relative;
-    color: var(--primary);
-    font-weight: 600;
-}
-
-.fixed-tooltip-img {
-    display: none;
-    position: fixed; /* Bắt buộc để thoát khỏi overflow của table */
-    z-index: 999999;
-    width: 180px;
-    height: auto;
-    border: 3px solid var(--primary);
-    border-radius: 10px;
-    background: #000;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    pointer-events: none; /* Rất quan trọng: để chuột không bị vấp vào ảnh */
-}
-
+/* Table Responsive */
 .table-responsive {
+    width: 100%;
     overflow-x: auto;
     overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border);
+    border-radius: 8px;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 600px; /* Đảm bảo không bị dồn chữ */
+table { width: 100%; border-collapse: collapse; min-width: 500px; }
+th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
+
+/* Tooltip Fixed bám chuột */
+.card-tooltip { position: relative; color: var(--primary); font-weight: 600; cursor: help; }
+.fixed-tooltip-img {
+    display: none;
+    position: fixed;
+    z-index: 999999;
+    width: 160px;
+    height: auto;
+    border: 2px solid var(--primary);
+    border-radius: 10px;
+    pointer-events: none;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
 
-th { text-align: left; padding: 12px; background: #f1f5f9; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
-td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+/* Sửa lỗi tràn bộ bài mẫu */
+.deck-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
 
-/* Utility */
+.deck-item {
+    padding: 10px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--border);
+}
+
 .hidden { display: none !important; }
-.badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: 700; background: var(--primary); }
+
+@media (max-width: 768px) {
+    .dashboard-grid { grid-template-columns: 1fr !important; }
+    .fixed-tooltip-img { width: 140px; }
+}

@@ -96,7 +96,10 @@ export function renderTableOnly() {
 }
 
 // Hàm xử lý di chuyển và hiển thị tooltip bám theo chuột
+// Thêm vào đầu hoặc cuối file js/analysis-main.js
+
 window.handleTooltip = function(e, show) {
+    // Tìm ảnh tooltip bên trong element đang hover
     const img = e.currentTarget.querySelector('.fixed-tooltip-img');
     if (!img) return;
 
@@ -107,18 +110,45 @@ window.handleTooltip = function(e, show) {
 
     img.style.display = 'block';
     
-    // Tính toán vị trí: e.clientX/Y là tọa độ chuột so với màn hình
-    let x = e.clientX + 20; // Cách chuột 20px bên phải
-    let y = e.clientY - 100; // Nhấc lên 100px để không che dòng đang chọn
+    let x = e.clientX + 15;
+    let y = e.clientY - 120;
 
-    // Kiểm tra nếu sát mép phải màn hình thì đẩy sang trái chuột
-    if (x + 200 > window.innerWidth) {
-        x = e.clientX - 220;
+    // Chống tràn màn hình bên phải
+    if (x + 180 > window.innerWidth) {
+        x = e.clientX - 190;
     }
+    // Chống tràn màn hình phía trên
+    if (y < 0) { y = 10; }
 
     img.style.left = x + 'px';
     img.style.top = y + 'px';
 };
+
+export function renderTableOnly() {
+    const body = document.getElementById('meta-body');
+    if (!body || !currentStats?.cards) return;
+
+    const searchTerm = document.getElementById('searchCard')?.value.toLowerCase() || "";
+    const data = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
+
+    body.innerHTML = data.map(card => `
+        <tr style="cursor:pointer" 
+            onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')"
+            onmousemove="handleTooltip(event, true)" 
+            onmouseleave="handleTooltip(event, false)">
+            <td>
+                <div class="card-tooltip">
+                    ${card.name}
+                    <img src="${card.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
+                </div>
+            </td>
+            <td>${card.color || '-'}</td>
+            <td>${card.rarity || '-'}</td>
+            <td>${card.useCount}</td>
+            <td>${card.avgWinrate}%</td>
+        </tr>
+    `).join('');
+}
 export function analyzeQuantity(cardId, cardName) {
     const qtyStats = MetaEngine.calculateQuantityStats(rawData, cardId);
     const section = document.getElementById('quantity-analysis');
