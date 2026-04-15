@@ -16,9 +16,15 @@ export function renderDeckComposition(containerId, cardId, rawData) {
     const sampleDeckId = relevantDeckIds[0];
     const deckComposition = deckInfos.filter(di => di.deckid === sampleDeckId);
 
+    // Sắp xếp theo số lượng hoặc id để đẹp hơn
+    deckComposition.sort((a, b) => b.quantity - a.quantity);
+
     let html = `
-        <div class="card" style="margin-top: 20px; border-left: 5px solid var(--success); background: #fff;">
-            <h4 style="margin-bottom:10px;">Cấu trúc bộ bài mẫu chứa lá bài này</h4>
+        <div class="card" style="margin-top: 25px; border-top: 4px solid var(--success);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="color: var(--text-main);">🗂 Cấu trúc bộ bài tiêu biểu</h4>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Mẫu bộ bài ID: #${sampleDeckId}</span>
+            </div>
             <div class="deck-list-grid">
     `;
 
@@ -26,14 +32,17 @@ export function renderDeckComposition(containerId, cardId, rawData) {
         const cardInfo = cards.find(c => c.id == item.cardid);
         if (cardInfo) {
             html += `
-                <div class="deck-item" 
+                <div class="deck-item-v2" 
                      onmousemove="handleTooltip(event, true)" 
                      onmouseleave="handleTooltip(event, false)">
-                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--primary);">
-                        ${cardInfo.name}
-                    </span>
+                    
+                    <div class="qty-badge">${item.quantity}</div>
+                    
+                    <img src="${cardInfo.url || 'placeholder.jpg'}" alt="${cardInfo.name}">
+                    
+                    <div class="card-name-mini">${cardInfo.name}</div>
+
                     <img src="${cardInfo.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
-                    <span class="badge" style="background: var(--primary); color: white; padding: 2px 8px; border-radius: 12px;">x${item.quantity}</span>
                 </div>
             `;
         }

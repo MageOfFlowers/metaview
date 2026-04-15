@@ -40,21 +40,65 @@ th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left
 }
 .deck-list-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Tự động xuống dòng */
-    gap: 10px;
-    margin-top: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Chia cột nhỏ cho ảnh */
+    gap: 12px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 8px;
 }
 
-/* 2. Item từng lá bài */
-.deck-item {
-    padding: 8px 12px;
-    background: #f1f5f9;
-    border: 1px solid var(--border);
-    border-radius: 8px;
+.deck-item-v2 {
+    position: relative;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    position: relative; /* Để làm mốc cho tooltip nếu cần */
+    transition: transform 0.2s;
+}
+
+.deck-item-v2:hover {
+    transform: translateY(-5px); /* Hiệu ứng bay lên khi di chuột */
+}
+
+.deck-item-v2 img {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.deck-item-v2:hover img {
+    border-color: var(--primary);
+}
+
+/* Badge số lượng nằm đè lên góc ảnh */
+.deck-item-v2 .qty-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--primary);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    border: 2px solid white;
+    z-index: 10;
+}
+
+.deck-item-v2 .card-name-mini {
+    font-size: 0.7rem;
+    text-align: center;
+    margin-top: 5px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
 }
 
 .hidden { display: none !important; }
