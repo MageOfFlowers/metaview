@@ -66,16 +66,32 @@ export function triggerWinrateOnlyRender() {
     charts.winrate = renderWinrateChart('winrateBarChart', data.slice(0, 10), charts.winrate);
 }
 
+// js/analysis-main.js
+
 export function renderTableOnly() {
     const body = document.getElementById('meta-body');
-    const search = document.getElementById('searchCard').value.toLowerCase();
-    const data = currentStats.cards.filter(c => c.name.toLowerCase().includes(search));
+    if (!body || !currentStats?.cards) return; // Bảo vệ nếu chưa có dữ liệu
+
+    // FIX LỖI VALUE: Kiểm tra sự tồn tại của ô tìm kiếm
+    const searchInput = document.getElementById('searchCard');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+
+    const data = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
 
     body.innerHTML = data.map(card => `
         <tr style="cursor:pointer" onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')">
-            <td><span class="card-tooltip">${card.name}<img src="${card.url || 'placeholder.jpg'}" class="tooltip-img"></span></td>
-            <td>${card.color || '-'}</td><td>${card.rarity || '-'}</td>
-            <td>${card.useCount}</td><td>${card.avgWinrate}%</td>
+            <td>
+                <div class="card-tooltip">
+                    ${card.name}
+                    <div class="tooltip-wrapper">
+                        <img src="${card.url || 'placeholder.jpg'}" class="tooltip-img">
+                    </div>
+                </div>
+            </td>
+            <td>${card.color || '-'}</td>
+            <td>${card.rarity || '-'}</td>
+            <td>${card.useCount}</td>
+            <td>${card.avgWinrate}%</td>
         </tr>
     `).join('');
 }
@@ -83,30 +99,41 @@ export function renderTableOnly() {
 export function analyzeQuantity(cardId, cardName) {
     const qtyStats = MetaEngine.calculateQuantityStats(rawData, cardId);
     const section = document.getElementById('quantity-analysis');
+    if (!section) return;
+
     section.classList.remove('hidden');
-    document.getElementById('qty-title').innerText = `Phân tích: ${cardName}`;
-    document.getElementById('qty-table-body').innerHTML = qtyStats.map(q => `
-        <tr><td><strong>${q.quantity} bản</strong></td><td>${q.count} deck</td><td>${q.avgWinrate}%</td></tr>
-    `).join('');
+    document.getElementById('qty-title').innerText = `Phân tích chi tiết: ${cardName}`;
+    
+    // Render bảng
+    const tableBody = document.getElementById('qty-table-body');
+    if (tableBody) {
+        tableBody.innerHTML = qtyStats.map(q => `
+            <tr>
+                <td><strong>${q.quantity} bản</strong></td>
+                <td>${q.count} bộ bài</td>
+                <td>${q.avgWinrate}%</td>
+            </tr>
+        `).join('');
+    }
 
-    const ctxQty = document.getElementById('qtyWinrateChart').getContext('2d');
-    if (charts.qty) charts.qty.destroy();
-    charts.qty = new Chart(ctxQty, {
-        type: 'bar',
-        data: {
-            labels: qtyStats.map(q => `${q.quantity} bản`),
-            datasets: [{ label: 'Winrate (%)', data: qtyStats.map(q => q.avgWinrate), backgroundColor: '#2563eb' }]
-        },
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false 
-        }
-    });
+    // Render biểu đồ (Đảm bảo responsive)
+    const ctx = document.getElementById('qtyWinrateChart');
+    if (ctx) {
+        if (charts.qty) charts.qty.destroy();
+        charts.qty = new Chart(ctx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: qtyStats.map(q => `${q.quantity} bản`),
+                datasets: [{ label: 'Winrate (%)', data: qtyStats.map(q => q.avgWinrate), backgroundColor: '#2563eb' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
 
-    // 3. QUAN TRỌNG: Gọi hàm render phần cấu trúc bộ bài mẫu bị thiếu
-    // Đảm bảo deck-analysis.js đã được import là renderDeckComposition
-    renderDeckComposition('deck-comp-container', cardId, rawData);
-
-    // Cuộn xuống để người dùng thấy phần mở rộng (Hữu ích trên mobile)
+    // FIX LỖI PC: Đảm bảo gọi render cấu trúc bộ bài mẫu
+    if (typeof renderDeckComposition === 'function') {
+        renderDeckComposition('deck-comp-container', cardId, rawData);
+    }
+    
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
