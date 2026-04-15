@@ -95,19 +95,18 @@ export function analyzeQuantity(cardId, cardName) {
         type: 'bar',
         data: {
             labels: qtyStats.map(q => `${q.quantity} bản`),
-            datasets: [{ 
-                label: 'Winrate TB (%)', 
-                data: qtyStats.map(q => q.avgWinrate), 
-                backgroundColor: '#2563eb' 
-            }]
+            datasets: [{ label: 'Winrate (%)', data: qtyStats.map(q => q.avgWinrate), backgroundColor: '#2563eb' }]
         },
         options: { 
-            responsive: true,
-            maintainAspectRatio: false, // Cho phép biểu đồ co giãn theo khung mobile
-            scales: { y: { beginAtZero: true, max: 100 } } 
+            responsive: true, 
+            maintainAspectRatio: false 
         }
     });
 
-    // Tự động cuộn xuống phần chi tiết để người dùng biết nó đã mở
+    // 3. QUAN TRỌNG: Gọi hàm render phần cấu trúc bộ bài mẫu bị thiếu
+    // Đảm bảo deck-analysis.js đã được import là renderDeckComposition
+    renderDeckComposition('deck-comp-container', cardId, rawData);
+
+    // Cuộn xuống để người dùng thấy phần mở rộng (Hữu ích trên mobile)
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
