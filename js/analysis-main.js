@@ -66,35 +66,6 @@ export function triggerWinrateOnlyRender() {
     charts.winrate = renderWinrateChart('winrateBarChart', data.slice(0, 10), charts.winrate);
 }
 
-// js/analysis-main.js
-export function renderTableOnly() {
-    const body = document.getElementById('meta-body');
-    if (!body || !currentStats?.cards) return;
-
-    const searchInput = document.getElementById('searchCard');
-    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
-    const data = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
-
-    body.innerHTML = data.map(card => `
-        <tr style="cursor:pointer" 
-            onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')"
-            onmousemove="handleTooltip(event, true)" 
-            onmouseleave="handleTooltip(event, false)"
-        >
-            <td>
-                <div class="card-tooltip">
-                    ${card.name}
-                    <img src="${card.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
-                </div>
-            </td>
-            <td>${card.color || '-'}</td>
-            <td>${card.rarity || '-'}</td>
-            <td>${card.useCount}</td>
-            <td>${card.avgWinrate}%</td>
-        </tr>
-    `).join('');
-}
-
 // Hàm xử lý di chuyển và hiển thị tooltip bám theo chuột
 // Thêm vào đầu hoặc cuối file js/analysis-main.js
 
