@@ -12,24 +12,13 @@
 body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text-main); padding: 10px; }
 .container { max-width: 1200px; margin: 0 auto; }
 
-.card {
-    background: var(--card-bg);
-    padding: 16px;
-    border-radius: var(--radius);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-    width: 100%;
-    overflow: hidden; /* Chống tràn nội dung card */
-}
-
-/* Table Responsive */
 .table-responsive {
-    width: 100%;
     overflow-x: auto;
     overflow-y: visible !important;
-    -webkit-overflow-scrolling: touch;
-    border: 1px solid var(--border);
-    border-radius: 8px;
+}
+
+.card {
+    overflow: visible !important; /* Cho phép tooltip bay ra ngoài card */
 }
 
 table { width: 100%; border-collapse: collapse; min-width: 500px; }
@@ -38,33 +27,34 @@ th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left
 /* Tooltip Fixed bám chuột */
 .card-tooltip { position: relative; color: var(--primary); font-weight: 600; cursor: help; }
 .fixed-tooltip-img {
-    display: none;
-    position: fixed;
-    z-index: 999999;
-    width: 160px;
+    display: none; /* Chỉ hiện khi hover */
+    position: fixed; /* Thoát khỏi mọi khung chứa bị tràn */
+    z-index: 999999 !important;
+    width: 180px; /* Độ rộng vừa phải để không đè hết màn hình */
     height: auto;
-    border: 2px solid var(--primary);
+    border: 3px solid var(--primary);
     border-radius: 10px;
-    pointer-events: none;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    background: #000;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    pointer-events: none; /* Không cản trở con trỏ chuột */
 }
-
-/* Sửa lỗi tràn bộ bài mẫu */
 .deck-list-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Tự động xuống dòng */
     gap: 10px;
     margin-top: 15px;
 }
 
+/* 2. Item từng lá bài */
 .deck-item {
-    padding: 10px;
+    padding: 8px 12px;
     background: #f1f5f9;
+    border: 1px solid var(--border);
     border-radius: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: 1px solid var(--border);
+    position: relative; /* Để làm mốc cho tooltip nếu cần */
 }
 
 .hidden { display: none !important; }

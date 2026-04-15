@@ -17,7 +17,7 @@ export function renderDeckComposition(containerId, cardId, rawData) {
     const deckComposition = deckInfos.filter(di => di.deckid === sampleDeckId);
 
     let html = `
-        <div class="card" style="margin-top: 20px; border-left: 5px solid var(--success);">
+        <div class="card" style="margin-top: 20px; border-left: 5px solid var(--success); background: #fff;">
             <h4 style="margin-bottom:10px;">Cấu trúc bộ bài mẫu chứa lá bài này</h4>
             <div class="deck-list-grid">
     `;
@@ -26,12 +26,14 @@ export function renderDeckComposition(containerId, cardId, rawData) {
         const cardInfo = cards.find(c => c.id == item.cardid);
         if (cardInfo) {
             html += `
-                <div class="deck-item" onmousemove="handleTooltip(event, true)" onmouseleave="handleTooltip(event, false)">
-                    <div class="card-tooltip">
+                <div class="deck-item" 
+                     onmousemove="handleTooltip(event, true)" 
+                     onmouseleave="handleTooltip(event, false)">
+                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--primary);">
                         ${cardInfo.name}
-                        <img src="${cardInfo.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
-                    </div>
-                    <span class="badge" style="background:var(--primary); color:#fff; padding:2px 6px; border-radius:4px;">x${item.quantity}</span>
+                    </span>
+                    <img src="${cardInfo.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
+                    <span class="badge" style="background: var(--primary); color: white; padding: 2px 8px; border-radius: 12px;">x${item.quantity}</span>
                 </div>
             `;
         }
