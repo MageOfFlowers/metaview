@@ -5,25 +5,30 @@ export function renderDeckComposition(containerId, cardId, rawData) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const { deckInfos, cards } = rawData;
-    const relevantDeckIds = [...new Set(deckInfos.filter(di => di.cardid == cardId).map(di => di.deckid))];
-
-    if (relevantDeckIds.length === 0) {
+    const { deckInfos, cards, decks } = rawData;
+    
+    // Tìm deck tiêu biểu chứa lá bài này
+    const relevantDeckUse = deckInfos.find(di => di.cardid == cardId);
+    if (!relevantDeckUse) {
         container.innerHTML = "";
         return;
     }
 
-    const sampleDeckId = relevantDeckIds[0];
+    const sampleDeckId = relevantDeckUse.deckid;
     const deckComposition = deckInfos.filter(di => di.deckid === sampleDeckId);
-
-    // Sắp xếp theo số lượng hoặc id để đẹp hơn
-    deckComposition.sort((a, b) => b.quantity - a.quantity);
+    
+    // LẤY TÊN BỘ BÀI TỪ DỮ LIỆU DECKS
+    const deckData = decks.find(d => d.id == sampleDeckId);
+    const deckName = deckData ? deckData.name : `Bộ bài #${sampleDeckId}`;
 
     let html = `
-        <div class="card" style="margin-top: 25px; border-top: 4px solid var(--success);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4 style="color: var(--text-main);">🗂 Cấu trúc bộ bài tiêu biểu</h4>
-                <span style="font-size: 0.8rem; color: var(--text-muted);">Mẫu bộ bài ID: #${sampleDeckId}</span>
+        <div class="deck-analysis-container">
+            <div class="deck-header">
+                <div>
+                    <h4 style="color: var(--text-main); font-size: 1.1rem;">🗂 Cấu trúc: <span style="color: var(--primary);">${deckName}</span></h4>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Đây là bộ bài phổ biến nhất sử dụng thẻ này</p>
+                </div>
+                <span class="badge" style="background: var(--success);">Top Deck</span>
             </div>
             <div class="deck-list-grid">
     `;
@@ -35,13 +40,9 @@ export function renderDeckComposition(containerId, cardId, rawData) {
                 <div class="deck-item-v2" 
                      onmousemove="handleTooltip(event, true)" 
                      onmouseleave="handleTooltip(event, false)">
-                    
-                    <div class="qty-badge">${item.quantity}</div>
-                    
+                    <div class="qty-badge">x${item.quantity}</div>
                     <img src="${cardInfo.url || 'placeholder.jpg'}" alt="${cardInfo.name}">
-                    
                     <div class="card-name-mini">${cardInfo.name}</div>
-
                     <img src="${cardInfo.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
                 </div>
             `;
