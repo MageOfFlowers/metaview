@@ -68,24 +68,24 @@ export function triggerWinrateOnlyRender() {
 
 // js/analysis-main.js
 
-// Cập nhật hàm renderTableOnly trong js/analysis-main.js
 export function renderTableOnly() {
     const body = document.getElementById('meta-body');
     if (!body || !currentStats?.cards) return;
 
+    // Lấy giá trị từ ô tìm kiếm
     const searchInput = document.getElementById('searchCard');
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
 
+    // Lọc danh sách thẻ bài
     const data = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
 
+    // Render HTML vào bảng Danh sách Meta
     body.innerHTML = data.map(card => `
         <tr style="cursor:pointer" onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')">
             <td>
                 <div class="card-tooltip">
                     ${card.name}
-                    <div class="tooltip-wrapper">
-                        <img src="${card.url || 'placeholder.jpg'}" class="tooltip-img" alt="${card.name}">
-                    </div>
+                    <img src="${card.url || 'placeholder.jpg'}" class="tooltip-img" alt="${card.name}">
                 </div>
             </td>
             <td>${card.color || '-'}</td>

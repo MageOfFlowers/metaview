@@ -42,6 +42,7 @@ body {
 }
 
 /* FIX TOOLTIP: Tuyệt chiêu position fixed để không bao giờ bị che */
+/* FIX TRIỆT ĐỂ TOOLTIP BỊ CHE TRONG BẢNG */
 .card-tooltip {
     position: relative;
     color: var(--primary);
@@ -50,11 +51,11 @@ body {
     display: inline-block;
 }
 
-/* Chỗ chứa ảnh - dùng fixed để thoát khỏi overflow của table */
+/* Ảnh card giờ sẽ cố định so với màn hình để không bị bảng cắt mất */
 .card-tooltip .tooltip-img {
     display: none; /* Mặc định ẩn */
-    position: fixed; /* QUAN TRỌNG: Cố định so với màn hình */
-    z-index: 999999 !important; 
+    position: fixed; /* QUAN TRỌNG: Chuyển từ absolute sang fixed */
+    z-index: 999999 !important; /* Luôn trên cùng */
     width: 200px;
     height: auto;
     border: 3px solid var(--primary);
@@ -62,24 +63,23 @@ body {
     background: #000;
     box-shadow: 0 15px 30px rgba(0,0,0,0.6);
     pointer-events: none;
-    /* Vị trí xuất hiện sẽ được xử lý bằng CSS hover đơn giản */
+    
+    /* Vị trí: Hiện ở giữa màn hình bên phải hoặc trái tùy bạn chỉnh */
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); 
+    transform: translate(-50%, -50%);
 }
 
-/* Hiển thị khi di chuột vào */
 .card-tooltip:hover .tooltip-img {
-    display: block;
+    display: block; /* Hiện khi di chuột vào tên thẻ bài */
 }
 
-/* Bảng Responsive trên Mobile */
+/* Đảm bảo bảng vẫn cuộn được trên mobile nhưng không cắt nội dung bay ra ngoài */
 .table-responsive {
     width: 100%;
     overflow-x: auto;
+    overflow-y: visible !important; /* Cho phép nội dung nổi lên trên */
     -webkit-overflow-scrolling: touch;
-    border: 1px solid var(--border);
-    border-radius: 8px;
 }
 
 table {
