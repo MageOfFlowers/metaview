@@ -41,18 +41,16 @@ body {
     margin-bottom: 20px;
 }
 
-/* FIX TOOLTIP: Hiện ngay tại dòng, không bị bảng che */
+/* CSS tối giản cho Tooltip bám theo chuột */
 .card-tooltip {
     position: relative;
-    display: inline-block;
     color: var(--primary);
     font-weight: 600;
-    cursor: help;
 }
 
-.card-tooltip .tooltip-img {
+.fixed-tooltip-img {
     display: none;
-    position: fixed; /* Vẫn dùng fixed để thoát khỏi bảng */
+    position: fixed; /* Bắt buộc để thoát khỏi overflow của table */
     z-index: 999999;
     width: 180px;
     height: auto;
@@ -60,19 +58,9 @@ body {
     border-radius: 10px;
     background: #000;
     box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    pointer-events: none;
-    
-    /* Mặc định ảnh sẽ hiện bên phải con trỏ một chút và dịch lên trên */
-    margin-left: 20px; 
-    margin-top: -100px; 
+    pointer-events: none; /* Rất quan trọng: để chuột không bị vấp vào ảnh */
 }
 
-/* Khi hover, chúng ta sẽ điều khiển vị trí bằng JavaScript hoặc dùng CSS Hover đơn giản */
-.card-tooltip:hover .tooltip-img {
-    display: block;
-}
-
-/* Đảm bảo bảng danh sách không cắt cụt nội dung */
 .table-responsive {
     overflow-x: auto;
     overflow-y: visible !important;

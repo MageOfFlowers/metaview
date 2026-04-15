@@ -67,7 +67,6 @@ export function triggerWinrateOnlyRender() {
 }
 
 // js/analysis-main.js
-
 export function renderTableOnly() {
     const body = document.getElementById('meta-body');
     if (!body || !currentStats?.cards) return;
@@ -79,12 +78,13 @@ export function renderTableOnly() {
     body.innerHTML = data.map(card => `
         <tr style="cursor:pointer" 
             onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')"
-            onmousemove="moveTooltip(event)" 
+            onmousemove="handleTooltip(event, true)" 
+            onmouseleave="handleTooltip(event, false)"
         >
             <td>
                 <div class="card-tooltip">
                     ${card.name}
-                    <img src="${card.url || 'placeholder.jpg'}" class="tooltip-img">
+                    <img src="${card.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
                 </div>
             </td>
             <td>${card.color || '-'}</td>
@@ -95,22 +95,30 @@ export function renderTableOnly() {
     `).join('');
 }
 
-/**
- * Hàm bổ trợ: Di chuyển tooltip theo con trỏ chuột
- * Giúp ảnh hiện ngay cạnh chữ chứ không bị nhảy vào giữa màn hình
- */
-window.moveTooltip = function(e) {
-    const tooltips = document.querySelectorAll('.tooltip-img');
-    tooltips.forEach(img => {
-        // Kiểm tra nếu ảnh đang hiển thị (trên dòng đang hover)
-        if (img.parentElement.parentElement.parentElement.matches(':hover')) {
-            // Đặt vị trí ảnh cách con trỏ chuột 20px
-            img.style.left = (e.clientX + 20) + 'px';
-            img.style.top = (e.clientY - 100) + 'px';
-        }
-    });
-};
+// Hàm xử lý di chuyển và hiển thị tooltip bám theo chuột
+window.handleTooltip = function(e, show) {
+    const img = e.currentTarget.querySelector('.fixed-tooltip-img');
+    if (!img) return;
 
+    if (!show) {
+        img.style.display = 'none';
+        return;
+    }
+
+    img.style.display = 'block';
+    
+    // Tính toán vị trí: e.clientX/Y là tọa độ chuột so với màn hình
+    let x = e.clientX + 20; // Cách chuột 20px bên phải
+    let y = e.clientY - 100; // Nhấc lên 100px để không che dòng đang chọn
+
+    // Kiểm tra nếu sát mép phải màn hình thì đẩy sang trái chuột
+    if (x + 200 > window.innerWidth) {
+        x = e.clientX - 220;
+    }
+
+    img.style.left = x + 'px';
+    img.style.top = y + 'px';
+};
 export function analyzeQuantity(cardId, cardName) {
     const qtyStats = MetaEngine.calculateQuantityStats(rawData, cardId);
     const section = document.getElementById('quantity-analysis');
