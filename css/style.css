@@ -55,13 +55,59 @@ th { text-align: left; padding: 12px; background: #f1f5f9; color: var(--text-mut
 td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 
 /* Tooltip Fix */
-.card-tooltip { position: relative; color: var(--primary); font-weight: 600; cursor: help; }
-.card-tooltip .tooltip-img {
-    visibility: hidden; width: 160px; background-color: #000; border: 2px solid var(--primary);
-    border-radius: 8px; position: absolute; z-index: 9999; bottom: 125%; left: 50%;
-    transform: translateX(-50%); opacity: 0; transition: opacity 0.3s; pointer-events: none;
+.card-tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    color: var(--primary);
+    text-decoration: underline dotted;
+    z-index: 10; /* Đảm bảo chữ có z-index thấp hơn ảnh khi hover */
 }
-.card-tooltip:hover .tooltip-img { visibility: visible; opacity: 1; }
 
-.hidden { display: none !important; }
-.filter-sm { padding: 5px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.8rem; }
+.card-tooltip .tooltip-img {
+    visibility: hidden;
+    width: 180px;
+    background-color: #000;
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    position: absolute;
+    z-index: 9999 !important; /* Ưu tiên cao nhất để không bị che */
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.card-tooltip:hover .tooltip-img {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* FIX: Xử lý hiển thị bảng trên Mobile */
+.table-container {
+    width: 100%;
+    overflow-x: auto; /* Cho phép cuộn ngang bảng trên điện thoại */
+    -webkit-overflow-scrolling: touch;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px; /* Ép bảng có độ rộng tối thiểu để không bị dồn chữ */
+}
+
+/* Dashboard Grid cho Mobile */
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr !important; /* Ép về 1 cột */
+    }
+    
+    .card {
+        padding: 15px;
+    }
+
+    h1 { font-size: 1.4rem; }
+}

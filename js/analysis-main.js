@@ -89,16 +89,25 @@ export function analyzeQuantity(cardId, cardName) {
         <tr><td><strong>${q.quantity} bản</strong></td><td>${q.count} deck</td><td>${q.avgWinrate}%</td></tr>
     `).join('');
 
-    const ctx = document.getElementById('qtyWinrateChart').getContext('2d');
+    const ctxQty = document.getElementById('qtyWinrateChart').getContext('2d');
     if (charts.qty) charts.qty.destroy();
-    charts.qty = new Chart(ctx, {
+    charts.qty = new Chart(ctxQty, {
         type: 'bar',
         data: {
             labels: qtyStats.map(q => `${q.quantity} bản`),
-            datasets: [{ label: 'Winrate (%)', data: qtyStats.map(q => q.avgWinrate), backgroundColor: '#2563eb' }]
+            datasets: [{ 
+                label: 'Winrate TB (%)', 
+                data: qtyStats.map(q => q.avgWinrate), 
+                backgroundColor: '#2563eb' 
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true,
+            maintainAspectRatio: false, // Cho phép biểu đồ co giãn theo khung mobile
+            scales: { y: { beginAtZero: true, max: 100 } } 
+        }
     });
-    renderDeckComposition('deck-comp-container', cardId, rawData);
-    section.scrollIntoView({ behavior: 'smooth' });
+
+    // Tự động cuộn xuống phần chi tiết để người dùng biết nó đã mở
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
