@@ -65,7 +65,31 @@ export function triggerWinrateOnlyRender() {
     data.sort((a, b) => (mode === 'winrate') ? (b.avgWinrate - a.avgWinrate) : (b.useCount - a.useCount));
     charts.winrate = renderWinrateChart('winrateBarChart', data.slice(0, 10), charts.winrate);
 }
+export function renderTableOnly() {
+    const body = document.getElementById('meta-body');
+    if (!body || !currentStats?.cards) return;
 
+    const searchTerm = document.getElementById('searchCard')?.value.toLowerCase() || "";
+    const data = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
+
+    body.innerHTML = data.map(card => `
+        <tr style="cursor:pointer" 
+            onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')"
+            onmousemove="handleTooltip(event, true)" 
+            onmouseleave="handleTooltip(event, false)">
+            <td>
+                <div class="card-tooltip">
+                    ${card.name}
+                    <img src="${card.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
+                </div>
+            </td>
+            <td>${card.color || '-'}</td>
+            <td>${card.rarity || '-'}</td>
+            <td>${card.useCount}</td>
+            <td>${card.avgWinrate}%</td>
+        </tr>
+    `).join('');
+}
 // Hàm xử lý di chuyển và hiển thị tooltip bám theo chuột
 // Thêm vào đầu hoặc cuối file js/analysis-main.js
 
@@ -95,31 +119,7 @@ window.handleTooltip = function(e, show) {
     img.style.top = y + 'px';
 };
 
-export function renderTableOnly() {
-    const body = document.getElementById('meta-body');
-    if (!body || !currentStats?.cards) return;
 
-    const searchTerm = document.getElementById('searchCard')?.value.toLowerCase() || "";
-    const data = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
-
-    body.innerHTML = data.map(card => `
-        <tr style="cursor:pointer" 
-            onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')"
-            onmousemove="handleTooltip(event, true)" 
-            onmouseleave="handleTooltip(event, false)">
-            <td>
-                <div class="card-tooltip">
-                    ${card.name}
-                    <img src="${card.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
-                </div>
-            </td>
-            <td>${card.color || '-'}</td>
-            <td>${card.rarity || '-'}</td>
-            <td>${card.useCount}</td>
-            <td>${card.avgWinrate}%</td>
-        </tr>
-    `).join('');
-}
 export function analyzeQuantity(cardId, cardName) {
     const qtyStats = MetaEngine.calculateQuantityStats(rawData, cardId);
     const section = document.getElementById('quantity-analysis');
