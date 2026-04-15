@@ -85,18 +85,12 @@
     </div>
 
     <div class="card">
-    <div class="flex-header">
-        <h3>Danh sách Meta Thẻ bài</h3>
-        <input type="text" id="searchCard" class="filter-sm" placeholder="Tìm nhanh thẻ bài..." oninput="renderTableOnly()">
-    </div>
-    <div class="table-container"> <table>
+    <h3>Danh sách Meta Thẻ bài</h3>
+    <div class="table-responsive">
+        <table>
             <thead>
                 <tr>
-                    <th>Tên thẻ bài</th>
-                    <th>Hệ</th>
-                    <th>Độ hiếm</th>
-                    <th id="usage-column-header">Số lượt dùng</th>
-                    <th>Winrate</th>
+                    <th>Tên thẻ</th><th>Hệ</th><th>Độ hiếm</th><th>Sử dụng</th><th>Winrate</th>
                 </tr>
             </thead>
             <tbody id="meta-body"></tbody>
@@ -104,30 +98,30 @@
     </div>
 </div>
 
-<div id="quantity-analysis" class="card hidden" style="margin-top: 20px; border: 2px solid var(--primary); background: #f8fafc;">
-    <div class="flex-header">
-        <h3 id="qty-title" style="color: var(--primary);">Phân tích chi tiết</h3>
+<div id="quantity-analysis" class="card hidden" style="border: 2px solid var(--primary); background: #fdfdfd;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 id="qty-title">Phân tích chi tiết</h3>
+        <button onclick="document.getElementById('quantity-analysis').classList.add('hidden')" style="padding: 8px 15px; cursor:pointer;">Đóng [X]</button>
     </div>
-    
+
     <div class="dashboard-grid">
         <div class="card">
             <div style="height: 250px;"><canvas id="qtyWinrateChart"></canvas></div>
         </div>
         <div class="card">
-            <div class="table-container"> <table>
+            <div class="table-responsive">
+                <table>
                     <thead>
-                        <tr>
-                            <th>Số lượng</th>
-                            <th>Số bộ bài</th>
-                            <th>Winrate TB</th>
-                        </tr>
+                        <tr><th>Số lượng</th><th>Số bộ bài</th><th>Winrate TB</th></tr>
                     </thead>
                     <tbody id="qty-table-body"></tbody>
                 </table>
             </div>
         </div>
     </div>
-    </div>
+
+    <div id="deck-comp-container" style="margin-top: 20px;"></div>
+</div>
 </div>
 
 <script type="module">

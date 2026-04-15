@@ -54,14 +54,11 @@ table { width: 100%; border-collapse: collapse; min-width: 600px; }
 th { text-align: left; padding: 12px; background: #f1f5f9; color: var(--text-muted); font-size: 0.8rem; }
 td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 
-/* Tooltip Fix */
 .card-tooltip {
     position: relative;
     display: inline-block;
     cursor: help;
-    color: var(--primary);
-    text-decoration: underline dotted;
-    z-index: 10; /* Đảm bảo chữ có z-index thấp hơn ảnh khi hover */
+    z-index: 10; /* Thấp hơn ảnh tooltip */
 }
 
 .card-tooltip .tooltip-img {
@@ -71,14 +68,14 @@ td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     border: 2px solid var(--primary);
     border-radius: 8px;
     position: absolute;
-    z-index: 9999 !important; /* Ưu tiên cao nhất để không bị che */
+    z-index: 9999 !important; /* Ưu tiên tuyệt đối */
     bottom: 125%;
     left: 50%;
     transform: translateX(-50%);
     opacity: 0;
     transition: opacity 0.3s;
     pointer-events: none;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .card-tooltip:hover .tooltip-img {
@@ -86,28 +83,29 @@ td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     opacity: 1;
 }
 
-/* FIX: Xử lý hiển thị bảng trên Mobile */
-.table-container {
+/* FIX: Hỗ trợ cuộn ngang bảng trên Mobile */
+.table-responsive {
     width: 100%;
-    overflow-x: auto; /* Cho phép cuộn ngang bảng trên điện thoại */
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    margin-bottom: 10px;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 600px; /* Ép bảng có độ rộng tối thiểu để không bị dồn chữ */
+    min-width: 600px; /* Ép bảng rộng ra để không bị dồn chữ trên mobile */
 }
 
-/* Dashboard Grid cho Mobile */
+/* Grid linh hoạt */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+
 @media (max-width: 768px) {
     .dashboard-grid {
-        grid-template-columns: 1fr !important; /* Ép về 1 cột */
+        grid-template-columns: 1fr;
     }
-    
-    .card {
-        padding: 15px;
-    }
-
-    h1 { font-size: 1.4rem; }
 }
