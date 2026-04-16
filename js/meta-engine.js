@@ -58,7 +58,7 @@ export const MetaEngine = {
         const playerStats = {};
 
         filteredUses.forEach(use => {
-            const pName = use.playerName || "Người chơi ẩn danh";
+            const pName = use.username || "Người chơi ẩn danh";
             if (!playerStats[pName]) {
                 playerStats[pName] = { name: pName, winSum: 0, count: 0, decks: new Set(), bestRank: 999 };
             }
