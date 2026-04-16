@@ -1,3 +1,5 @@
+import { MetaEngine } from '../meta-engine.js';
+
 export function renderDeckRanking(canvasId, rawData, filteredUses, currentChart = null, limit = 10) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !filteredUses) return null;
