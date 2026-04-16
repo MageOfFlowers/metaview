@@ -1,17 +1,17 @@
 import { MetaEngine } from '../meta-engine.js';
 
-export function renderDeckRanking(canvasId, rawData, currentChart = null, limit = 10) {
+export function renderDeckRanking(canvasId, rawData, filteredUses, currentChart = null, limit = 10) {
     const canvas = document.getElementById(canvasId);
-    if (!canvas || !filteredUses) return null; // Kiểm tra an toàn
+    if (!canvas || !filteredUses) return null;
     if (currentChart) currentChart.destroy();
 
     const ctx = canvas.getContext('2d');
     const { deckInfos, cards, decks } = rawData;
 
-    // Tính toán thống kê Deck dựa trên filteredUses
     const deckStatsMap = {};
     const deckMap = new Map(decks.map(d => [String(d.id), d]));
 
+    // Sử dụng filteredUses thay vì rawData.compUses
     filteredUses.forEach(use => {
         const deckIdStr = String(use.deckid);
         if (!deckMap.has(deckIdStr)) return;
@@ -24,27 +24,26 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
         deckStatsMap[deckIdStr].count++;
     });
 
-    // Sắp xếp và lấy Top
     const sortedDecks = Object.values(deckStatsMap)
-        .map(d => {
-            const deckInfo = deckMap.get(String(d.id));
+        .map(stats => {
+            const deck = deckMap.get(String(stats.id));
+            const composition = deckInfos.filter(di => di.deckid === stats.id);
             return {
-                ...d,
-                displayName: deckInfo ? deckInfo.name : `Deck #${d.id}`,
-                avgRank: parseFloat((d.totalRank / d.count).toFixed(1)),
-                avgWin: parseFloat((d.totalWin / d.count).toFixed(1)),
-                composition: deckInfos.filter(di => di.deckid === d.id)
+                ...stats,
+                displayName: deck ? deck.name : `Deck #${stats.id}`,
+                avgWinrate: (stats.totalWin / stats.count).toFixed(1),
+                avgRank: (stats.totalRank / stats.count).toFixed(1),
+                composition: composition
             };
         })
-        .sort((a, b) => a.avgRank - b.avgRank)
+        .sort((a, b) => b.count - a.count || b.avgWinrate - a.avgWinrate)
         .slice(0, limit);
 
-    // Lấy danh sách duy nhất các Card IDs xuất hiện trong các Top Deck này để tạo Dataset
-    const allCardIdsInTop = [...new Set(sortedDecks.flatMap(d => d.composition.map(c => c.cardid)))];
-    const cardInfoMap = new Map(cards.map(c => [c.id, c]));
+    const uniqueCardIds = [...new Set(sortedDecks.flatMap(d => d.composition.map(c => c.cardid)))];
+    const cardMap = new Map(cards.map(c => [c.id, c]));
 
-    const datasets = allCardIdsInTop.map(cid => {
-        const cardInfo = cardInfoMap.get(cid);
+    const datasets = uniqueCardIds.map(cid => {
+        const cardInfo = cardMap.get(cid);
         return {
             label: cardInfo ? cardInfo.name : `Card ${cid}`,
             data: sortedDecks.map(d => {
@@ -52,12 +51,11 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
                 return item ? item.quantity : 0;
             }),
             backgroundColor: MetaEngine.getColorCode(cardInfo ? cardInfo.color : 'G'),
-            borderWidth: 1,
-            borderColor: '#ffffff'
+            stack: 'Stack 0'
         };
     });
 
-   return new Chart(ctx, {
+    return new Chart(ctx, {
         type: 'bar',
         data: {
             labels: sortedDecks.map(d => `${d.displayName} (Avg Rank: ${d.avgRank})`),
@@ -67,26 +65,8 @@ export function renderDeckRanking(canvasId, rawData, currentChart = null, limit 
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                x: { 
-                    stacked: true, // Xếp chồng
-                    title: { display: true, text: 'Số lượng Card trong Deck' } 
-                },
-                y: { 
-                    stacked: true // Xếp chồng
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return ` ${context.dataset.label}: ${context.raw} bản`;
-                        }
-                    }
-                },
-                // QUAN TRỌNG: Ẩn phần chú thích liệt kê tên thẻ bài ở trên
-                legend: { display: false }
-            }
+            scales: { x: { stacked: true }, y: { stacked: true } },
+            plugins: { legend: { display: false } }
         }
     });
 }
