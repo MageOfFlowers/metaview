@@ -16,10 +16,10 @@ export async function initAnalysis() {
     try {
         const [cards, uses, infos, comps, decks] = await Promise.all([
             request('/cards'), request('/competition-use'), request('/deck-infos'),
-            request('/competitions'), request('/decksget')
+            request('/competitions'), request('/decksget'),
+            request('/users')
         ]);
-        rawData = { cards, compUses: uses, deckInfos: infos, decks, competitions: comps };
-
+        rawData = { cards, compUses: uses, deckInfos: infos, decks, competitions: comps, users };
         const fComp = document.getElementById('filterComp');
         if (comps && fComp) {
             fComp.innerHTML = '<option value="all">Tất cả giải đấu</option>' + 
@@ -50,8 +50,7 @@ export function render() {
     currentStats = MetaEngine.calculateStats(rawData, filters);
     
     // 2. Lấy dữ liệu người chơi (Sử dụng filteredUses vừa được trả về ở trên)
-    const playerStats = MetaEngine.calculatePlayerStats(currentStats.filteredUses);
-    
+    const playerStats = MetaEngine.calculatePlayerStats(currentStats.filteredUses, rawData.users);    
     // 3. Render các thành phần
     triggerUsageRender();
     triggerWinrateOnlyRender();

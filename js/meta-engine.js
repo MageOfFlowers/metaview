@@ -65,13 +65,16 @@ calculateStats(rawData, filters = {}) {
     };
 },
 
-    calculatePlayerStats(filteredUses) {
+    calculatePlayerStats(filteredUses, users = []) {
         if (!filteredUses || filteredUses.length === 0) return [];
+        
+        // Tạo một bản đồ (Map) để tra cứu tên nhanh hơn: userId -> name
+        const userMap = new Map(users.map(u => [u.id, u.username || u.name]));
         
         const playerStats = {};
         filteredUses.forEach(use => {
-            // Đọc trực tiếp từ key 'username' như bạn đã xác nhận
-            const pName = use.username || "Người chơi ẩn danh";
+            // Lấy tên từ Map dựa trên userId trong competition-use
+            const pName = userMap.get(use.userid) || "Người chơi #" + use.userid;
             
             if (!playerStats[pName]) {
                 playerStats[pName] = { 
