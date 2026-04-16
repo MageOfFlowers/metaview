@@ -7,88 +7,103 @@ export function renderDeckRanking(canvasId, rawData, filteredUses, currentChart 
 
     const ctx = canvas.getContext('2d');
     const { deckInfos, cards, decks } = rawData;
-    
     const viewMode = document.getElementById('deckSortMode')?.value || 'usage';
-const deckStatsMap = {};
-const deckMap = new Map(decks.map(d => [String(d.id), d]));
-filteredUses.forEach(use => {
-        const deckIdStr = String(use.deckid);
-        if (!deckMap.has(deckIdStr)) return;
+    const cardMap = new Map(cards.map(c => [c.id, c]));
+    const deckMap = new Map(decks.map(d => [String(d.id), d]));
 
-        if (!deckStatsMap[deckIdStr]) {
-            deckStatsMap[deckIdStr] = { id: use.deckid, totalWin: 0, count: 0, totalRank: 0 };
+    // 1. Gom nhóm dữ liệu
+    const deckStatsMap = {};
+    filteredUses.forEach(use => {
+        const dId = String(use.deckid);
+        if (!deckMap.has(dId)) return;
+        if (!deckStatsMap[dId]) {
+            deckStatsMap[dId] = { id: use.deckid, totalWin: 0, count: 0, totalRank: 0 };
         }
-        deckStatsMap[deckIdStr].totalWin += parseFloat(use.winrate || 0);
-        deckStatsMap[deckIdStr].totalRank += parseInt(use.rank || 99);
-        deckStatsMap[deckIdStr].count++;
+        deckStatsMap[dId].totalWin += parseFloat(use.winrate || 0);
+        deckStatsMap[dId].totalRank += parseInt(use.rank || 99);
+        deckStatsMap[dId].count++;
     });
-// 2. Sắp xếp mảng dựa trên viewMode
-const sortedDecks = Object.values(deckStatsMap)
-    .map(stats => {
+
+    // 2. Tính toán chỉ số và xác định màu chủ đạo
+    const processedDecks = Object.values(deckStatsMap).map(stats => {
         const deck = deckMap.get(String(stats.id));
+        const composition = deckInfos.filter(di => di.deckid == stats.id);
+        
+        // Tìm màu chiếm tỷ lệ lớn nhất
+        const colorCounts = {};
+        composition.forEach(item => {
+            const card = cardMap.get(item.cardid);
+            const cCode = card ? card.color : 'G';
+            colorCounts[cCode] = (colorCounts[cCode] || 0) + item.quantity;
+        });
+        const dominantColor = Object.keys(colorCounts).reduce((a, b) => colorCounts[a] > colorCounts[b] ? a : b, 'G');
+
         return {
             ...stats,
             displayName: deck ? deck.name : `Deck #${stats.id}`,
             avgWinrate: (stats.totalWin / stats.count).toFixed(1),
             avgRank: (stats.totalRank / stats.count).toFixed(1),
-            composition: deckInfos.filter(di => di.deckid == stats.id)
+            mainColor: MetaEngine.getColorCode(dominantColor),
+            composition: composition.map(ci => ({
+                ...ci,
+                name: cardMap.get(ci.cardid)?.name || 'Unknown'
+            }))
         };
     });
 
-if (viewMode === 'winrate') {
-    sortedDecks.sort((a, b) => b.avgWinrate - a.avgWinrate);
-} else if (viewMode === 'rank') {
-    sortedDecks.sort((a, b) => a.avgRank - b.avgRank); // Hạng càng nhỏ càng cao
-} else {
-    sortedDecks.sort((a, b) => b.count - a.count); // Phổ biến
-}
+    // 3. Sắp xếp theo Filter
+    if (viewMode === 'winrate') processedDecks.sort((a, b) => b.avgWinrate - a.avgWinrate);
+    else if (viewMode === 'rank') processedDecks.sort((a, b) => a.avgRank - b.avgRank);
+    else processedDecks.sort((a, b) => b.count - a.count);
 
-const finalDecks = sortedDecks.slice(0, limit);
+    const finalDecks = processedDecks.slice(0, limit);
 
-// 3. Hiển thị chỉ số bên dưới tên Deck (Labels)
-const labels = finalDecks.map(d => {
-    let subLabel = '';
-    if (viewMode === 'winrate') subLabel = `(${d.avgWinrate}%)`;
-    else if (viewMode === 'rank') subLabel = `(Top ${d.avgRank})`;
-    else subLabel = `(${d.count} lượt)`;
-
-    return [d.displayName, subLabel]; // Trả về mảng để Chart.js tự xuống dòng
-});
-    // -------------------------
-
-    const uniqueCardIds = [...new Set(finalDecks.flatMap(d => d.composition.map(c => c.cardid)))];
-    const cardMap = new Map(cards.map(c => [c.id, c]));
-
-    const datasets = uniqueCardIds.map(cid => {
-        const cardInfo = cardMap.get(cid);
-        return {
-            label: cardInfo ? cardInfo.name : `Card ${cid}`,
-            data: finalDecks.map(d => {
-                const item = d.composition.find(c => c.cardid == cid);
-                return item ? item.quantity : 0;
-            }),
-            backgroundColor: MetaEngine.getColorCode(cardInfo ? cardInfo.color : 'G'),
-            stack: 'Stack 0'
-        };
-    });
-
+    // 4. Khởi tạo Chart
     return new Chart(ctx, {
         type: 'bar',
         data: {
-            // Hiển thị thông số tương ứng lên nhãn
-            labels: finalDecks.map(d => `${d.displayName} (${viewMode === 'rank' ? 'Hạng ' + d.avgRank : d.avgWinrate + '%'})`),
-            datasets: datasets
+            labels: finalDecks.map(d => d.displayName),
+            datasets: [{
+                label: 'Chỉ số',
+                data: finalDecks.map(d => {
+                    if (viewMode === 'winrate') return d.avgWinrate;
+                    if (viewMode === 'rank') return d.avgRank;
+                    return d.count;
+                }),
+                backgroundColor: finalDecks.map(d => d.mainColor), // Màu theo thẻ chính
+                borderRadius: 5
+            }]
         },
         options: {
-            plugins: {
-                title: { display: true, text: `Top 10 Bộ bài theo ${viewMode}` },
-                legend: { display: false }
-            },
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => {
+                            const d = finalDecks[items[0].dataIndex];
+                            return `${d.displayName} (${viewMode}: ${items[0].raw})`;
+                        },
+                        label: (item) => {
+                            const d = finalDecks[item.dataIndex];
+                            // Hiển thị cấu trúc bộ bài trong tooltip
+                            let lines = ['Cấu trúc bộ bài:'];
+                            d.composition.slice(0, 10).forEach(c => {
+                                lines.push(`• ${c.name} x${c.quantity}`);
+                            });
+                            if (d.composition.length > 10) lines.push('...');
+                            return lines;
+                        }
+                    }
+                }
+            },
             scales: {
-                x: { stacked: true },
-                y: { stacked: true, title: { display: true, text: 'Số lượng card' } }
+                y: {
+                    beginAtZero: true,
+                    reverse: viewMode === 'rank', // Hạng 1 nằm trên cùng
+                    title: { display: true, text: viewMode.toUpperCase() }
+                }
             }
         }
     });
