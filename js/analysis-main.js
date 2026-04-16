@@ -53,44 +53,6 @@ export function render() {
     renderTableOnly();
 }
 
-function triggerPlayerRender(playerStats) {
-    const ctx = document.getElementById('playerRankingChart');
-    if (!ctx) return;
-
-    const topPlayers = playerStats.slice(0, 10);
-    if (charts.playerRank) charts.playerRank.destroy();
-
-    charts.playerRank = new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: topPlayers.map(p => p.name),
-            datasets: [
-                { label: 'Winrate (%)', data: topPlayers.map(p => p.avgWinrate), backgroundColor: '#10b981', yAxisID: 'y' },
-                { label: 'Số Deck', data: topPlayers.map(p => p.deckCount), type: 'line', borderColor: '#f59e0b', yAxisID: 'y1' }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, position: 'left' },
-                y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } }
-            }
-        }
-    });
-
-    const honorBody = document.getElementById('player-honor-body');
-    if (honorBody) {
-        honorBody.innerHTML = topPlayers.map(p => `
-            <tr>
-                <td><strong>${p.name}</strong></td>
-                <td>Hạng ${p.bestRank}</td>
-                <td>${p.totalGames} giải</td>
-            </tr>
-        `).join('');
-    }
-}
-
 // ... Giữ nguyên các hàm triggerUsageRender, triggerWinrateOnlyRender, renderTableOnly, handleTooltip và analyzeQuantity từ file cũ của bạn ...
 export function triggerPlayerRender(playerStats) {
     const ctx = document.getElementById('playerRankingChart');
