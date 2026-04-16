@@ -1,4 +1,3 @@
-// js/charts/deck-analysis.js
 import { MetaEngine } from '../meta-engine.js';
 
 let currentPage = 1;
@@ -18,10 +17,10 @@ export function renderDeckComposition(containerId, cardId, rawData) {
         return;
     }
 
-    // 2. Tính toán chỉ số cho từng bộ bài
+    // 2. Gom nhóm và tính toán chỉ số cho từng bộ bài
     const uniqueDeckIds = [...new Set(decksWithCard.map(d => d.deckid))];
     
-    // Đọc chế độ sắp xếp từ dropdown ở Danh sách Meta bên ngoài
+    // Lấy tiêu chí sắp xếp từ dropdown của bảng Meta ở bên ngoài
     const sortMode = document.getElementById('metaSortMode')?.value || 'usage';
 
     let deckList = uniqueDeckIds.map(dId => {
@@ -41,7 +40,7 @@ export function renderDeckComposition(containerId, cardId, rawData) {
         };
     });
 
-    // 3. Sắp xếp theo lựa chọn của Danh sách Meta
+    // 3. Sắp xếp dựa theo tiêu chí của bảng Meta đã chọn
     if (sortMode === 'winrate') {
         deckList.sort((a, b) => b.winrate - a.winrate);
     } else {
@@ -51,16 +50,16 @@ export function renderDeckComposition(containerId, cardId, rawData) {
     const totalPages = Math.ceil(deckList.length / pageSize);
     const paginatedDecks = deckList.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-    // 4. Render giao diện với Card lớn (45x65px)
+    // 4. Render Giao diện với Card lớn
     let html = `
         <div class="deck-analysis-container" style="margin-top:20px; border-top: 2px solid #eee; padding-top:20px;">
-            <h4 style="margin-bottom:15px; color: var(--primary);">🗂️ Các bộ bài tiêu biểu sử dụng thẻ này</h4>
+            <h4 style="margin-bottom: 15px; color: var(--primary);">🗂️ Các bộ bài tiêu biểu sử dụng thẻ này</h4>
             <div class="deck-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
     `;
 
     paginatedDecks.forEach(deck => {
         html += `
-            <div class="card" style="border: 1px solid #e2e8f0; background: #f8fafc; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="card" style="border: 1px solid #e2e8f0; background: #f8fafc; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
                     <strong style="font-size: 0.95rem; color: #1e293b;">${deck.name}</strong>
                     <div style="text-align: right;">
@@ -68,9 +67,10 @@ export function renderDeckComposition(containerId, cardId, rawData) {
                         <div style="font-size: 0.7rem; color: #64748b;">${deck.count} lượt dùng</div>
                     </div>
                 </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px;">
         `;
 
+        // Render card bài mẫu kích thước 45x65
         deck.composition.forEach(comp => {
             const card = cardMap.get(comp.cardid);
             if (card) {
@@ -82,14 +82,14 @@ export function renderDeckComposition(containerId, cardId, rawData) {
                         display: flex; align-items: center; justify-content: center;
                         box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <span style="font-size: 8px; color: white; font-weight: bold; text-align: center; line-height: 1.1; padding: 2px; text-shadow: 1px 1px 2px #000;">
-                            ${card.name.length > 15 ? card.name.substring(0, 12) + '..' : card.name}
+                            ${card.name.substring(0, 10)}
                         </span>
                         <span style="
                             position: absolute; top: -6px; right: -6px; 
                             background: #ef4444; color: white; font-size: 10px; 
                             width: 18px; height: 18px; display: flex; 
                             align-items: center; justify-content: center;
-                            border-radius: 50%; border: 1.5px solid white; font-weight: bold;">
+                            border-radius: 50%; border: 1.5px solid white; font-weight: bold; z-index: 2;">
                             ${comp.quantity}
                         </span>
                     </div>
@@ -102,7 +102,7 @@ export function renderDeckComposition(containerId, cardId, rawData) {
 
     html += `</div>`;
 
-    // 5. Điều khiển phân trang
+    // 5. Nút phân trang
     if (totalPages > 1) {
         html += `
             <div style="display: flex; justify-content: center; gap: 15px; margin-top: 25px;">
@@ -116,7 +116,7 @@ export function renderDeckComposition(containerId, cardId, rawData) {
     html += `</div>`;
     container.innerHTML = html;
 
-    // Gán sự kiện cho các nút phân trang
+    // Gán sự kiện
     document.getElementById('prevDeckPage')?.addEventListener('click', () => {
         currentPage--;
         renderDeckComposition(containerId, cardId, rawData);
@@ -127,7 +127,6 @@ export function renderDeckComposition(containerId, cardId, rawData) {
     });
 }
 
-// Hàm để reset trang về 1 khi chọn card mới
 export function resetDeckAnalysisPage() {
     currentPage = 1;
 }
