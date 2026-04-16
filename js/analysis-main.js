@@ -9,6 +9,8 @@ import { renderUsageChart } from './charts/usage-charts.js';
 let rawData = { cards: [], compUses: [], deckInfos: [], decks: [], competitions: [] };
 let currentStats = null; 
 let charts = { usage: null, winrate: null, qty: null, deckRank: null, playerRank: null };
+let metaCurrentPage = 1;
+const metaPageSize = 10;
 
 export async function initAnalysis() {
     try {
@@ -45,6 +47,8 @@ export function render() {
     };
     
     currentStats = MetaEngine.calculateStats(rawData, filters);
+    
+    metaCurrentPage = 1;
     const playerStats = MetaEngine.calculatePlayerStats(currentStats.filteredUses);
     
     triggerUsageRender();
@@ -170,12 +174,26 @@ export function triggerWinrateOnlyRender() {
 }
 export function renderTableOnly() {
     const body = document.getElementById('meta-body');
+    const paginationContainer = document.getElementById('meta-pagination'); // Cần thêm thẻ này trong HTML
     if (!body || !currentStats?.cards) return;
 
     const searchTerm = document.getElementById('searchCard')?.value.toLowerCase() || "";
-    const data = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
+    
+    // 1. Lọc dữ liệu theo tìm kiếm
+    const filteredData = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
 
-    body.innerHTML = data.map(card => `
+    // 2. Tính toán phân trang
+    const totalPages = Math.ceil(filteredData.length / metaPageSize);
+    
+    // Đảm bảo trang hiện tại không vượt quá tổng số trang sau khi lọc
+    if (metaCurrentPage > totalPages && totalPages > 0) metaCurrentPage = totalPages;
+    if (metaCurrentPage < 1) metaCurrentPage = 1;
+
+    const startIndex = (metaCurrentPage - 1) * metaPageSize;
+    const paginatedData = filteredData.slice(startIndex, startIndex + metaPageSize);
+
+    // 3. Render nội dung bảng
+    body.innerHTML = paginatedData.map(card => `
         <tr style="cursor:pointer" 
             onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')"
             onmousemove="handleTooltip(event, true)" 
@@ -192,6 +210,37 @@ export function renderTableOnly() {
             <td>${card.avgWinrate}%</td>
         </tr>
     `).join('');
+
+    // 4. Render bộ điều khiển phân trang
+    if (paginationContainer) {
+        renderPaginationControls(paginationContainer, totalPages);
+    }
+}
+
+// Hàm bổ trợ render nút chuyển trang
+function renderPaginationControls(container, totalPages) {
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="pagination-wrapper" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 15px;">
+            <button class="btn-nav" ${metaCurrentPage === 1 ? 'disabled' : ''} id="prevMetaPage">◀ Trước</button>
+            <span style="font-size: 0.9rem; font-weight: bold;">Trang ${metaCurrentPage} / ${totalPages}</span>
+            <button class="btn-nav" ${metaCurrentPage === totalPages ? 'disabled' : ''} id="nextMetaPage">Sau ▶</button>
+        </div>
+    `;
+
+    document.getElementById('prevMetaPage')?.addEventListener('click', () => {
+        metaCurrentPage--;
+        renderTableOnly();
+    });
+
+    document.getElementById('nextMetaPage')?.addEventListener('click', () => {
+        metaCurrentPage++;
+        renderTableOnly();
+    });
 }
 // Hàm xử lý di chuyển và hiển thị tooltip bám theo chuột
 // Thêm vào đầu hoặc cuối file js/analysis-main.js
