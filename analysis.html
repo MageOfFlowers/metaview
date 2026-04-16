@@ -78,11 +78,18 @@
 
     <div class="dashboard-grid">
     <div class="card">
-        <h3>Xếp hạng Bộ bài (Top Meta)</h3>
-        <div style="height: 400px;">
-            <canvas id="deckRankChart"></canvas>
-        </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3>🏆 Xếp hạng Bộ bài</h3>
+        <select id="deckSortMode" onchange="triggerRender()" style="padding: 5px; border-radius: 4px;">
+            <option value="usage">Sắp theo: Phổ biến</option>
+            <option value="winrate">Sắp theo: Tỷ lệ thắng</option>
+            <option value="rank">Sắp theo: Hạng trung bình</option>
+        </select>
     </div>
+    <div style="height: 400px;">
+        <canvas id="deckRankChart"></canvas>
+    </div>
+</div>
 
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
