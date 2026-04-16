@@ -84,6 +84,33 @@
         <div style="height: 400px;"><canvas id="deckRankingChart"></canvas></div>
     </div>
 
+    <div class="dashboard-grid">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3>🏅 Xếp hạng Người chơi</h3>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Top 10 Winrate & Đa dạng Deck</span>
+            </div>
+            <div style="height: 350px;"><canvas id="playerRankingChart"></canvas></div>
+        </div>
+
+        <div class="card">
+            <h3>Hall of Fame</h3>
+            <div class="table-responsive">
+                <table style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th>Người chơi</th>
+                            <th>Hạng cao nhất</th>
+                            <th>Số giải</th>
+                        </tr>
+                    </thead>
+                    <tbody id="player-honor-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+</div>
+
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
         <h3>Danh sách Meta</h3>

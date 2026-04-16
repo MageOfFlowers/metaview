@@ -7,7 +7,7 @@ import { renderUsageChart } from './charts/usage-charts.js';
 
 let rawData = { cards: [], compUses: [], deckInfos: [], decks: [], competitions: [] };
 let currentStats = null; 
-let charts = { usage: null, winrate: null, qty: null, deckRank: null };
+let charts = { usage: null, winrate: null, qty: null, deckRank: null, playerRank: null };
 
 export async function initAnalysis() {
     try {
@@ -45,10 +45,57 @@ export function render() {
     };
     currentStats = MetaEngine.calculateStats(rawData, filters);
     
+    // Tính stats người chơi
+    const playerStats = MetaEngine.calculatePlayerStats(rawData, currentStats.filteredUses); // Cần lưu filteredUses vào currentStats ở MetaEngine
+    
     triggerUsageRender();
     triggerWinrateOnlyRender();
     charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank, 10);
+    
+    // Gọi render chart người chơi
+    triggerPlayerRender(playerStats);
+    
     renderTableOnly();
+}
+
+export function triggerPlayerRender(playerStats) {
+    const ctx = document.getElementById('playerRankingChart');
+    if (!ctx) return;
+
+    // Sắp xếp theo Winrate cao nhất (hoặc tùy chọn khác)
+    const sortedPlayers = playerStats.sort((a, b) => b.avgWinrate - a.avgWinrate).slice(0, 10);
+
+    if (charts.playerRank) charts.playerRank.destroy();
+    
+    charts.playerRank = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: sortedPlayers.map(p => p.name),
+            datasets: [
+                {
+                    label: 'Winrate (%)',
+                    data: sortedPlayers.map(p => p.avgWinrate),
+                    backgroundColor: '#10b981', // Màu xanh lá
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Số lượng Deck',
+                    data: sortedPlayers.map(p => p.deckCount),
+                    type: 'line',
+                    borderColor: '#f59e0b',
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Winrate %' } },
+                y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Số lượng Deck' } }
+            }
+        }
+    });
 }
 
 export function triggerUsageRender() {

@@ -80,5 +80,34 @@ export const MetaEngine = {
             count: statsByQty[qty].count,
             avgWinrate: statsByQty[qty].count > 0 ? (statsByQty[qty].win / statsByQty[qty].count).toFixed(1) : 0
         }));
-    }
+    },
+
+    calculatePlayerStats(rawData, filteredUses) {
+    const playerStats = {};
+
+    filteredUses.forEach(use => {
+        const pName = use.playerName || "Ẩn danh"; // Giả định field này có trong compUses
+        if (!playerStats[pName]) {
+            playerStats[pName] = { 
+                name: pName, 
+                winrateSum: 0, 
+                count: 0, 
+                decks: new Set(),
+                bestRank: 999 
+            };
+        }
+        playerStats[pName].winrateSum += use.winrate;
+        playerStats[pName].count += 1;
+        playerStats[pName].decks.add(use.deckid);
+        if (use.rank < playerStats[pName].bestRank) playerStats[pName].bestRank = use.rank;
+    });
+
+    return Object.values(playerStats).map(p => ({
+        name: p.name,
+        avgWinrate: (p.winrateSum / p.count).toFixed(1),
+        deckCount: p.decks.size,
+        bestRank: p.bestRank,
+        totalGames: p.count
+    }));
+}
 };
