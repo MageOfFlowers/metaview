@@ -23,7 +23,6 @@ export async function initAnalysis() {
                 comps.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         }
 
-        // Gán các hàm vào window để gọi từ HTML
         Object.assign(window, {
             triggerRender: render,
             triggerUsageRender,
@@ -43,21 +42,56 @@ export function render() {
         endDate: document.getElementById('filterEnd').value,
         mode: document.getElementById('calcMode').value
     };
-    currentStats = MetaEngine.calculateStats(rawData, filters);
     
-    // Tính stats người chơi
-    const playerStats = MetaEngine.calculatePlayerStats(rawData, currentStats.filteredUses); // Cần lưu filteredUses vào currentStats ở MetaEngine
+    currentStats = MetaEngine.calculateStats(rawData, filters);
+    const playerStats = MetaEngine.calculatePlayerStats(currentStats.filteredUses);
     
     triggerUsageRender();
     triggerWinrateOnlyRender();
     charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank, 10);
-    
-    // Gọi render chart người chơi
     triggerPlayerRender(playerStats);
-    
     renderTableOnly();
 }
 
+function triggerPlayerRender(playerStats) {
+    const ctx = document.getElementById('playerRankingChart');
+    if (!ctx) return;
+
+    const topPlayers = playerStats.slice(0, 10);
+    if (charts.playerRank) charts.playerRank.destroy();
+
+    charts.playerRank = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: topPlayers.map(p => p.name),
+            datasets: [
+                { label: 'Winrate (%)', data: topPlayers.map(p => p.avgWinrate), backgroundColor: '#10b981', yAxisID: 'y' },
+                { label: 'Số Deck', data: topPlayers.map(p => p.deckCount), type: 'line', borderColor: '#f59e0b', yAxisID: 'y1' }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, position: 'left' },
+                y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } }
+            }
+        }
+    });
+
+    const honorBody = document.getElementById('player-honor-body');
+    if (honorBody) {
+        honorBody.innerHTML = topPlayers.map(p => `
+            <tr>
+                <td><strong>${p.name}</strong></td>
+                <td>Hạng ${p.bestRank}</td>
+                <td>${p.totalGames} giải</td>
+            </tr>
+        `).join('');
+    }
+}
+
+// ... Giữ nguyên các hàm triggerUsageRender, triggerWinrateOnlyRender, renderTableOnly, handleTooltip và analyzeQuantity từ file cũ của bạn ...
 export function triggerPlayerRender(playerStats) {
     const ctx = document.getElementById('playerRankingChart');
     if (!ctx) return;

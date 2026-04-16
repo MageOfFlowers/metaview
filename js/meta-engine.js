@@ -1,39 +1,26 @@
 export const MetaEngine = {
-    RARITY_ORDER: { 'SCR': 1, 'EX': 2, '5S': 3, 'UR': 4, 'SR': 5, 'R': 6, 'U': 7, 'C': 8 },
-
     getColorCode(s) {
         const map = { 'R': '#ef4444', 'P': '#a855f7', 'Y': '#eab308', 'G': '#22c55e' };
         return map[s] || '#64748b';
     },
 
-    getRarityColor(r) {
-        const colors = { 
-            'SCR': '#ff00ff', 'EX': '#00ffff', '5S': '#ffd700', 
-            'UR': '#f59e0b', 'SR': '#a855f7', 'R': '#2563eb', 'U': '#22c55e', 'C': '#94a3b8' 
-        };
-        return colors[r] || '#ccc';
-    },
-
     calculateStats(rawData, filters = {}) {
-    let { compUses, deckInfos, cards, competitions } = rawData; // Thêm competitions
-    const { compId, startDate, endDate, mode = 'deck', region = 'all' } = filters;    // 1. Xác định danh sách các ID giải đấu thuộc Region đã chọn
-    let validCompIdsByRegion = [];
-    if (region !== 'all' && competitions) {
-        validCompIdsByRegion = competitions
-            .filter(c => c.region === region)
-            .map(c => c.id);
-    }
+        let { compUses, deckInfos, cards, competitions } = rawData;
+        const { compId, startDate, endDate, mode = 'deck', region = 'all' } = filters;
 
-    let filteredUses = compUses.filter(use => {
-        const matchComp = compId === 'all' || use.competitionid == compId;
-        
-        // Lọc theo Region: Nếu không chọn 'all', chỉ lấy những 'use' thuộc giải đấu hợp lệ
-        const matchRegion = region === 'all' || validCompIdsByRegion.includes(Number(use.competitionid));        const useDate = new Date(use.createdAt);
-        const matchDate = (!startDate || useDate >= new Date(startDate)) && 
-                          (!endDate || useDate <= new Date(endDate));
-        
-        return matchComp && matchRegion && matchDate;
-    });
+        let validCompIdsByRegion = [];
+        if (region !== 'all' && competitions) {
+            validCompIdsByRegion = competitions.filter(c => c.region === region).map(c => c.id);
+        }
+
+        let filteredUses = compUses.filter(use => {
+            const matchComp = compId === 'all' || use.competitionid == compId;
+            const matchRegion = region === 'all' || validCompIdsByRegion.includes(Number(use.competitionid));
+            const useDate = new Date(use.createdAt);
+            const matchDate = (!startDate || useDate >= new Date(startDate)) && 
+                              (!endDate || useDate <= new Date(endDate));
+            return matchComp && matchRegion && matchDate;
+        });
 
         const cardStats = {};
         const colorStats = { 'R': 0, 'P': 0, 'Y': 0, 'G': 0 };
@@ -61,8 +48,33 @@ export const MetaEngine = {
                 avgWinrate: c.useCount > 0 ? (c.totalWin / c.useCount).toFixed(1) : 0
             })).sort((a, b) => b.useCount - a.useCount),
             colors: colorStats,
-            rarities: rarityStats
+            rarities: rarityStats,
+            filteredUses: filteredUses // Trả về để dùng cho Player Stats
         };
+    },
+
+    calculatePlayerStats(filteredUses) {
+        if (!filteredUses || filteredUses.length === 0) return [];
+        const playerStats = {};
+
+        filteredUses.forEach(use => {
+            const pName = use.playerName || "Người chơi ẩn danh";
+            if (!playerStats[pName]) {
+                playerStats[pName] = { name: pName, winSum: 0, count: 0, decks: new Set(), bestRank: 999 };
+            }
+            playerStats[pName].winSum += use.winrate;
+            playerStats[pName].count++;
+            playerStats[pName].decks.add(use.deckid);
+            if (use.rank && use.rank < playerStats[pName].bestRank) playerStats[pName].bestRank = use.rank;
+        });
+
+        return Object.values(playerStats).map(p => ({
+            name: p.name,
+            avgWinrate: (p.winSum / p.count).toFixed(1),
+            deckCount: p.decks.size,
+            bestRank: p.bestRank === 999 ? '-' : p.bestRank,
+            totalGames: p.count
+        })).sort((a, b) => b.avgWinrate - a.avgWinrate);
     },
 
     calculateQuantityStats(rawData, cardId) {
@@ -80,34 +92,5 @@ export const MetaEngine = {
             count: statsByQty[qty].count,
             avgWinrate: statsByQty[qty].count > 0 ? (statsByQty[qty].win / statsByQty[qty].count).toFixed(1) : 0
         }));
-    },
-
-    calculatePlayerStats(rawData, filteredUses) {
-    const playerStats = {};
-
-    filteredUses.forEach(use => {
-        const pName = use.playerName || "Ẩn danh"; // Giả định field này có trong compUses
-        if (!playerStats[pName]) {
-            playerStats[pName] = { 
-                name: pName, 
-                winrateSum: 0, 
-                count: 0, 
-                decks: new Set(),
-                bestRank: 999 
-            };
-        }
-        playerStats[pName].winrateSum += use.winrate;
-        playerStats[pName].count += 1;
-        playerStats[pName].decks.add(use.deckid);
-        if (use.rank < playerStats[pName].bestRank) playerStats[pName].bestRank = use.rank;
-    });
-
-    return Object.values(playerStats).map(p => ({
-        name: p.name,
-        avgWinrate: (p.winrateSum / p.count).toFixed(1),
-        deckCount: p.decks.size,
-        bestRank: p.bestRank,
-        totalGames: p.count
-    }));
-}
+    }
 };
