@@ -2,16 +2,40 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Game Portal</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-    <div class="container">
-        <h1>🎮 Card Game Management</h1>
+<body class="index-body">
+    <div class="container portal-container">
+        <header class="portal-header">
+            <h1>📊 Card Game <span class="highlight">Portal</span></h1>
+            <p>Hệ thống quản lý dữ liệu và phân tích Meta-game chuyên sâu</p>
+        </header>
+
         <div class="menu-grid">
-            <a href="analysis.html" class="menu-card">📈 Xem Phân Tích Meta</a>
-            <a href="admin.html" class="menu-card">⚙️ Vào Trang Quản Trị</a>
+            <a href="analysis.html" class="menu-card-v2">
+                <div class="card-icon">📈</div>
+                <div class="card-info">
+                    <h3>Phân Tích Meta</h3>
+                    <p>Thống kê tỷ lệ thắng, xu hướng các bộ bài và biểu đồ trực quan.</p>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+
+            <a href="admin.html" class="menu-card-v2">
+                <div class="card-icon">⚙️</div>
+                <div class="card-info">
+                    <h3>Quản Trị Hệ Thống</h3>
+                    <p>Quản lý người chơi, đăng ký giải đấu và xây dựng bộ bài.</p>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
         </div>
+        
+        <footer class="portal-footer">
+            <p>© 2026 MetaAnalyse Portal - Data Driven Gaming</p>
+        </footer>
     </div>
 </body>
 </html>

@@ -110,20 +110,28 @@ calculateStats(rawData, filters = {}) {
     }));
 },
 
-    calculateQuantityStats(rawData, cardId) {
-        const { compUses, deckInfos } = rawData;
-        const statsByQty = { 1: { win: 0, count: 0 }, 2: { win: 0, count: 0 }, 3: { win: 0, count: 0 }, 4: { win: 0, count: 0 } };
-        compUses.forEach(use => {
-            const cardInDeck = deckInfos.find(di => di.deckid === use.deckid && di.cardid == cardId);
-            if (cardInDeck) {
-                const qty = cardInDeck.quantity;
-                if (statsByQty[qty]) { statsByQty[qty].count++; statsByQty[qty].win += use.winrate; }
-            }
-        });
-        return Object.keys(statsByQty).map(qty => ({
-            quantity: qty,
-            count: statsByQty[qty].count,
-            avgWinrate: statsByQty[qty].count > 0 ? (statsByQty[qty].win / statsByQty[qty].count).toFixed(1) : 0
-        }));
-    }
+// Trong file meta-engine.js
+calculateQuantityStats(rawData, cardId) {
+    const { compUses, deckInfos } = rawData;
+    // Chỉ khởi tạo từ 1 đến 3
+    const statsByQty = { 
+        1: { win: 0, count: 0 }, 
+        2: { win: 0, count: 0 }, 
+        3: { win: 0, count: 0 } 
+    };
+
+    compUses.forEach(use => {
+        const cardInDeck = deckInfos.find(di => di.deckid === use.deckid && di.cardid == cardId);
+        if (cardInDeck && statsByQty[cardInDeck.quantity]) {
+            statsByQty[cardInDeck.quantity].count++;
+            statsByQty[cardInDeck.quantity].win += parseFloat(use.winrate || 0);
+        }
+    });
+
+    return Object.keys(statsByQty).map(q => ({
+        quantity: q,
+        count: statsByQty[q].count,
+        avgWinrate: statsByQty[q].count > 0 ? (statsByQty[q].win / statsByQty[q].count).toFixed(1) : 0
+    }));
+}
 };

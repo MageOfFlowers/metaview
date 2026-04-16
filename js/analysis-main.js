@@ -84,14 +84,9 @@ window.triggerPlayerRender = () => {
 // Thêm vào file analysis-main.js
 
 window.updateDeckRankingOnly = () => {
-    // Kiểm tra nếu dữ liệu stats chưa có (lần đầu load) thì không làm gì hoặc gọi render chung
-    if (!currentStats || !rawData) {
-        render();
-        return;
-    }
-
-    // Chỉ gọi đúng hàm render của biểu đồ Deck
-    // Sử dụng lại currentStats.filteredUses đã được tính từ trước đó
+    if (!currentStats || !rawData) return;
+    
+    // Gọi lại hàm vẽ với dữ liệu hiện có, không tính toán lại stats tổng
     charts.deckRank = renderDeckRanking(
         'deckRankChart', 
         rawData, 
