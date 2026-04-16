@@ -5,6 +5,7 @@ import { renderWinrateChart } from './charts/winrate-chart.js';
 import { renderDeckRanking } from './charts/deck-ranking.js';
 import { renderDeckComposition } from './charts/deck-analysis.js';
 import { renderUsageChart } from './charts/usage-charts.js';
+import { renderPlayerRanking } from './charts/player-ranking.js';
 
 let rawData = { cards: [], compUses: [], deckInfos: [], decks: [], competitions: [] };
 let currentStats = null; 
@@ -58,10 +59,20 @@ export function render() {
     
     // Gọi hàm hiển thị người chơi
     triggerPlayerRender(playerStats);
-    
+    window.triggerPlayerRender();
     renderTableOnly();
 }
-
+window.triggerPlayerRender = () => {
+    if (!currentStats || !rawData) return;
+    
+    charts.playerRank = renderPlayerRanking(
+        'playerRankChart', 
+        currentStats.filteredUses, 
+        rawData, 
+        charts.playerRank
+    );
+    };
+    
 function triggerPlayerRender(playerStats) {
     const ctx = document.getElementById('playerRankingChart');
     const honorBody = document.getElementById('player-honor-body');
