@@ -14,7 +14,7 @@ const metaPageSize = 10;
 
 export async function initAnalysis() {
     try {
-        const [cards, uses, infos, comps, decks] = await Promise.all([
+        const [cards, uses, infos, comps, decks, users] = await Promise.all([
             request('/cards'), request('/competition-use'), request('/deck-infos'),
             request('/competitions'), request('/decksget'),
             request('/users')
