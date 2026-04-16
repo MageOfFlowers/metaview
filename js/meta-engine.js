@@ -58,7 +58,7 @@ calculateStats(rawData, filters = {}) {
         rarities: rarityStats, 
         filteredUses: filteredUses 
     };
-}
+},
 
     calculatePlayerStats(filteredUses) {
         if (!filteredUses || filteredUses.length === 0) return [];
