@@ -16,7 +16,7 @@
     </header>
 
     <div class="card">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
             <div class="input-group">
                 <label>Giải đấu</label>
                 <select id="filterComp" style="width:100%; padding:8px;" onchange="triggerRender()"></select>
@@ -24,7 +24,7 @@
             <div class="input-group">
                 <label>Khu vực</label>
                 <select id="filterRegion" style="width:100%; padding:8px;" onchange="triggerRender()">
-                    <option value="all">Tất cả khu vực</option>
+                    <option value="all">Tất cả</option>
                     <option value="VN">Việt Nam</option>
                     <option value="INT">Quốc tế</option>
                 </select>
@@ -34,10 +34,14 @@
                 <input type="date" id="filterStart" style="width:100%; padding:7px;" onchange="triggerRender()">
             </div>
             <div class="input-group">
+                <label>Đến ngày</label>
+                <input type="date" id="filterEnd" style="width:100%; padding:7px;" onchange="triggerRender()">
+            </div>
+            <div class="input-group">
                 <label>Chế độ tính</label>
                 <select id="calcMode" style="width:100%; padding:8px;" onchange="triggerRender()">
-                    <option value="deck">Tính theo số Deck sử dụng</option>
-                    <option value="total">Tính tổng số bản Card</option>
+                    <option value="deck">Theo số bộ bài</option>
+                    <option value="total">Theo số bản card</option>
                 </select>
             </div>
         </div>
@@ -50,13 +54,12 @@
                 <canvas id="deckRankingChart"></canvas>
             </div>
         </div>
-
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3>🏆 Xếp hạng Người chơi</h3>
                 <select id="playerSortMode" onchange="window.triggerPlayerRender()" style="padding: 5px;">
-                    <option value="winrate">Theo tỷ lệ thắng</option>
-                    <option value="avgRank">Theo hạng trung bình</option>
+                    <option value="winrate">Theo Winrate</option>
+                    <option value="avgRank">Theo Hạng TB</option>
                 </select>
             </div>
             <div style="height: 400px; position: relative;">
@@ -70,15 +73,12 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h3>🎨 Tỉ lệ sử dụng</h3>
                 <select id="usageViewMode" onchange="triggerUsageRender()">
-                    <option value="color">Theo Hệ (Color)</option>
-                    <option value="rarity">Theo Độ hiếm (Rarity)</option>
+                    <option value="color">Theo Hệ</option>
+                    <option value="rarity">Theo Độ hiếm</option>
                 </select>
             </div>
-            <div style="height: 300px; position: relative;">
-                <canvas id="usageTypeChart"></canvas>
-            </div>
+            <div style="height: 300px; position: relative;"><canvas id="usageTypeChart"></canvas></div>
         </div>
-
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h3>🔝 Top 10 Thẻ bài</h3>
@@ -94,9 +94,7 @@
                     </select>
                 </div>
             </div>
-            <div style="height: 300px; position: relative;">
-                <canvas id="winrateBarChart"></canvas>
-            </div>
+            <div style="height: 300px; position: relative;"><canvas id="winrateBarChart"></canvas></div>
         </div>
     </div>
 
@@ -107,37 +105,14 @@
         </div>
         <div class="table-responsive">
             <table>
-                <thead>
-                    <tr>
-                        <th>Tên thẻ</th><th>Hệ</th><th>Độ hiếm</th><th>Sử dụng</th><th>Winrate</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Tên thẻ</th><th>Hệ</th><th>Hiếm</th><th>Sử dụng</th><th>Winrate</th></tr></thead>
                 <tbody id="meta-body"></tbody>
             </table>
         </div>
         <div id="meta-pagination"></div>
     </div>
-
-    <div id="quantity-analysis" class="card hidden" style="border: 2px solid var(--primary); margin-top: 20px;">
-        <h3 id="qty-title">Chi tiết</h3>
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <div class="card" style="height: 300px; position: relative;">
-                <canvas id="qtyWinrateChart"></canvas>
-            </div>
-            <div class="table-responsive">
-                <table>
-                    <thead><tr><th>Số lượng</th><th>Bộ bài</th><th>Winrate</th></tr></thead>
-                    <tbody id="qty-table-body"></tbody>
-                </table>
-            </div>
-        </div>
-        <div id="deck-comp-container"></div>
-    </div>
 </div>
 
-<script type="module">
-    import { initAnalysis } from './js/analysis-main.js';
-    document.addEventListener('DOMContentLoaded', initAnalysis);
-</script>
+<script type="module" src="./js/analysis-main.js"></script>
 </body>
 </html>
