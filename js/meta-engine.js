@@ -9,6 +9,11 @@ export const MetaEngine = {
         return colors[r] || '#64748b';
     },
 
+    getColorCode(s) {
+        const map = { 'R': '#ef4444', 'P': '#a855f7', 'Y': '#eab308', 'G': '#22c55e' };
+        return map[s] || '#64748b';
+    },
+
     // meta-engine.js - Cập nhật hàm calculateStats
 calculateStats(rawData, filters = {}) {
     let { compUses, deckInfos, cards } = rawData;
