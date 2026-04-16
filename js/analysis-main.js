@@ -112,48 +112,40 @@ export function triggerWinrateOnlyRender() {
     charts.winrate = renderWinrateChart('winrateBarChart', data.slice(0, 10), charts.winrate);
 }
 export function renderTableOnly() {
-    const body = document.getElementById('meta-body');
-    const paginationContainer = document.getElementById('meta-pagination'); // Cần thêm thẻ này trong HTML
-    if (!body || !currentStats?.cards) return;
+    if (!currentStats) return;
+    const tbody = document.getElementById('meta-body');
+    const sortMode = document.getElementById('metaSortMode')?.value || 'usage';
+    const searchTerm = document.getElementById('searchCard').value.toLowerCase();
 
-    const searchTerm = document.getElementById('searchCard')?.value.toLowerCase() || "";
-    
-    // 1. Lọc dữ liệu theo tìm kiếm
-    const filteredData = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
+    // 1. Lấy dữ liệu và lọc theo tìm kiếm
+    let displayData = currentStats.cardStats.filter(c => c.name.toLowerCase().includes(searchTerm));
 
-    // 2. Tính toán phân trang
-    const totalPages = Math.ceil(filteredData.length / metaPageSize);
-    
-    // Đảm bảo trang hiện tại không vượt quá tổng số trang sau khi lọc
-    if (metaCurrentPage > totalPages && totalPages > 0) metaCurrentPage = totalPages;
-    if (metaCurrentPage < 1) metaCurrentPage = 1;
+    // 2. Sắp xếp dựa trên lựa chọn
+    if (sortMode === 'winrate') {
+        displayData.sort((a, b) => b.avgWinrate - a.avgWinrate);
+    } else {
+        displayData.sort((a, b) => b.useCount - a.useCount);
+    }
 
-    const startIndex = (metaCurrentPage - 1) * metaPageSize;
-    const paginatedData = filteredData.slice(startIndex, startIndex + metaPageSize);
+    // 3. Phân trang và Render (giữ nguyên logic cũ của bạn)
+    const totalPages = Math.ceil(displayData.length / metaPageSize);
+    const start = (metaCurrentPage - 1) * metaPageSize;
+    const pageData = displayData.slice(start, start + metaPageSize);
 
-    // 3. Render nội dung bảng
-    body.innerHTML = paginatedData.map(card => `
-        <tr style="cursor:pointer" 
-            onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')"
-            onmousemove="handleTooltip(event, true)" 
-            onmouseleave="handleTooltip(event, false)">
-            <td>
-                <div class="card-tooltip">
-                    ${card.name}
-                    <img src="${card.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
-                </div>
-            </td>
-            <td>${card.color || '-'}</td>
-            <td>${card.rarity || '-'}</td>
-            <td>${card.useCount}</td>
-            <td>${card.avgWinrate}%</td>
+    tbody.innerHTML = pageData.map(c => `
+        <tr onclick="window.renderDeckDetail(${c.id}, '${c.name}')" style="cursor:pointer;">
+            <td><strong>${c.name}</strong></td>
+            <td><span class="badge" style="background:${MetaEngine.getColorCode(c.color)}">${c.color}</span></td>
+            <td>${c.rarity}</td>
+            <td>${c.useCount}</td>
+            <td>${c.avgWinrate}%</td>
         </tr>
     `).join('');
-
-    // 4. Render bộ điều khiển phân trang
-    if (paginationContainer) {
-        renderPaginationControls(paginationContainer, totalPages);
-    }
+    
+    renderPagination('meta-pagination', totalPages, metaCurrentPage, (p) => {
+        metaCurrentPage = p;
+        renderTableOnly();
+    });
 }
 
 // Hàm bổ trợ render nút chuyển trang
