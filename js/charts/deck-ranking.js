@@ -2,29 +2,25 @@ import { MetaEngine } from '../meta-engine.js';
 
 export function renderDeckRanking(canvasId, rawData, currentChart = null, limit = 10) {
     const canvas = document.getElementById(canvasId);
-    if (!canvas) return null;
+    if (!canvas || !filteredUses) return null; // Kiểm tra an toàn
     if (currentChart) currentChart.destroy();
 
     const ctx = canvas.getContext('2d');
-    
-    const compUses = rawData.compUses || [];
-    const deckInfos = rawData.deckInfos || [];
-    const cards = rawData.cards || [];
-    const decks = rawData.decks || [];
+    const { deckInfos, cards, decks } = rawData;
 
-    // Tính toán thống kê Deck
+    // Tính toán thống kê Deck dựa trên filteredUses
     const deckStatsMap = {};
     const deckMap = new Map(decks.map(d => [String(d.id), d]));
 
-    compUses.forEach(use => {
+    filteredUses.forEach(use => {
         const deckIdStr = String(use.deckid);
         if (!deckMap.has(deckIdStr)) return;
 
         if (!deckStatsMap[deckIdStr]) {
             deckStatsMap[deckIdStr] = { id: use.deckid, totalWin: 0, count: 0, totalRank: 0 };
         }
-        deckStatsMap[deckIdStr].totalWin += (use.winrate || 0);
-        deckStatsMap[deckIdStr].totalRank += (use.rank || 99);
+        deckStatsMap[deckIdStr].totalWin += parseFloat(use.winrate || 0);
+        deckStatsMap[deckIdStr].totalRank += parseInt(use.rank || 99);
         deckStatsMap[deckIdStr].count++;
     });
 
