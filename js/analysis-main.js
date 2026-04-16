@@ -258,3 +258,46 @@ export function analyzeQuantity(cardId, cardName) {
     
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+// Hàm vẽ thanh phân trang (Helper)
+function renderPagination(containerId, totalPages, currentPage, onPageChange) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = `<div class="pagination" style="display: flex; justify-content: center; gap: 5px; margin-top: 15px;">`;
+    
+    // Nút Trước
+    html += `<button class="btn-nav" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">◀</button>`;
+
+    // Các số trang
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            html += `<button class="btn-nav ${i === currentPage ? 'active' : ''}" 
+                     style="${i === currentPage ? 'background: var(--primary); color: white;' : ''}" 
+                     data-page="${i}">${i}</button>`;
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+            html += `<span style="line-height: 30px;">...</span>`;
+        }
+    }
+
+    // Nút Sau
+    html += `<button class="btn-nav" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">▶</button>`;
+    html += `</div>`;
+
+    container.innerHTML = html;
+
+    // Gán sự kiện click
+    container.querySelectorAll('button[data-page]').forEach(btn => {
+        btn.onclick = () => {
+            const page = parseInt(btn.getAttribute('data-page'));
+            if (page >= 1 && page <= totalPages) {
+                onPageChange(page);
+            }
+        };
+    });
+}
