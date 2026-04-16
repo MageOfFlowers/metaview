@@ -80,16 +80,6 @@ window.triggerPlayerRender = () => {
         charts.playerRank
     );
 };
-window.triggerPlayerRender = () => {
-    if (!currentStats || !rawData) return;
-    
-    charts.playerRank = renderPlayerRanking(
-        'playerRankChart', 
-        currentStats.filteredUses, 
-        rawData, 
-        charts.playerRank
-    );
-    };
     
 function triggerPlayerRender(playerStats) {
     const ctx = document.getElementById('playerRankChart');
