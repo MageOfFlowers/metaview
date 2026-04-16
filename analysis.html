@@ -76,40 +76,29 @@
         </div>
     </div>
 
+    <div class="dashboard-grid">
     <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3>🏆 Xếp hạng Deck</h3>
-            <input type="text" id="searchDeck" class="filter-sm" placeholder="Tìm deck..." oninput="triggerRender()">
+        <h3>Xếp hạng Bộ bài (Top Meta)</h3>
+        <div style="height: 400px;">
+            <canvas id="deckRankChart"></canvas>
         </div>
-        <div style="height: 400px;"><canvas id="deckRankingChart"></canvas></div>
-    </div>
-
-<div class="dashboard-grid" style="margin-top: 20px;">
-    <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3>🏅 Xếp hạng Người chơi</h3>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">Top 10 Winrate & Đa dạng Deck</span>
-        </div>
-        <div style="height: 350px;"><canvas id="playerRankingChart"></canvas></div>
     </div>
 
     <div class="card">
-        <h3>Hall of Fame</h3>
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Người chơi</th>
-                        <th>Hạng tốt nhất</th>
-                        <th>Số giải</th>
-                    </tr>
-                </thead>
-                <tbody id="player-honor-body">
-                    </tbody>
-            </table>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3>Xếp hạng Người chơi</h3>
+            <select id="playerSortMode" onchange="triggerPlayerRender()" style="padding: 4px;">
+                <option value="winrate">Theo Winrate</option>
+                <option value="rank">Theo Hạng TB</option>
+            </select>
+        </div>
+        <div style="height: 400px;">
+            <canvas id="playerRankChart"></canvas>
         </div>
     </div>
 </div>
+
+
 
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">

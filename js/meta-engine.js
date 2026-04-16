@@ -65,44 +65,50 @@ calculateStats(rawData, filters = {}) {
     };
 },
 
-    calculatePlayerStats(filteredUses, users = []) {
-        if (!filteredUses || filteredUses.length === 0) return [];
-        
-        // Tạo một bản đồ (Map) để tra cứu tên nhanh hơn: userId -> name
-        const userMap = new Map(users.map(u => [u.id, u.username || u.name]));
-        
-        const playerStats = {};
-        filteredUses.forEach(use => {
-            // Lấy tên từ Map dựa trên userId trong competition-use
-            const pName = userMap.get(use.userid) || "Người chơi #" + use.userid;
-            
-            if (!playerStats[pName]) {
-                playerStats[pName] = { 
-                    name: pName, 
-                    winSum: 0, 
-                    count: 0, 
-                    decks: new Set(), 
-                    bestRank: 999 
-                };
-            }
-            playerStats[pName].winSum += parseFloat(use.winrate || 0);
-            playerStats[pName].count++;
-            playerStats[pName].decks.add(use.deckid);
-            
-            const currentRank = parseInt(use.rank);
-            if (!isNaN(currentRank) && currentRank < playerStats[pName].bestRank) {
-                playerStats[pName].bestRank = currentRank;
-            }
-        });
+   calculatePlayerStats(filteredUses, users = [], deckInfos = [], decks = [], competitions = []) {
+    const userMap = new Map(users.map(u => [u.id, u.username || u.name]));
+    const deckMap = new Map(decks.map(d => [d.id, d.name]));
+    const compMap = new Map(competitions.map(c => [c.id, c.name]));
 
-        return Object.values(playerStats).map(p => ({
-            name: p.name,
-            avgWinrate: (p.winSum / p.count).toFixed(1),
-            deckCount: p.decks.size,
-            bestRank: p.bestRank === 999 ? '-' : p.bestRank,
-            totalGames: p.count
-        })).sort((a, b) => b.avgWinrate - a.avgWinrate);
-    },
+    const playerStats = {};
+
+    filteredUses.forEach(use => {
+        const pName = userMap.get(use.userid) || `User ${use.userid}`;
+        if (!playerStats[pName]) {
+            playerStats[pName] = { name: pName, wins: 0, count: 0, totalRank: 0, decksUsed: {} };
+        }
+
+        playerStats[pName].wins += parseFloat(use.winrate || 0);
+        playerStats[pName].totalRank += parseInt(use.rank || 0);
+        playerStats[pName].count++;
+
+        // Theo dõi stats từng deck của người chơi này
+        if (!playerStats[pName].decksUsed[use.deckid]) {
+            playerStats[pName].decksUsed[use.deckid] = { 
+                winrate: use.winrate, 
+                bestRank: use.rank, 
+                compId: use.competitionid 
+            };
+        } else {
+            if (parseInt(use.rank) < parseInt(playerStats[pName].decksUsed[use.deckid].bestRank)) {
+                playerStats[pName].decksUsed[use.deckid].bestRank = use.rank;
+                playerStats[pName].decksUsed[use.deckid].compId = use.competitionid;
+            }
+        }
+    });
+
+    return Object.values(playerStats).map(p => ({
+        name: p.name,
+        avgWinrate: (p.wins / p.count).toFixed(1),
+        avgRank: (p.totalRank / p.count).toFixed(1),
+        deckDetails: Object.keys(p.decksUsed).map(did => ({
+            name: deckMap.get(parseInt(did)) || "N/A",
+            winrate: p.decksUsed[did].winrate,
+            bestRank: p.decksUsed[did].bestRank,
+            compName: compMap.get(p.decksUsed[did].compId) || "N/A"
+        }))
+    }));
+},
 
     calculateQuantityStats(rawData, cardId) {
         const { compUses, deckInfos } = rawData;
