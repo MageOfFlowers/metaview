@@ -173,6 +173,45 @@
         const el = document.getElementById(id);
         if (data && el) el.innerHTML = data.map(i => `<option value="${i.id}">${i[key] || i.name}</option>`).join('');
     }
+    // Gán sự kiện cho nút Xác nhận đăng ký
+document.getElementById('btn-reg').onclick = async () => {
+    // Thu thập dữ liệu từ các input
+    const compEl = document.getElementById('regComp');
+    const userEl = document.getElementById('regUser');
+    const deckEl = document.getElementById('regDeck');
+    const winRateEl = document.getElementById('regWin');
+    const rankEl = document.getElementById('regRank');
+
+    // Kiểm tra dữ liệu đầu vào cơ bản
+    if (!compEl.value || !userEl.value || !deckEl.value) {
+        alert("Vui lòng chọn đầy đủ Giải đấu, Người chơi và Bộ bài!");
+        return;
+    }
+
+    const body = {
+        competitionid: parseInt(compEl.value),
+        userid: parseInt(userEl.value),
+        deckid: parseInt(deckEl.value),
+        winrate: parseFloat(winRateEl.value) || 0,
+        rank: parseInt(rankEl.value) || 1
+    };
+
+    console.log("Đang gửi dữ liệu đăng ký:", body); // Debug dữ liệu
+
+    try {
+        const res = await request('/competition-use', 'POST', body);
+        if (res) {
+            alert("✅ Đăng ký giải đấu hoàn tất!");
+            // Tùy chọn: Reset form hoặc đóng accordion sau khi thành công
+            // location.reload(); 
+        } else {
+            alert("❌ Lỗi: Server từ chối yêu cầu. Vui lòng kiểm tra lại dữ liệu.");
+        }
+    } catch (error) {
+        console.error("Lỗi khi gọi API đăng ký:", error);
+        alert("❌ Không thể kết nối đến máy chủ.");
+    }
+};
 
     init();
 </script>

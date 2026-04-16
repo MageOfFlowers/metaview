@@ -314,3 +314,126 @@ select, input {
 .color-btn.active[data-color="G"] { background: #22c55e; color: white; }
 .color-btn.active[data-color="Y"] { background: #eab308; color: white; }
 .color-btn.active[data-color="P"] { background: #a855f7; color: white; }
+
+/* --- NÂNG CẤP STYLE CHO CÁC NÚT (BUTTONS) --- */
+
+/* Reset cơ bản cho nút để đảm bảo nhất quán */
+button, .btn-submit, .color-btn {
+    font-family: inherit; /* Sử dụng font của body */
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out; /* Tạo hiệu ứng chuyển động mượt mà */
+    outline: none; /* Xóa viền focus mặc định phèn */
+}
+
+/* 1. Phong cách nút "Submit" chính (Lưu, Xác nhận...) - Nút Màu Xanh */
+.btn-submit {
+    display: inline-block;
+    padding: 12px 24px;
+    background-image: linear-gradient(to bottom right, var(--primary), #3b82f6); /* Gradient xanh nhẹ */
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2), 0 2px 4px -1px rgba(37, 99, 235, 0.1); /* Bóng xanh */
+    text-transform: uppercase; /* Chữ hoa cho mạnh mẽ */
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Viền trong mờ nhẹ */
+    width: auto; /* Mặc định không chiếm hết chiều ngang */
+}
+
+/* Hiệu ứng di chuột cho nút Submit */
+.btn-submit:hover {
+    background-image: linear-gradient(to bottom right, var(--primary-hover), #2563eb);
+    transform: translateY(-2px); /* Nhích nhẹ lên trên */
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -2px rgba(37, 99, 235, 0.2); /* Bóng đậm hơn */
+}
+
+/* Hiệu ứng khi nhấn giữ nút Submit */
+.btn-submit:active {
+    transform: translateY(1px) scale(0.98); /* Lún xuống và thu nhỏ nhẹ */
+    box-shadow: 0 2px 4px -1px rgba(37, 99, 235, 0.2);
+}
+
+/* 2. Phong cách nút "Filter Màu" (Color-btn) - Nút Trắng dạng "Pill" */
+.filter-bar .color-btn {
+    padding: 8px 18px;
+    background-color: #ffffff;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 99px; /* Dạng viên thuốc viên mãn */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* Hiệu ứng di chuột cho nút Filter */
+.filter-bar .color-btn:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+/* Phong cách khi nút Filter được CHỌN (Active) */
+.filter-bar .color-btn.active {
+    color: white !important;
+    border-color: transparent;
+    font-weight: 600;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Màu riêng cho từng nút Active (đã bao gồm Gradient nhẹ) */
+.filter-bar .color-btn.active[data-color="all"] {
+    background-image: linear-gradient(to bottom right, #64748b, #475569); /* Xám đậm */
+}
+.filter-bar .color-btn.active[data-color="R"] {
+    background-image: linear-gradient(to bottom right, #ef4444, #dc2626); /* Đỏ */
+}
+.filter-bar .color-btn.active[data-color="G"] {
+    background-image: linear-gradient(to bottom right, #22c55e, #16a34a); /* Xanh lá */
+}
+.filter-bar .color-btn.active[data-color="Y"] {
+    background-image: linear-gradient(to bottom right, #eab308, #ca8a04); /* Vàng */
+}
+.filter-bar .color-btn.active[data-color="P"] {
+    background-image: linear-gradient(to bottom right, #a855f7, #9333ea); /* Tím */
+}
+
+/* 3. Phong cách nút "Xóa" nhỏ (Dấu ✖) trong danh sách */
+.selected-row button {
+    padding: 2px 6px;
+    background: #fee2e2; /* Nền đỏ nhạt mờ */
+    border-radius: 6px;
+    color: #ef4444 !important; /* Chữ đỏ */
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.selected-row button:hover {
+    background: #fecaca; /* Đỏ đậm hơn khi hover */
+    transform: scale(1.1); /* Phóng to nhẹ */
+}
+
+/* --- ĐIỀU CHỈNH NHỎ VỀ BỐ CỤC ĐỂ NÚT ĐẸP HƠN --- */
+
+/* Đảm bảo Filter Bar căn giữa và thoáng */
+.filter-bar {
+    justify-content: center; /* Căn giữa các nút */
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+/* Cho ô tìm kiếm trông đồng bộ hơn */
+#searchCard {
+    border-radius: 99px; /* Dạng viên thuốc giống nút */
+    padding: 8px 20px;
+    flex: 0 0 250px; /* Không cho ô tìm kiếm chiếm quá nhiều */
+}
+
+/* Căn giữa nút Save Deck */
+#save-deck-btn {
+    display: block;
+    margin: 30px auto 10px auto; /* Căn giữa bằng margin auto */
+}
