@@ -47,21 +47,39 @@ export function render() {
         mode: document.getElementById('calcMode').value
     };
 
-    // 1. Tính toán stats tổng quát
+    // 1. Tính toán stats
     currentStats = MetaEngine.calculateStats(rawData, filters);
     
-    // 2. Lấy dữ liệu người chơi (Sử dụng filteredUses vừa được trả về ở trên)
-    const playerStats = MetaEngine.calculatePlayerStats(currentStats.filteredUses, rawData.users);    
-    // 3. Render các thành phần
+    // 2. Render Usage & Winrate
     triggerUsageRender();
     triggerWinrateOnlyRender();
-    charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank, 10);
+
+    // 3. Render Deck Ranking (Sửa ID và truyền đủ filteredUses)
+    charts.deckRank = renderDeckRanking(
+        'deckRankChart', 
+        rawData, 
+        currentStats.filteredUses, 
+        charts.deckRank, 
+        10
+    );
     
-    // Gọi hàm hiển thị người chơi
-    triggerPlayerRender(playerStats);
-    window.triggerPlayerRender();
+    // 4. Render Player Ranking
+    triggerPlayerRender();
+    
     renderTableOnly();
 }
+
+// Thống nhất 1 hàm trigger duy nhất
+window.triggerPlayerRender = () => {
+    if (!currentStats || !rawData) return;
+    
+    charts.playerRank = renderPlayerRanking(
+        'playerRankChart', // Khớp với ID trong HTML
+        currentStats.filteredUses, 
+        rawData, 
+        charts.playerRank
+    );
+};
 window.triggerPlayerRender = () => {
     if (!currentStats || !rawData) return;
     
@@ -74,7 +92,7 @@ window.triggerPlayerRender = () => {
     };
     
 function triggerPlayerRender(playerStats) {
-    const ctx = document.getElementById('playerRankingChart');
+    const ctx = document.getElementById('playerRankChart');
     const honorBody = document.getElementById('player-honor-body');
     if (!ctx || !honorBody) return;
 
