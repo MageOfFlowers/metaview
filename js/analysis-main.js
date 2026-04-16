@@ -45,115 +45,61 @@ export function render() {
         endDate: document.getElementById('filterEnd').value,
         mode: document.getElementById('calcMode').value
     };
-    
+
+    // 1. Tính toán stats tổng quát
     currentStats = MetaEngine.calculateStats(rawData, filters);
     
-    metaCurrentPage = 1;
+    // 2. Lấy dữ liệu người chơi (Sử dụng filteredUses vừa được trả về ở trên)
     const playerStats = MetaEngine.calculatePlayerStats(currentStats.filteredUses);
     
+    // 3. Render các thành phần
     triggerUsageRender();
     triggerWinrateOnlyRender();
     charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank, 10);
-    triggerPlayerRender(playerStats); // Gọi hàm render biểu đồ và bảng người chơi
+    
+    // Gọi hàm hiển thị người chơi
+    triggerPlayerRender(playerStats);
+    
     renderTableOnly();
 }
 
 function triggerPlayerRender(playerStats) {
     const ctx = document.getElementById('playerRankingChart');
-    if (!ctx) return;
+    const honorBody = document.getElementById('player-honor-body');
+    if (!ctx || !honorBody) return;
 
-    // Chỉ lấy Top 10 người chơi có Winrate cao nhất
-    const topPlayers = playerStats.sort((a, b) => b.avgWinrate - a.avgWinrate).slice(0, 10);
+    const topPlayers = playerStats.slice(0, 10);
 
+    // Biểu đồ
     if (charts.playerRank) charts.playerRank.destroy();
-
-    // Tạo biểu đồ kết hợp (bar và line)
     charts.playerRank = new Chart(ctx.getContext('2d'), {
-        type: 'bar', // Mặc định là bar chart
+        type: 'bar',
         data: {
-            labels: topPlayers.map(p => p.name), // Trục X là tên người chơi
+            labels: topPlayers.map(p => p.name),
             datasets: [
-                { 
-                    label: 'Winrate (%)', 
-                    data: topPlayers.map(p => p.avgWinrate), 
-                    backgroundColor: '#10b981', // Màu cột Winrate
-                    yAxisID: 'y' // Trục Y bên trái cho Winrate
-                },
-                { 
-                    label: 'Số Deck', 
-                    data: topPlayers.map(p => p.deckCount), 
-                    type: 'line', // Chuyển thành line chart cho số lượng Deck
-                    borderColor: '#f59e0b', // Màu đường số Deck
-                    yAxisID: 'y1' // Trục Y bên phải cho số lượng Deck
-                }
+                { label: 'Winrate (%)', data: topPlayers.map(p => p.avgWinrate), backgroundColor: '#10b981', yAxisID: 'y' },
+                { label: 'Số Deck', data: topPlayers.map(p => p.deckCount), type: 'line', borderColor: '#f59e0b', yAxisID: 'y1' }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { // Trục Y bên trái cho Winrate
-                    beginAtZero: true,
-                    position: 'left',
-                    ticks: { callback: value => value + '%' } // Hiển thị đơn vị %
-                },
-                y1: { // Trục Y bên phải cho số lượng Deck
-                    beginAtZero: true,
-                    position: 'right',
-                    grid: { drawOnChartArea: false }, // Không vẽ đường lưới của trục Y bên phải trên khu vực biểu đồ
-                    ticks: { callback: value => value } // Hiển thị số nguyên
-                },
-                x: { // Trục X
-                    ticks: {
-                        autoSkip: true, // Tự động ẩn bớt nhãn nếu quá nhiều
-                        maxRotation: 45, // Góc xoay tối đa là 45 độ
-                        minRotation: 45 // Góc xoay tối thiểu là 45 độ
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top', // Vị trí chú giải
-                    labels: {
-                        usePointStyle: true // Sử dụng điểm thay vì ô vuông cho chú giải
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.parsed.y !== null) {
-                                label += context.parsed.y + (context.datasetIndex === 0 ? '%' : '');
-                            }
-                            return label;
-                        }
-                    }
-                }
+                y: { beginAtZero: true, position: 'left' },
+                y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } },
+                x: { ticks: { maxRotation: 45, minRotation: 45 } }
             }
         }
     });
 
-    // Render dữ liệu cho bảng "Hall of Fame"
-    const honorBody = document.getElementById('player-honor-body');
-    if (honorBody) {
-        if (playerStats.length === 0) {
-            honorBody.innerHTML = '<tr><td colspan="3">Không có dữ liệu người chơi</td></tr>';
-        } else {
-            // Sắp xếp người chơi theo hạng cao nhất
-            const bestRankPlayers = playerStats.filter(p => p.bestRank !== '-').sort((a, b) => a.bestRank - b.bestRank).slice(0, 10);
-            
-            honorBody.innerHTML = bestRankPlayers.map(p => `
-                <tr>
-                    <td><strong>${p.name}</strong></td>
-                    <td>Hạng ${p.bestRank}</td>
-                    <td>${p.totalGames} giải</td>
-                </tr>
-            `).join('');
-        }
-    }
+    // Bảng Hall of Fame
+    honorBody.innerHTML = topPlayers.map(p => `
+        <tr>
+            <td><strong>${p.name}</strong></td>
+            <td>Hạng ${p.bestRank}</td>
+            <td>${p.totalGames} giải</td>
+        </tr>
+    `).join('');
 }
 
 // ... Giữ nguyên các hàm triggerUsageRender, triggerWinrateOnlyRender, renderTableOnly, handleTooltip và analyzeQuantity từ file cũ của bạn ...
