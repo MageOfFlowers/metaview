@@ -1,3 +1,4 @@
+// js/charts/deck-analysis.js
 import { MetaEngine } from '../meta-engine.js';
 
 let currentPage = 1;
@@ -17,10 +18,10 @@ export function renderDeckComposition(containerId, cardId, rawData) {
         return;
     }
 
-    // 2. Gom nhóm và tính toán chỉ số cho từng bộ bài
+    // 2. Tính toán chỉ số cho từng bộ bài
     const uniqueDeckIds = [...new Set(decksWithCard.map(d => d.deckid))];
     
-    // Lấy tiêu chí sắp xếp từ dropdown của bảng Meta (metaSortMode)
+    // Đọc chế độ sắp xếp từ dropdown ở Danh sách Meta bên ngoài
     const sortMode = document.getElementById('metaSortMode')?.value || 'usage';
 
     let deckList = uniqueDeckIds.map(dId => {
@@ -40,7 +41,7 @@ export function renderDeckComposition(containerId, cardId, rawData) {
         };
     });
 
-    // 3. Sắp xếp dựa theo tiêu chí của bảng Meta
+    // 3. Sắp xếp theo lựa chọn của Danh sách Meta
     if (sortMode === 'winrate') {
         deckList.sort((a, b) => b.winrate - a.winrate);
     } else {
@@ -50,10 +51,10 @@ export function renderDeckComposition(containerId, cardId, rawData) {
     const totalPages = Math.ceil(deckList.length / pageSize);
     const paginatedDecks = deckList.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-    // 4. Render Giao diện
+    // 4. Render giao diện với Card lớn (45x65px)
     let html = `
         <div class="deck-analysis-container" style="margin-top:20px; border-top: 2px solid #eee; padding-top:20px;">
-            <h4 style="margin-bottom: 15px; color: var(--primary);">🗂️ Các bộ bài tiêu biểu sử dụng thẻ này</h4>
+            <h4 style="margin-bottom:15px; color: var(--primary);">🗂️ Các bộ bài tiêu biểu sử dụng thẻ này</h4>
             <div class="deck-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
     `;
 
@@ -61,7 +62,7 @@ export function renderDeckComposition(containerId, cardId, rawData) {
         html += `
             <div class="card" style="border: 1px solid #e2e8f0; background: #f8fafc; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
-                    <strong style="font-size: 1rem; color: #1e293b;">${deck.name}</strong>
+                    <strong style="font-size: 0.95rem; color: #1e293b;">${deck.name}</strong>
                     <div style="text-align: right;">
                         <div style="font-size: 0.85rem; color: #10b981; font-weight: bold;">${deck.winrate}% WR</div>
                         <div style="font-size: 0.7rem; color: #64748b;">${deck.count} lượt dùng</div>
@@ -76,37 +77,19 @@ export function renderDeckComposition(containerId, cardId, rawData) {
                 const color = MetaEngine.getColorCode(card.color);
                 html += `
                     <div title="${card.name}" style="
-                        width: 45px; 
-                        height: 65px; 
-                        background: ${color}; 
-                        border-radius: 4px; 
-                        position: relative; 
-                        border: 1px solid rgba(0,0,0,0.15);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    ">
-                        <span style="font-size: 9px; color: white; font-weight: bold; text-align: center; line-height: 1; padding: 2px; text-shadow: 1px 1px 2px #000;">
-                            ${card.name.length > 12 ? card.name.substring(0, 10) + '..' : card.name}
+                        width: 45px; height: 65px; background: ${color}; 
+                        border-radius: 4px; position: relative; border: 1px solid rgba(0,0,0,0.15);
+                        display: flex; align-items: center; justify-content: center;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <span style="font-size: 8px; color: white; font-weight: bold; text-align: center; line-height: 1.1; padding: 2px; text-shadow: 1px 1px 2px #000;">
+                            ${card.name.length > 15 ? card.name.substring(0, 12) + '..' : card.name}
                         </span>
                         <span style="
-                            position: absolute; 
-                            top: -6px; 
-                            right: -6px; 
-                            background: #ef4444; 
-                            color: white; 
-                            font-size: 10px; 
-                            width: 18px;
-                            height: 18px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            border-radius: 50%;
-                            border: 1.5px solid white;
-                            font-weight: bold;
-                            z-index: 1;
-                        ">
+                            position: absolute; top: -6px; right: -6px; 
+                            background: #ef4444; color: white; font-size: 10px; 
+                            width: 18px; height: 18px; display: flex; 
+                            align-items: center; justify-content: center;
+                            border-radius: 50%; border: 1.5px solid white; font-weight: bold;">
                             ${comp.quantity}
                         </span>
                     </div>
@@ -114,43 +97,37 @@ export function renderDeckComposition(containerId, cardId, rawData) {
             }
         });
 
-        html += `
-                </div>
-            </div>
-        `;
+        html += `</div></div>`;
     });
 
     html += `</div>`;
 
-    // 5. Pagination
+    // 5. Điều khiển phân trang
     if (totalPages > 1) {
         html += `
             <div style="display: flex; justify-content: center; gap: 15px; margin-top: 25px;">
-                <button class="btn-nav" ${currentPage === 1 ? 'disabled' : ''} 
-                    onclick="window.updateDeckPage(-1, '${containerId}', ${cardId})" 
-                    style="padding: 5px 15px;">◀</button>
-                <span style="font-weight: bold; line-height: 32px; color: #475569;">${currentPage} / ${totalPages}</span>
-                <button class="btn-nav" ${currentPage === totalPages ? 'disabled' : ''} 
-                    onclick="window.updateDeckPage(1, '${containerId}', ${cardId})" 
-                    style="padding: 5px 15px;">▶</button>
+                <button class="btn-nav" ${currentPage === 1 ? 'disabled' : ''} id="prevDeckPage">◀</button>
+                <span style="font-weight: bold; line-height: 32px;">${currentPage} / ${totalPages}</span>
+                <button class="btn-nav" ${currentPage === totalPages ? 'disabled' : ''} id="nextDeckPage">▶</button>
             </div>
         `;
     }
 
     html += `</div>`;
     container.innerHTML = html;
+
+    // Gán sự kiện cho các nút phân trang
+    document.getElementById('prevDeckPage')?.addEventListener('click', () => {
+        currentPage--;
+        renderDeckComposition(containerId, cardId, rawData);
+    });
+    document.getElementById('nextDeckPage')?.addEventListener('click', () => {
+        currentPage++;
+        renderDeckComposition(containerId, cardId, rawData);
+    });
 }
 
-// Hàm global để xử lý chuyển trang
-window.updateDeckPage = (offset, containerId, cardId) => {
-    currentPage += offset;
-    // Gọi lại hàm render từ file chính để đảm bảo có rawData
-    if (window.renderDeckDetail) {
-        window.renderDeckDetail(cardId);
-    }
-};
-
-// Reset trang khi chọn thẻ bài mới
+// Hàm để reset trang về 1 khi chọn card mới
 export function resetDeckAnalysisPage() {
     currentPage = 1;
 }

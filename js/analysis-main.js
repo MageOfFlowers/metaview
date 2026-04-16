@@ -113,36 +113,40 @@ export function triggerWinrateOnlyRender() {
 }
 // js/analysis-main.js
 
+// js/analysis-main.js
+
 export function renderTableOnly() {
-    // Kiểm tra an toàn: Nếu currentStats chưa có hoặc cardStats bị undefined
-    if (!currentStats || !currentStats.cardStats) {
-        console.warn("Dữ liệu currentStats.cardStats chưa sẵn sàng.");
+    // Kiểm tra an toàn: đổi từ currentStats.cardStats thành currentStats.cards
+    if (!currentStats || !currentStats.cards) {
+        console.error("Dữ liệu currentStats.cards không tồn tại. Kiểm tra lại MetaEngine.calculateStats");
         return;
     }
 
     const tbody = document.getElementById('meta-body');
+    // Lấy chế độ sắp xếp từ dropdown ở Danh sách Meta
     const sortMode = document.getElementById('metaSortMode')?.value || 'usage';
     const searchTerm = document.getElementById('searchCard')?.value.toLowerCase() || "";
 
-    // Sửa lỗi: Thêm kiểm tra filter
-    let displayData = currentStats.cardStats.filter(c => 
+    // 1. Lọc theo tìm kiếm (Sử dụng currentStats.cards)
+    let displayData = currentStats.cards.filter(c => 
         c && c.name && c.name.toLowerCase().includes(searchTerm)
     );
 
-    // Logic sắp xếp (như đã thống nhất)
+    // 2. Sắp xếp dựa trên lựa chọn ở danh sách Meta
     if (sortMode === 'winrate') {
         displayData.sort((a, b) => (parseFloat(b.avgWinrate) || 0) - (parseFloat(a.avgWinrate) || 0));
     } else {
         displayData.sort((a, b) => (b.useCount || 0) - (a.useCount || 0));
     }
 
-    // Phần render bảng và phân trang giữ nguyên...
+    // 3. Phân trang
     const totalPages = Math.ceil(displayData.length / metaPageSize);
     const start = (metaCurrentPage - 1) * metaPageSize;
     const pageData = displayData.slice(start, start + metaPageSize);
 
+    // 4. Render bảng
     tbody.innerHTML = pageData.map(c => `
-        <tr onclick="window.renderDeckDetail(${c.id}, '${c.name}')" style="cursor:pointer;">
+        <tr onclick="window.renderDeckDetail(${c.id}, '${c.name.replace(/'/g, "\\'")}')" style="cursor:pointer;">
             <td><strong>${c.name}</strong></td>
             <td><span class="badge" style="background:${MetaEngine.getColorCode(c.color)}">${c.color}</span></td>
             <td>${c.rarity}</td>
@@ -151,7 +155,7 @@ export function renderTableOnly() {
         </tr>
     `).join('');
     
-    // Gọi hàm render phân trang của bạn
+    // Render pagination (Giả sử bạn đã có hàm này)
     renderPagination('meta-pagination', totalPages, metaCurrentPage, (p) => {
         metaCurrentPage = p;
         renderTableOnly();
