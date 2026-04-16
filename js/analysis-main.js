@@ -5,9 +5,9 @@ import { renderWinrateChart } from './charts/winrate-chart.js';
 import { renderDeckRanking } from './charts/deck-ranking.js';
 import { renderDeckComposition } from './charts/deck-analysis.js';
 import { renderUsageChart } from './charts/usage-charts.js';
-import { renderPlayerRanking } from './charts/player-ranking.js';
+import { renderPlayerRanking } from './charts/player-ranking.js'; // Giả định file đã tách
 
-let rawData = { cards: [], compUses: [], deckInfos: [], decks: [], competitions: [] };
+let rawData = { cards: [], compUses: [], deckInfos: [], decks: [], competitions: [], users: [] };
 let currentStats = null; 
 let charts = { usage: null, winrate: null, qty: null, deckRank: null, playerRank: null };
 let metaCurrentPage = 1;
@@ -15,27 +15,38 @@ const metaPageSize = 10;
 
 export async function initAnalysis() {
     try {
+        // Fetch đầy đủ dữ liệu bao gồm cả users để map tên người chơi
         const [cards, uses, infos, comps, decks, users] = await Promise.all([
-            request('/cards'), request('/competition-use'), request('/deck-infos'),
-            request('/competitions'), request('/decksget'),
+            request('/cards'), 
+            request('/competition-use'), 
+            request('/deck-infos'),
+            request('/competitions'), 
+            request('/decksget'),
             request('/users')
         ]);
+        
         rawData = { cards, compUses: uses, deckInfos: infos, decks, competitions: comps, users };
+
         const fComp = document.getElementById('filterComp');
         if (comps && fComp) {
             fComp.innerHTML = '<option value="all">Tất cả giải đấu</option>' + 
                 comps.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         }
 
+        // Đăng ký các hàm vào window để gọi từ HTML
         Object.assign(window, {
             triggerRender: render,
             triggerUsageRender,
             triggerWinrateOnlyRender,
+            triggerPlayerRender,
             renderTableOnly,
             analyzeQuantity
         });
+        
         render(); 
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+        console.error("Lỗi khởi tạo analysis:", err); 
+    }
 }
 
 export function render() {
@@ -47,186 +58,116 @@ export function render() {
         mode: document.getElementById('calcMode').value
     };
 
-    // 1. Tính toán stats tổng quát
+    // 1. Tính toán stats dựa trên filter
     currentStats = MetaEngine.calculateStats(rawData, filters);
     
-    // 2. Lấy dữ liệu người chơi (Sử dụng filteredUses vừa được trả về ở trên)
-    const playerStats = MetaEngine.calculatePlayerStats(currentStats.filteredUses, rawData.users);    
-    // 3. Render các thành phần
+    // 2. Render các biểu đồ cơ bản
     triggerUsageRender();
     triggerWinrateOnlyRender();
-    charts.deckRank = renderDeckRanking('deckRankingChart', rawData, charts.deckRank, 10);
     
-    // Gọi hàm hiển thị người chơi
-    triggerPlayerRender(playerStats);
-    window.triggerPlayerRender();
+    // 3. Render Xếp hạng Deck - Truyền filteredUses để không bị mất data khi filter
+    charts.deckRank = renderDeckRanking('deckRankingChart', rawData, currentStats.filteredUses, charts.deckRank);
+    
+    // 4. Render Xếp hạng Người chơi
+    triggerPlayerRender();
+    
+    // 5. Render bảng danh sách meta
     renderTableOnly();
 }
-window.triggerPlayerRender = () => {
-    if (!currentStats || !rawData) return;
+
+/**
+ * Render Xếp hạng Người chơi với chế độ xem thay đổi
+ */
+export function triggerPlayerRender() {
+    if (!currentStats || !currentStats.filteredUses) return;
     
+    // Gọi hàm render từ file logic riêng đã tách
     charts.playerRank = renderPlayerRanking(
-        'playerRankChart', 
+        'playerRankingChart', 
         currentStats.filteredUses, 
         rawData, 
         charts.playerRank
     );
-    };
-    
-function triggerPlayerRender(playerStats) {
-    const ctx = document.getElementById('playerRankingChart');
-    const honorBody = document.getElementById('player-honor-body');
-    if (!ctx || !honorBody) return;
-
-    const topPlayers = playerStats.slice(0, 10);
-
-    // Biểu đồ
-    if (charts.playerRank) charts.playerRank.destroy();
-    charts.playerRank = new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: topPlayers.map(p => p.name),
-            datasets: [
-                { label: 'Winrate (%)', data: topPlayers.map(p => p.avgWinrate), backgroundColor: '#10b981', yAxisID: 'y' },
-                { label: 'Số Deck', data: topPlayers.map(p => p.deckCount), type: 'line', borderColor: '#f59e0b', yAxisID: 'y1' }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, position: 'left' },
-                y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } },
-                x: { ticks: { maxRotation: 45, minRotation: 45 } }
-            }
-        }
-    });
-
-    // Bảng Hall of Fame
-    honorBody.innerHTML = topPlayers.map(p => `
-        <tr>
-            <td><strong>${p.name}</strong></td>
-            <td>Hạng ${p.bestRank}</td>
-            <td>${p.totalGames} giải</td>
-        </tr>
-    `).join('');
 }
 
-// ... Giữ nguyên các hàm triggerUsageRender, triggerWinrateOnlyRender, renderTableOnly, handleTooltip và analyzeQuantity từ file cũ của bạn ...
-
 export function triggerUsageRender() {
+    if (!currentStats) return;
     const mode = document.getElementById('usageViewMode').value;
     charts.usage = renderUsageChart('usageTypeChart', currentStats, mode, charts.usage);
 }
 
 export function triggerWinrateOnlyRender() {
+    if (!currentStats) return;
     const mode = document.getElementById('topCardMode').value;
     const color = document.getElementById('filterWinrateColor').value;
     let data = [...currentStats.cards];
+    
     if (color !== 'all') data = data.filter(c => c.color === color);
     
     data.sort((a, b) => (mode === 'winrate') ? (b.avgWinrate - a.avgWinrate) : (b.useCount - a.useCount));
     charts.winrate = renderWinrateChart('winrateBarChart', data.slice(0, 10), charts.winrate);
 }
+
 export function renderTableOnly() {
     const body = document.getElementById('meta-body');
-    const paginationContainer = document.getElementById('meta-pagination'); // Cần thêm thẻ này trong HTML
+    const paginationContainer = document.getElementById('meta-pagination');
     if (!body || !currentStats?.cards) return;
 
     const searchTerm = document.getElementById('searchCard')?.value.toLowerCase() || "";
-    
-    // 1. Lọc dữ liệu theo tìm kiếm
     const filteredData = currentStats.cards.filter(c => c.name.toLowerCase().includes(searchTerm));
-
-    // 2. Tính toán phân trang
     const totalPages = Math.ceil(filteredData.length / metaPageSize);
     
-    // Đảm bảo trang hiện tại không vượt quá tổng số trang sau khi lọc
     if (metaCurrentPage > totalPages && totalPages > 0) metaCurrentPage = totalPages;
-    if (metaCurrentPage < 1) metaCurrentPage = 1;
 
     const startIndex = (metaCurrentPage - 1) * metaPageSize;
     const paginatedData = filteredData.slice(startIndex, startIndex + metaPageSize);
 
-    // 3. Render nội dung bảng
     body.innerHTML = paginatedData.map(card => `
-        <tr style="cursor:pointer" 
-            onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')"
-            onmousemove="handleTooltip(event, true)" 
-            onmouseleave="handleTooltip(event, false)">
+        <tr style="cursor:pointer" onclick="analyzeQuantity(${card.id}, '${card.name.replace(/'/g, "\\'")}')">
             <td>
-                <div class="card-tooltip">
+                <div class="card-tooltip" onmousemove="handleTooltip(event, true)" onmouseleave="handleTooltip(event, false)">
                     ${card.name}
                     <img src="${card.url || 'placeholder.jpg'}" class="fixed-tooltip-img">
                 </div>
             </td>
-            <td>${card.color || '-'}</td>
+            <td><span class="badge" style="background:${MetaEngine.getColorCode(card.color)}">${card.color || '-'}</span></td>
             <td>${card.rarity || '-'}</td>
             <td>${card.useCount}</td>
             <td>${card.avgWinrate}%</td>
         </tr>
     `).join('');
 
-    // 4. Render bộ điều khiển phân trang
-    if (paginationContainer) {
-        renderPaginationControls(paginationContainer, totalPages);
-    }
+    if (paginationContainer) renderPaginationControls(paginationContainer, totalPages);
 }
 
-// Hàm bổ trợ render nút chuyển trang
 function renderPaginationControls(container, totalPages) {
-    if (totalPages <= 1) {
-        container.innerHTML = '';
-        return;
-    }
+    if (totalPages <= 1) { container.innerHTML = ''; return; }
 
     container.innerHTML = `
-        <div class="pagination-wrapper" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 15px;">
+        <div class="pagination-wrapper" style="display: flex; justify-content: center; gap: 15px; margin-top: 15px;">
             <button class="btn-nav" ${metaCurrentPage === 1 ? 'disabled' : ''} id="prevMetaPage">◀ Trước</button>
-            <span style="font-size: 0.9rem; font-weight: bold;">Trang ${metaCurrentPage} / ${totalPages}</span>
+            <span>Trang ${metaCurrentPage} / ${totalPages}</span>
             <button class="btn-nav" ${metaCurrentPage === totalPages ? 'disabled' : ''} id="nextMetaPage">Sau ▶</button>
         </div>
     `;
 
-    document.getElementById('prevMetaPage')?.addEventListener('click', () => {
-        metaCurrentPage--;
-        renderTableOnly();
-    });
-
-    document.getElementById('nextMetaPage')?.addEventListener('click', () => {
-        metaCurrentPage++;
-        renderTableOnly();
-    });
+    document.getElementById('prevMetaPage')?.addEventListener('click', () => { metaCurrentPage--; renderTableOnly(); });
+    document.getElementById('nextMetaPage')?.addEventListener('click', () => { metaCurrentPage++; renderTableOnly(); });
 }
-// Hàm xử lý di chuyển và hiển thị tooltip bám theo chuột
-// Thêm vào đầu hoặc cuối file js/analysis-main.js
 
 window.handleTooltip = function(e, show) {
-    // Tìm ảnh tooltip bên trong element đang hover
     const img = e.currentTarget.querySelector('.fixed-tooltip-img');
     if (!img) return;
-
-    if (!show) {
-        img.style.display = 'none';
-        return;
+    img.style.display = show ? 'block' : 'none';
+    if (show) {
+        let x = e.clientX + 15;
+        let y = e.clientY - 120;
+        if (x + 180 > window.innerWidth) x = e.clientX - 190;
+        if (y < 0) y = 10;
+        img.style.left = x + 'px';
+        img.style.top = y + 'px';
     }
-
-    img.style.display = 'block';
-    
-    let x = e.clientX + 15;
-    let y = e.clientY - 120;
-
-    // Chống tràn màn hình bên phải
-    if (x + 180 > window.innerWidth) {
-        x = e.clientX - 190;
-    }
-    // Chống tràn màn hình phía trên
-    if (y < 0) { y = 10; }
-
-    img.style.left = x + 'px';
-    img.style.top = y + 'px';
 };
-
 
 export function analyzeQuantity(cardId, cardName) {
     const qtyStats = MetaEngine.calculateQuantityStats(rawData, cardId);
@@ -236,7 +177,6 @@ export function analyzeQuantity(cardId, cardName) {
     section.classList.remove('hidden');
     document.getElementById('qty-title').innerText = `Phân tích chi tiết: ${cardName}`;
     
-    // Render bảng
     const tableBody = document.getElementById('qty-table-body');
     if (tableBody) {
         tableBody.innerHTML = qtyStats.map(q => `
@@ -248,7 +188,6 @@ export function analyzeQuantity(cardId, cardName) {
         `).join('');
     }
 
-    // Render biểu đồ (Đảm bảo responsive)
     const ctx = document.getElementById('qtyWinrateChart');
     if (ctx) {
         if (charts.qty) charts.qty.destroy();
@@ -262,10 +201,8 @@ export function analyzeQuantity(cardId, cardName) {
         });
     }
 
-    // FIX LỖI PC: Đảm bảo gọi render cấu trúc bộ bài mẫu
     if (typeof renderDeckComposition === 'function') {
         renderDeckComposition('deck-comp-container', cardId, rawData);
     }
-    
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
