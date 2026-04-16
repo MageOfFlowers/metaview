@@ -111,23 +111,32 @@ export function triggerWinrateOnlyRender() {
     data.sort((a, b) => (mode === 'winrate') ? (b.avgWinrate - a.avgWinrate) : (b.useCount - a.useCount));
     charts.winrate = renderWinrateChart('winrateBarChart', data.slice(0, 10), charts.winrate);
 }
+// js/analysis-main.js
+
 export function renderTableOnly() {
-    if (!currentStats) return;
-    const tbody = document.getElementById('meta-body');
-    const sortMode = document.getElementById('metaSortMode')?.value || 'usage';
-    const searchTerm = document.getElementById('searchCard').value.toLowerCase();
-
-    // 1. Lấy dữ liệu và lọc theo tìm kiếm
-    let displayData = currentStats.cardStats.filter(c => c.name.toLowerCase().includes(searchTerm));
-
-    // 2. Sắp xếp dựa trên lựa chọn
-    if (sortMode === 'winrate') {
-        displayData.sort((a, b) => b.avgWinrate - a.avgWinrate);
-    } else {
-        displayData.sort((a, b) => b.useCount - a.useCount);
+    // Kiểm tra an toàn: Nếu currentStats chưa có hoặc cardStats bị undefined
+    if (!currentStats || !currentStats.cardStats) {
+        console.warn("Dữ liệu currentStats.cardStats chưa sẵn sàng.");
+        return;
     }
 
-    // 3. Phân trang và Render (giữ nguyên logic cũ của bạn)
+    const tbody = document.getElementById('meta-body');
+    const sortMode = document.getElementById('metaSortMode')?.value || 'usage';
+    const searchTerm = document.getElementById('searchCard')?.value.toLowerCase() || "";
+
+    // Sửa lỗi: Thêm kiểm tra filter
+    let displayData = currentStats.cardStats.filter(c => 
+        c && c.name && c.name.toLowerCase().includes(searchTerm)
+    );
+
+    // Logic sắp xếp (như đã thống nhất)
+    if (sortMode === 'winrate') {
+        displayData.sort((a, b) => (parseFloat(b.avgWinrate) || 0) - (parseFloat(a.avgWinrate) || 0));
+    } else {
+        displayData.sort((a, b) => (b.useCount || 0) - (a.useCount || 0));
+    }
+
+    // Phần render bảng và phân trang giữ nguyên...
     const totalPages = Math.ceil(displayData.length / metaPageSize);
     const start = (metaCurrentPage - 1) * metaPageSize;
     const pageData = displayData.slice(start, start + metaPageSize);
@@ -142,6 +151,7 @@ export function renderTableOnly() {
         </tr>
     `).join('');
     
+    // Gọi hàm render phân trang của bạn
     renderPagination('meta-pagination', totalPages, metaCurrentPage, (p) => {
         metaCurrentPage = p;
         renderTableOnly();
