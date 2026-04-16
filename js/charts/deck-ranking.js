@@ -7,7 +7,19 @@ export function renderDeckRanking(canvasId, rawData, filteredUses, currentChart 
     const { deckInfos, cards, decks } = rawData;
     
     const viewMode = document.getElementById('deckSortMode')?.value || 'usage';
+const deckStatsMap = {};
+const deckMap = new Map(decks.map(d => [String(d.id), d]));
+filteredUses.forEach(use => {
+        const deckIdStr = String(use.deckid);
+        if (!deckMap.has(deckIdStr)) return;
 
+        if (!deckStatsMap[deckIdStr]) {
+            deckStatsMap[deckIdStr] = { id: use.deckid, totalWin: 0, count: 0, totalRank: 0 };
+        }
+        deckStatsMap[deckIdStr].totalWin += parseFloat(use.winrate || 0);
+        deckStatsMap[deckIdStr].totalRank += parseInt(use.rank || 99);
+        deckStatsMap[deckIdStr].count++;
+    });
 // 2. Sắp xếp mảng dựa trên viewMode
 const sortedDecks = Object.values(deckStatsMap)
     .map(stats => {
