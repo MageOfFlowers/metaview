@@ -8,22 +8,19 @@ export const MetaEngine = {
         let { compUses, deckInfos, cards, competitions } = rawData;
         const { compId, startDate, endDate, mode = 'deck', region = 'all' } = filters;
 
-        let validCompIdsByRegion = [];
-        if (region !== 'all' && competitions) {
-            validCompIdsByRegion = competitions.filter(c => c.region === region).map(c => c.id);
-        }
-
-        // Bước lọc dữ liệu
         let filteredUses = compUses.filter(use => {
             const matchComp = compId === 'all' || use.competitionid == compId;
-            const matchRegion = region === 'all' || validCompIdsByRegion.includes(Number(use.competitionid));
             const useDate = new Date(use.createdAt);
             const matchDate = (!startDate || useDate >= new Date(startDate)) && 
                               (!endDate || useDate <= new Date(endDate));
-            return matchComp && matchRegion && matchDate;
+            return matchComp && matchDate;
         });
 
         const cardStats = {};
+        // KHỞI TẠO ĐỐI TƯỢNG ĐỂ TRÁNH LỖI UNDEFINED
+        const colorStats = { 'R': 0, 'P': 0, 'Y': 0, 'G': 0 };
+        const rarityStats = { 'SCR': 0, 'EX': 0, 'UR': 0, 'SR': 0, 'R': 0, 'U': 0, 'C': 0 };
+
         cards.forEach(c => cardStats[c.id] = { ...c, useCount: 0, totalWin: 0 });
 
         filteredUses.forEach(use => {
@@ -34,6 +31,10 @@ export const MetaEngine = {
                     const count = mode === 'total' ? item.quantity : 1;
                     card.useCount += count;
                     card.totalWin += (use.winrate * count);
+                    
+                    // Cập nhật thống kê màu và độ hiếm
+                    if (colorStats[card.color] !== undefined) colorStats[card.color] += count;
+                    if (rarityStats[card.rarity] !== undefined) rarityStats[card.rarity] += count;
                 }
             });
         });
@@ -43,7 +44,9 @@ export const MetaEngine = {
                 ...c,
                 avgWinrate: c.useCount > 0 ? (c.totalWin / c.useCount).toFixed(1) : 0
             })).sort((a, b) => b.useCount - a.useCount),
-            filteredUses: filteredUses // QUAN TRỌNG: Phải thêm dòng này để trả về dữ liệu thô
+            colors: colorStats,    // Đảm bảo có trả về
+            rarities: rarityStats, // Đảm bảo có trả về
+            filteredUses: filteredUses 
         };
     },
 
@@ -82,7 +85,7 @@ export const MetaEngine = {
             totalGames: p.count
         })).sort((a, b) => b.avgWinrate - a.avgWinrate);
     },
-    
+
     calculateQuantityStats(rawData, cardId) {
         const { compUses, deckInfos } = rawData;
         const statsByQty = { 1: { win: 0, count: 0 }, 2: { win: 0, count: 0 }, 3: { win: 0, count: 0 }, 4: { win: 0, count: 0 } };
