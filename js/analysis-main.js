@@ -27,7 +27,11 @@ export async function initAnalysis() {
             fComp.innerHTML = '<option value="all">Tất cả giải đấu</option>' + 
                 comps.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         }
-
+        const startInput = document.getElementById('filterStart');
+        const endInput = document.getElementById('filterEnd');
+        
+        if(startInput) startInput.onchange = () => triggerRender();
+        if(endInput) endInput.onchange = () => triggerRender();
         Object.assign(window, {
             triggerRender: render,
             triggerUsageRender,

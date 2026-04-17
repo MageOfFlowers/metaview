@@ -16,15 +16,37 @@ export const MetaEngine = {
 
     // meta-engine.js - Cập nhật hàm calculateStats
 calculateStats(rawData, filters = {}) {
-    let { compUses, deckInfos, cards } = rawData;
+    let { compUses, deckInfos, cards, competitions } = rawData;
     const { compId, startDate, endDate, mode = 'deck' } = filters;
-
+    const compDateMap = new Map();
+    if (competitions) {
+        competitions.forEach(c => {
+            compDateMap.set(c.id, c.competition_date); // Sử dụng trường competition_date như bạn yêu cầu
+        });
+    }
     let filteredUses = compUses.filter(use => {
+        // 1. Lọc theo Giải đấu
         const matchComp = compId === 'all' || use.competitionid == compId;
-        const useDate = new Date(use.createdAt);
-        const matchDate = (!startDate || useDate >= new Date(startDate)) && 
-                          (!endDate || useDate <= new Date(endDate));
-        return matchComp && matchDate;
+        
+        // 2. Lấy ngày của giải đấu tương ứng với bản ghi này
+        const dateStr = compDateMap.get(use.competitionid);
+        const useDate = dateStr ? new Date(dateStr).setHours(0,0,0,0) : null;
+        
+        let matchStartDate = true;
+        if (startDate && useDate) {
+            matchStartDate = useDate >= new Date(startDate).setHours(0,0,0,0);
+        } else if (startDate && !useDate) {
+            matchStartDate = false; // Nếu lọc theo ngày mà giải đấu không có ngày thì loại bỏ
+        }
+        
+        let matchEndDate = true;
+        if (endDate && useDate) {
+            matchEndDate = useDate <= new Date(endDate).setHours(0,0,0,0);
+        } else if (endDate && !useDate) {
+            matchEndDate = false;
+        }
+
+        return matchComp && matchStartDate && matchEndDate;
     });
 
     const cardStats = {};
