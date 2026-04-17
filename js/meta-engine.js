@@ -18,35 +18,41 @@ export const MetaEngine = {
 calculateStats(rawData, filters = {}) {
     let { compUses, deckInfos, cards, competitions } = rawData;
     const { compId, startDate, endDate, mode = 'deck' } = filters;
+
+    // Tạo Map tra cứu ngày từ bảng competitions
     const compDateMap = new Map();
     if (competitions) {
         competitions.forEach(c => {
-            compDateMap.set(c.id, c.competition_date); // Sử dụng trường competition_date như bạn yêu cầu
+            // Sử dụng đúng trường competition_date như bạn đã nêu
+            compDateMap.set(c.id, c.competition_date);
         });
     }
+
     let filteredUses = compUses.filter(use => {
         // 1. Lọc theo Giải đấu
         const matchComp = compId === 'all' || use.competitionid == compId;
-        
-        // 2. Lấy ngày của giải đấu tương ứng với bản ghi này
+        if (!matchComp) return false;
+
+        // 2. Lọc theo Ngày tháng
         const dateStr = compDateMap.get(use.competitionid);
-        const useDate = dateStr ? new Date(dateStr).setHours(0,0,0,0) : null;
-        
-        let matchStartDate = true;
-        if (startDate && useDate) {
-            matchStartDate = useDate >= new Date(startDate).setHours(0,0,0,0);
-        } else if (startDate && !useDate) {
-            matchStartDate = false; // Nếu lọc theo ngày mà giải đấu không có ngày thì loại bỏ
-        }
-        
-        let matchEndDate = true;
-        if (endDate && useDate) {
-            matchEndDate = useDate <= new Date(endDate).setHours(0,0,0,0);
-        } else if (endDate && !useDate) {
-            matchEndDate = false;
+        if (!dateStr) {
+            // Nếu giải đấu không có ngày, chỉ cho qua nếu không chọn lọc ngày
+            return !startDate && !endDate;
         }
 
-        return matchComp && matchStartDate && matchEndDate;
+        const useTime = new Date(dateStr).setHours(0,0,0,0);
+        
+        if (startDate) {
+            const startTime = new Date(startDate).setHours(0,0,0,0);
+            if (useTime < startTime) return false;
+        }
+        
+        if (endDate) {
+            const endTime = new Date(endDate).setHours(0,0,0,0);
+            if (useTime > endTime) return false;
+        }
+
+        return true;
     });
 
     const cardStats = {};
