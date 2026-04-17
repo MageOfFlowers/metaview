@@ -43,8 +43,10 @@
     <div class="dashboard-grid">
         <div class="card">
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
-                <h3>Tỷ lệ sử dụng</h3>
-                <button class="info-btn" data-tip="usage_chart">!</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <h3>Tỷ lệ sử dụng</h3>
+                    <button class="info-btn" data-tip="usage_chart">!</button>
+                </div>
                 <div style="display: flex; gap: 5px;">
                     <select id="calcMode" class="filter-sm" onchange="triggerRender()">
                         <option value="deck">Theo Deck</option>
@@ -61,8 +63,10 @@
         
         <div class="card">
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
-                <h3>Top Card</h3>
-                <button class="info-btn" data-tip="top_card_chart">!</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <h3>Top Card</h3>
+                    <button class="info-btn" data-tip="top_card_chart">!</button>
+                </div>
                 <div style="display: flex; gap: 5px;">
                     <select id="topCardMode" class="filter-sm" onchange="triggerWinrateOnlyRender()">
                         <option value="winrate">Winrate</option>
@@ -81,8 +85,10 @@
     <div class="dashboard-grid">
     <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3>🏆 Xếp hạng Bộ bài</h3>
-        <button class="info-btn" data-tip="deck_rank_chart">!</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <h3>🏆 Xếp hạng Bộ bài</h3>
+            <button class="info-btn" data-tip="deck_rank_chart">!</button>
+        </div>
         <select id="deckSortMode" onchange="updateDeckRankingOnly()">
     <option value="usage">Sắp theo: Phổ biến</option>
     <option value="winrate">Sắp theo: Tỷ lệ thắng</option>
@@ -96,8 +102,10 @@
 
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3>Xếp hạng Người chơi</h3>
-            <button class="info-btn" data-tip="player_rank_chart">!</button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <h3>Xếp hạng Người chơi</h3>
+                <button class="info-btn" data-tip="player_rank_chart">!</button>
+            </div>
             <select id="playerSortMode" onchange="triggerPlayerRender()" style="padding: 4px;">
                 <option value="winrate">Theo Winrate</option>
                 <option value="rank">Theo Hạng TB</option>
@@ -113,8 +121,10 @@
 
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3>Danh sách Meta</h3>
-        <button class="info-btn" data-tip="meta_list">!</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <h3>Danh sách Meta</h3>
+            <button class="info-btn" data-tip="meta_list">!</button>
+        </div>
         <div style="display: flex; gap: 10px;">
             <select id="metaSortMode" onchange="renderTableOnly()">
                 <option value="usage">Sắp theo: Phổ biến</option>
