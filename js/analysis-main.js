@@ -14,17 +14,6 @@ let charts = { usage: null, winrate: null, qty: null, deckRank: null, playerRank
 let metaCurrentPage = 1;
 const metaPageSize = 10;
 
-function setupTooltips() {
-    const buttons = document.querySelectorAll('.info-btn');
-    buttons.forEach(btn => {
-        const key = btn.getAttribute('data-tip');
-        if (tooltipData[key]) {
-            // Gán nội dung từ file js vào thuộc tính data-tooltip để CSS hiển thị
-            btn.setAttribute('data-tooltip', tooltipData[key]);
-        }
-    });
-}
-
 export async function initAnalysis() {
     try {
         const [cards, uses, infos, comps, decks, users] = await Promise.all([
@@ -46,7 +35,13 @@ export async function initAnalysis() {
             renderTableOnly,
             analyzeQuantity
         });
-        setupTooltips();
+        const buttons = document.querySelectorAll('.info-btn');
+    buttons.forEach(btn => {
+        const key = btn.getAttribute('data-tip');
+        if (tooltipData[key]) {
+            btn.setAttribute('data-tooltip', tooltipData[key]);
+        }
+    });
         render(); 
     } catch (err) { console.error(err); }
 }
