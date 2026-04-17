@@ -617,3 +617,32 @@ select[size] option:checked {
     background-color: var(--primary) !important;
     color: white;
 }
+/* Đảm bảo group chứa input và select có chiều rộng đồng nhất */
+.input-group {
+    position: relative;
+    width: 100%;
+}
+
+.search-input {
+    width: 100%;
+    box-sizing: border-box; /* Đảm bảo padding không làm tràn khung */
+}
+
+/* Fix select rộng bằng input và ẩn mặc định */
+select[size] {
+    width: 100%;
+    box-sizing: border-box;
+    display: none; /* Ẩn đi mặc định */
+    position: absolute; /* Để không đẩy các thành phần bên dưới xuống khi hiện */
+    z-index: 10;
+    background: white;
+    border: 1px solid var(--primary);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Hiện select khi có class 'show' */
+select[size].show {
+    display: block;
+}

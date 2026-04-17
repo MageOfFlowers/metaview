@@ -114,13 +114,19 @@ async function init() {
     renderLibrary();
 }
 
-// Hàm lọc dữ liệu động
 window.filterSelect = (selectId, searchTerm) => {
-    const term = searchTerm.toLowerCase();
+    const el = document.getElementById(selectId);
+    const term = searchTerm.trim().toLowerCase();
+
+    // Nếu không nhập gì thì ẩn danh sách và thoát
+    if (term === "") {
+        el.classList.remove('show');
+        return;
+    }
+
     let data = [];
     let key = 'name';
 
-    // Xác định nguồn dữ liệu dựa trên id của select
     if (selectId === 'regUser') { data = cacheData.users; key = 'username'; }
     else if (selectId === 'regDeck') { data = cacheData.decks; }
     else if (selectId === 'regComp') { data = cacheData.comps; }
@@ -129,8 +135,30 @@ window.filterSelect = (selectId, searchTerm) => {
         (item[key] || item.name).toLowerCase().includes(term)
     );
 
+    // Cập nhật dữ liệu vào select
     fill(selectId, filtered, key);
+
+    // Hiện danh sách nếu có kết quả
+    if (filtered.length > 0) {
+        el.classList.add('show');
+    } else {
+        el.classList.remove('show');
+    }
 };
+
+// Thêm sự kiện để khi người dùng click chọn 1 option thì ẩn danh sách đi
+document.querySelectorAll('select[size]').forEach(select => {
+    select.onchange = () => {
+        // Cập nhật ngược lại tên vào ô input cho trực quan (tùy chọn)
+        const inputId = 'search' + select.id.charAt(0).toUpperCase() + select.id.slice(1);
+        const input = document.getElementById(inputId);
+        if (input && select.options[select.selectedIndex]) {
+            input.value = select.options[select.selectedIndex].text;
+        }
+        
+        select.classList.remove('show'); // Ẩn danh sách sau khi chọn
+    };
+});
 
     // Xử lý Accordion
     document.querySelectorAll('.accordion-header').forEach(header => {
