@@ -15,11 +15,13 @@ export const MetaEngine = {
     },
 
     // meta-engine.js - Cập nhật hàm calculateStats
+// meta-engine.js
+
 calculateStats(rawData, filters = {}) {
     let { compUses, deckInfos, cards, competitions } = rawData;
-    const { compId, startDate, endDate } = filters;
+    // Lấy thêm 'mode' từ filters
+    const { compId, startDate, endDate, mode } = filters; 
 
-    // Tạo Map tra cứu ngày: ép kiểu ID sang Number để tránh lỗi so sánh chuỗi/số
     const compDateMap = new Map();
     if (competitions) {
         competitions.forEach(c => {
@@ -28,14 +30,13 @@ calculateStats(rawData, filters = {}) {
     }
 
     let filteredUses = compUses.filter(use => {
-        // 1. Lọc theo Giải đấu (Ép kiểu cả 2 về Number)
         const matchComp = compId === 'all' || Number(use.competitionid) === Number(compId);
         if (!matchComp) return false;
 
-        // 2. Lọc theo Ngày tháng
         const dateValue = compDateMap.get(Number(use.competitionid));
         if (!dateValue) return !startDate && !endDate;
 
+        // Chuẩn hóa ngày về miliseconds để so sánh chính xác
         const useTime = new Date(dateValue).setHours(0,0,0,0);
         
         if (startDate) {
@@ -51,7 +52,6 @@ calculateStats(rawData, filters = {}) {
     });
 
     const cardStats = {};
-    // Đảm bảo các hệ màu cơ bản luôn xuất hiện để Object.keys không lỗi
     const colorStats = { 'R': 0, 'P': 0, 'Y': 0, 'G': 0 };
     const rarityStats = { 'SCR': 0, 'EX': 0, 'UR': 0, 'SR': 0, 'R': 0, 'U': 0, 'C': 0 };
 
@@ -62,11 +62,13 @@ calculateStats(rawData, filters = {}) {
         cardsInDeck.forEach(item => {
             const card = cardStats[item.cardid];
             if (card) {
-                const count = (mode === 'total') ? (item.quantity || 0) : 1;
+                // Đảm bảo mode đã có giá trị (mặc định là 'deck' nếu undefined)
+                const currentMode = mode || 'deck';
+                const count = (currentMode === 'total') ? (item.quantity || 0) : 1;
+                
                 card.useCount += count;
                 card.totalWin += (parseFloat(use.winrate || 0) * count);
                 
-                // Kiểm tra an toàn trước khi cộng dồn
                 if (card.color && colorStats.hasOwnProperty(card.color)) {
                     colorStats[card.color] += count;
                 }
@@ -87,7 +89,6 @@ calculateStats(rawData, filters = {}) {
         filteredUses: filteredUses 
     };
 },
-
    calculatePlayerStats(filteredUses, users = [], deckInfos = [], decks = [], competitions = []) {
     const userMap = new Map(users.map(u => [u.id, u.username || u.name]));
     const deckMap = new Map(decks.map(d => [d.id, d.name]));
