@@ -552,3 +552,38 @@ button, .btn-submit, .color-btn {
         font-size: 2rem;
     }
 }
+
+.info-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        background-color: var(--primary);
+        color: white;
+        border-radius: 50%;
+        font-size: 12px;
+        cursor: help;
+        margin-left: 8px;
+        border: none;
+        position: relative;
+    }
+
+    /* Tooltip cơ bản bằng CSS (có thể dùng thư viện như Tippy.js nếu muốn đẹp hơn) */
+    .info-btn:hover::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: #fff;
+        padding: 8px;
+        border-radius: 4px;
+        width: 200px;
+        font-size: 0.75rem;
+        z-index: 100;
+        white-space: normal;
+        font-weight: normal;
+        line-height: 1.4;
+    }

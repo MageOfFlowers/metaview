@@ -6,12 +6,24 @@ import { renderDeckRanking } from './charts/deck-ranking.js';
 import { renderDeckComposition } from './charts/deck-analysis.js';
 import { renderUsageChart } from './charts/usage-charts.js';
 import { renderPlayerRanking } from './charts/player-ranking.js';
+import { tooltipData } from './tooltips-content.js';
 
 let rawData = { cards: [], compUses: [], deckInfos: [], decks: [], competitions: [] };
 let currentStats = null; 
 let charts = { usage: null, winrate: null, qty: null, deckRank: null, playerRank: null };
 let metaCurrentPage = 1;
 const metaPageSize = 10;
+
+function setupTooltips() {
+    const buttons = document.querySelectorAll('.info-btn');
+    buttons.forEach(btn => {
+        const key = btn.getAttribute('data-tip');
+        if (tooltipData[key]) {
+            // Gán nội dung từ file js vào thuộc tính data-tooltip để CSS hiển thị
+            btn.setAttribute('data-tooltip', tooltipData[key]);
+        }
+    });
+}
 
 export async function initAnalysis() {
     try {
@@ -34,6 +46,7 @@ export async function initAnalysis() {
             renderTableOnly,
             analyzeQuantity
         });
+        setupTooltips();
         render(); 
     } catch (err) { console.error(err); }
 }
