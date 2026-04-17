@@ -26,14 +26,26 @@
         <div class="accordion-header">🏆 Đăng ký kết quả Giải <span>+</span></div>
         <div class="accordion-content">
             <div class="dashboard-grid">
-                <div class="input-group"><label>Giải đấu</label><select id="regComp"></select></div>
-                <div class="input-group"><label>Người chơi</label><select id="regUser"></select></div>
-                <div class="input-group"><label>Bộ bài</label><select id="regDeck"></select></div>
-                <div class="form-grid">
-                    <div class="input-group"><label>Tỷ lệ thắng (%)</label><input type="number" id="regWin" value="50"></div>
-                    <div class="input-group"><label>Thứ hạng (Rank)</label><input type="number" id="regRank" value="1" min="1"></div>
-                </div>
-            </div>
+    <div class="input-group">
+        <label>Giải đấu</label>
+        <input type="text" class="search-input" id="searchRegComp" placeholder="Tìm giải đấu..." oninput="filterSelect('regComp', this.value)">
+        <select id="regComp" size="4" style="height: 100px; margin-top:5px;"></select>
+    </div>
+    <div class="input-group">
+        <label>Người chơi</label>
+        <input type="text" class="search-input" id="searchRegUser" placeholder="Tìm người chơi..." oninput="filterSelect('regUser', this.value)">
+        <select id="regUser" size="4" style="height: 100px; margin-top:5px;"></select>
+    </div>
+    <div class="input-group">
+        <label>Bộ bài</label>
+        <input type="text" class="search-input" id="searchRegDeck" placeholder="Tìm bộ bài..." oninput="filterSelect('regDeck', this.value)">
+        <select id="regDeck" size="4" style="height: 100px; margin-top:5px;"></select>
+    </div>
+    <div class="form-grid">
+        <div class="input-group"><label>Tỷ lệ thắng (%)</label><input type="number" id="regWin" value="50"></div>
+        <div class="input-group"><label>Thứ hạng (Rank)</label><input type="number" id="regRank" value="1" min="1"></div>
+    </div>
+</div>
             <button class="btn-submit" id="btn-reg">Xác nhận đăng ký</button>
         </div>
     </div>
@@ -88,6 +100,50 @@
         
         renderLibrary();
     }
+
+    // Khai báo biến lưu trữ dữ liệu gốc để search
+let cacheData = {
+    users: [],
+    decks: [],
+    comps: []
+};
+
+async function init() {
+    const [users, decks, comps, cards] = await Promise.all([
+        request('/users'), request('/decksget'), request('/competitions'), request('/cards')
+    ]);
+    
+    // Lưu vào cache
+    cacheData.users = users || [];
+    cacheData.decks = decks || [];
+    cacheData.comps = comps || [];
+    allCards = cards || [];
+    
+    // Đổ dữ liệu ban đầu
+    fill('regUser', cacheData.users, 'username');
+    fill('regDeck', cacheData.decks, 'name');
+    fill('regComp', cacheData.comps, 'name');
+    
+    renderLibrary();
+}
+
+// Hàm lọc dữ liệu động
+window.filterSelect = (selectId, searchTerm) => {
+    const term = searchTerm.toLowerCase();
+    let data = [];
+    let key = 'name';
+
+    // Xác định nguồn dữ liệu dựa trên id của select
+    if (selectId === 'regUser') { data = cacheData.users; key = 'username'; }
+    else if (selectId === 'regDeck') { data = cacheData.decks; }
+    else if (selectId === 'regComp') { data = cacheData.comps; }
+
+    const filtered = data.filter(item => 
+        (item[key] || item.name).toLowerCase().includes(term)
+    );
+
+    fill(selectId, filtered, key);
+};
 
     // Xử lý Accordion
     document.querySelectorAll('.accordion-header').forEach(header => {
