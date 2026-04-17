@@ -33,7 +33,8 @@ export async function initAnalysis() {
             triggerUsageRender,
             triggerWinrateOnlyRender,
             renderTableOnly,
-            analyzeQuantity
+            analyzeQuantity,
+            renderDeckDetail: analyzeQuantity
         });
         const buttons = document.querySelectorAll('.info-btn');
     buttons.forEach(btn => {
@@ -154,14 +155,14 @@ export function renderTableOnly() {
 
     // 4. Render bảng
     tbody.innerHTML = pageData.map(c => `
-        <tr onclick="window.renderDeckDetail(${c.id}, '${c.name.replace(/'/g, "\\'")}')" style="cursor:pointer;">
-            <td><strong>${c.name}</strong></td>
-            <td><span class="badge" style="background:${MetaEngine.getColorCode(c.color)}">${c.color}</span></td>
-            <td>${c.rarity}</td>
-            <td>${c.useCount}</td>
-            <td>${c.avgWinrate}%</td>
-        </tr>
-    `).join('');
+    <tr onclick="analyzeQuantity(${c.id}, '${c.name.replace(/'/g, "\\'")}')" style="cursor:pointer;">
+        <td><strong>${c.name}</strong></td>
+        <td><span class="badge" style="background:${MetaEngine.getColorCode(c.color)}">${c.color}</span></td>
+        <td>${c.rarity}</td>
+        <td>${c.useCount}</td>
+        <td>${c.avgWinrate}%</td>
+    </tr>
+`).join('');
     
     // Render pagination (Giả sử bạn đã có hàm này)
     renderPagination('meta-pagination', totalPages, metaCurrentPage, (p) => {
