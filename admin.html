@@ -284,6 +284,37 @@ document.getElementById('btn-reg').onclick = async () => {
     }
 };
 
+// Lưu người dùng mới
+document.getElementById('save-user-btn').onclick = async () => {
+    const userNameInput = document.getElementById('userName');
+    const username = userNameInput.value.trim();
+
+    if (!username) {
+        return alert("Vui lòng nhập tên người chơi!");
+    }
+
+    try {
+        // Vì Backend dùng @RequestParam, ta cần truyền username qua URL query string
+        const res = await request(`/usersadd?username=${encodeURIComponent(username)}`, 'POST');
+        
+        if (res) {
+            alert(`Thành công! Đã tạo người dùng: ${res.username}`);
+            userNameInput.value = ''; // Reset input
+            
+            // Cập nhật lại danh sách cache và UI để có thể chọn ngay trong phần đăng ký giải
+            const updatedUsers = await request('/users');
+            if (updatedUsers) {
+                cacheData.users = updatedUsers;
+                fill('regUser', cacheData.users, 'username');
+            }
+        }
+    } catch (error) {
+        console.error("Lỗi khi tạo người dùng:", error);
+        alert("Không thể tạo người dùng. Vui lòng thử lại.");
+    }
+};
+
     init();
+
 </script>
 </html>
