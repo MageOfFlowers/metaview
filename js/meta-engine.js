@@ -23,22 +23,33 @@ calculateStats(rawData, filters = {}) {
     const { compId, startDate, endDate, mode } = filters; 
 
     const compDateMap = new Map();
+    const compRegionMap = new Map();
     if (competitions) {
         competitions.forEach(c => {
-            if (c.id) compDateMap.set(Number(c.id), c.competition_date);
+            if (c.id) {
+                compDateMap.set(Number(c.id), c.competition_date);
+                compRegionMap.set(Number(c.id), c.region); // Lưu region theo id giải đấu
+            }
         });
     }
 
     let filteredUses = compUses.filter(use => {
-        const matchComp = compId === 'all' || Number(use.competitionid) === Number(compId);
+        const cId = Number(use.competitionid);
+        
+        // 1. Lọc theo Giải đấu cụ thể
+        const matchComp = compId === 'all' || cId === Number(compId);
         if (!matchComp) return false;
 
-        const dateValue = compDateMap.get(Number(use.competitionid));
+        // 2. Lọc theo Khu vực (N hoặc S)
+        const compRegion = compRegionMap.get(cId);
+        const matchRegion = !region || region === 'all' || compRegion === region;
+        if (!matchRegion) return false;
+
+        // 3. Lọc theo Ngày tháng
+        const dateValue = compDateMap.get(cId);
         if (!dateValue) return !startDate && !endDate;
 
-        // Chuẩn hóa ngày về miliseconds để so sánh chính xác
         const useTime = new Date(dateValue).setHours(0,0,0,0);
-        
         if (startDate) {
             const startTime = new Date(startDate).setHours(0,0,0,0);
             if (useTime < startTime) return false;
