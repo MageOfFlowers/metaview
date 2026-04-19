@@ -34,6 +34,10 @@ calculateStats(rawData, filters = {}) {
     }
 
     let filteredUses = compUses.filter(use => {
+
+        let { compUses, deckInfos, cards, competitions } = rawData;
+    // Bổ sung 'region' vào danh sách lấy từ filters
+    const { compId, startDate, endDate, mode, region } = filters;
         const cId = Number(use.competitionid);
         
         // 1. Lọc theo Giải đấu cụ thể
