@@ -29,9 +29,10 @@ export async function initAnalysis() {
         }
         const startInput = document.getElementById('filterStart');
         const endInput = document.getElementById('filterEnd');
-        
+        const regionInput = document.getElementById('filterRegion');
         if(startInput) startInput.onchange = () => triggerRender();
         if(endInput) endInput.onchange = () => triggerRender();
+        if(regionInput) regionInput.onchange = () => render();
         Object.assign(window, {
             triggerRender: render,
             triggerUsageRender,
