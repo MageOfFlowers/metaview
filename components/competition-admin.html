@@ -1,32 +1,49 @@
 <div class="accordion-item">
-    <div class="accordion-header">🏆 Đăng ký kết quả Giải <span>+</span></div>
+    <div class="accordion-header">🏆 Đăng ký Giải & Lịch sử <span>+</span></div>
     <div class="accordion-content">
         <div class="dashboard-grid">
             <div class="input-group">
-                <label>Giải đấu</label>
-                <input type="text" class="search-input" id="searchRegComp" placeholder="Tìm giải đấu..." oninput="filterSelect('regComp', this.value)">
-                <select id="regComp" size="4" class="select-dropdown"></select>
-            </div>
-            <div class="input-group">
                 <label>Người chơi</label>
-                <input type="text" class="search-input" id="searchRegUser" placeholder="Tìm người chơi..." oninput="filterSelect('regUser', this.value)">
+                <input type="text" id="sUser" placeholder="Tìm người chơi..." oninput="window.filterSelect('regUser', this.value, window.adminState.users, 'username')">
                 <select id="regUser" size="4" class="select-dropdown"></select>
+                <div id="user-history" class="history-box" style="display:none"></div>
             </div>
             <div class="input-group">
                 <label>Bộ bài</label>
-                <input type="text" class="search-input" id="searchRegDeck" placeholder="Tìm bộ bài..." oninput="filterSelect('regDeck', this.value)">
+                <input type="text" id="sDeck" placeholder="Tìm bộ bài..." oninput="window.filterSelect('regDeck', this.value, window.adminState.decks)">
                 <select id="regDeck" size="4" class="select-dropdown"></select>
             </div>
-            <div class="form-grid">
-                <div class="input-group"><label>Tỷ lệ thắng (%)</label><input type="number" id="regWin" value="50"></div>
-                <div class="input-group"><label>Thứ hạng (Rank)</label><input type="number" id="regRank" value="1" min="1"></div>
+            <div class="input-group">
+                <label>Giải đấu</label>
+                <input type="text" id="sComp" placeholder="Tìm giải..." oninput="window.filterSelect('regComp', this.value, window.adminState.comps)">
+                <select id="regComp" size="4" class="select-dropdown"></select>
             </div>
         </div>
-        <button class="btn-submit" id="btn-reg">Xác nhận đăng ký</button>
+        <button class="btn-submit" id="btn-reg">Xác nhận Đăng ký</button>
     </div>
 </div>
 
 <script type="module">
     import { request } from '../js/api.js';
-    // Logic fetch data và filterSelect cho riêng phần Competition
+
+    document.getElementById('regUser').onchange = async (e) => {
+        const userId = e.target.value;
+        const history = await request(`/users/${userId}/history`);
+        const box = document.getElementById('user-history');
+        box.style.display = 'block';
+        box.innerHTML = history?.length ? `Đã từng dùng: ${history.map(h => h.deckName).join(', ')}` : 'Chưa có lịch sử.';
+        e.target.classList.remove('show');
+    };
+
+    document.getElementById('btn-reg').onclick = async () => {
+        const body = {
+            competitionid: parseInt(document.getElementById('regComp').value),
+            userid: parseInt(document.getElementById('regUser').value),
+            deckid: parseInt(document.getElementById('regDeck').value),
+            winrate: 50, rank: 1
+        };
+        if(!body.competitionid || !body.userid) return alert("Chọn đủ thông tin!");
+        await request('/competition-use', 'POST', body);
+        alert("Thành công!");
+    };
 </script>

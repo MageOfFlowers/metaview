@@ -1,30 +1,41 @@
 <div class="accordion-item">
-    <div class="accordion-header">👤 Tạo Người dùng mới <span>+</span></div>
+    <div class="accordion-header">👤 Quản lý Người dùng <span>+</span></div>
     <div class="accordion-content">
         <div class="input-group">
-            <label>Tên người chơi</label>
-            <input type="text" id="userName" placeholder="Nhập tên người dùng...">
+            <label>Tên người dùng mới</label>
+            <input type="text" id="userName" placeholder="Nhập tên...">
         </div>
         <button class="btn-submit" id="save-user-btn">Lưu người dùng</button>
+        <div id="user-list-display" style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;"></div>
     </div>
 </div>
 
 <script type="module">
     import { request } from '../js/api.js';
 
-    document.getElementById('save-user-btn').onclick = async () => {
-        const input = document.getElementById('userName');
-        const username = input.value.trim();
-        if (!username) return alert("Vui lòng nhập tên!");
+    function render() {
+        const container = document.getElementById('user-list-display');
+        container.innerHTML = window.adminState.users.map(u => `
+            <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee;">
+                <span>${u.username} (ID: ${u.id})</span>
+                <button class="delete-btn" onclick="deleteU(${u.id})">Xóa</button>
+            </div>
+        `).join('');
+    }
 
-        try {
-            const res = await request(`/usersadd?username=${encodeURIComponent(username)}`, 'POST');
-            if (res) {
-                alert(`Thành công! Đã tạo: ${res.username}`);
-                input.value = '';
-                // Thông báo cho các component khác cập nhật lại danh sách user
-                window.dispatchEvent(new CustomEvent('user-list-updated'));
-            }
-        } catch (e) { alert("Lỗi khi tạo user"); }
+    window.deleteU = async (id) => {
+        if(!confirm("Xóa người dùng này?")) return;
+        await request('/user-delete', 'POST', id);
+        window.refreshData();
     };
+
+    document.getElementById('save-user-btn').onclick = async () => {
+        const val = document.getElementById('userName').value.trim();
+        if(!val) return alert("Nhập tên!");
+        await request(`/usersadd?username=${encodeURIComponent(val)}`, 'POST');
+        document.getElementById('userName').value = '';
+        window.refreshData();
+    };
+
+    window.addEventListener('state-updated', render);
 </script>
