@@ -111,23 +111,37 @@
     window.cacheData = { users: [], decks: [], comps: [], cards: [] };
 
     // 🔄 TẢI DỮ LIỆU BAN ĐẦU
-    async function reloadData() {
-        const [u, d, c, cards] = await Promise.all([
-            request('/users'), 
-            request('/decksget'), 
-            request('/competitions'), 
-            request('/cards')
-        ]);
-        window.cacheData = { 
-            users: u || [], 
-            decks: d || [], 
-            comps: c || [], 
-            cards: cards || [] 
+async function reloadData() {
+    const [u, d, c, cards, infos] = await Promise.all([
+        request('/users'), 
+        request('/decksget'), 
+        request('/competitions'), 
+        request('/cards'),
+        request('/deck-infos') // Nạp thêm thông tin chi tiết thẻ
+    ]);
+    
+    // Gắn thông tin cards vào từng deck dựa trên deck-infos
+    const decksWithCards = d.map(deck => {
+        const matchingInfos = infos.filter(info => info.deckid === deck.id);
+        return {
+            ...deck,
+            cards: matchingInfos.map(info => ({
+                id: info.cardid,
+                name: info.cardName || cards.find(c => c.id === info.cardid)?.name || "Unknown",
+                quantity: info.quantity
+            }))
         };
-        window.renderDeckList();
-        renderLibrary();
-    }
+    });
 
+    window.cacheData = { 
+        users: u || [], 
+        decks: decksWithCards, 
+        cards: cards || [] 
+    };
+    
+    window.renderDeckList();
+    renderLibrary();
+}
     // 🔍 LOGIC GỢI Ý (SUGGESTION)
     window.filterSelect = (selectId, term) => {
         const el = document.getElementById(selectId);
@@ -181,32 +195,32 @@ window.addToDeck = (id, name, qty = 1) => {
     };
 
     // 📋 DANH SÁCH RÚT GỌN
-    window.renderDeckList = () => {
-        const term = document.getElementById('deckListSearch').value.toLowerCase();
-        const tbody = document.getElementById('deck-list-tbody');
-        
-        const filtered = window.cacheData.decks.filter(d => {
-            const deckNameMatch = d.name.toLowerCase().includes(term);
-            const cardsMatch = d.cards?.some(c => c.name.toLowerCase().includes(term));
-            return deckNameMatch || cardsMatch;
-        });
+// admin.html - Cập nhật renderDeckList
+window.renderDeckList = () => {
+    const term = document.getElementById('deckListSearch').value.toLowerCase();
+    const tbody = document.getElementById('deck-list-tbody');
+    
+    const filtered = window.cacheData.decks.filter(d => {
+        const deckNameMatch = d.name.toLowerCase().includes(term);
+        const cardsMatch = d.cards?.some(c => c.name.toLowerCase().includes(term));
+        return deckNameMatch || cardsMatch;
+    });
 
-        tbody.innerHTML = filtered.map(d => `
-            <tr>
-                <td>
-                    <strong>${d.name}</strong>
-                    <span class="card-tags">
-                        ${d.cards ? d.cards.map(c => `${c.name} (x${c.quantity || 1})`).join(', ') : 'Chưa có bài'}
-                    </span>
-                </td>
-                <td style="text-align:center">
-                    <button class="btn-sm" style="background:#28a745" onclick="window.loadDeckToEdit(${d.id})">Sửa</button>
-                    <button class="btn-sm" style="background:#dc3545" onclick="window.deleteDeck(${d.id})">Xóa</button>
-                </td>
-            </tr>
-        `).join('');
-    };
-
+    tbody.innerHTML = filtered.map(d => `
+        <tr>
+            <td>
+                <strong>${d.name}</strong>
+                <div class="card-tags" style="font-size: 0.75rem; color: #666; margin-top: 4px;">
+                    ${d.cards.map(c => `${c.name} x${c.quantity}`).join(', ')}
+                </div>
+            </td>
+            <td style="text-align:center">
+                <button class="btn-sm" style="background:#28a745" onclick="window.loadDeckToEdit(${d.id})">Sửa</button>
+                <button class="btn-sm" style="background:#dc3545" onclick="window.deleteDeck(${d.id})">Xóa</button>
+            </td>
+        </tr>
+    `).join('');
+};
     function renderLibrary() {
         const container = document.getElementById('card-lib-view');
         container.innerHTML = window.cacheData.cards.map(c => `
@@ -217,22 +231,61 @@ window.addToDeck = (id, name, qty = 1) => {
     }
 
     // ✏️ LOGIC NHẤN SỬA: Nạp thẻ vào ô
-    window.loadDeckToEdit = (id) => {
-        const deck = window.cacheData.decks.find(d => d.id === id);
-        if (!deck) return;
+// admin.html - Hàm nạp thẻ khi sửa
+window.loadDeckToEdit = (id) => {
+    const deck = window.cacheData.decks.find(d => d.id === id);
+    if (!deck) return;
 
-        document.getElementById('currentDeckId').value = deck.id;
-        document.getElementById('deckName').value = deck.name;
-        document.getElementById('deck-build-container').innerHTML = "";
+    document.getElementById('currentDeckId').value = deck.id;
+    document.getElementById('deckName').value = deck.name;
+    const container = document.getElementById('deck-build-container');
+    container.innerHTML = "";
 
-        if (deck.cards) {
-            deck.cards.forEach(c => {
-                window.addToDeck(c.id, c.name, c.quantity || 1);
-            });
+    // Nạp thẻ vào ô soạn thảo
+    deck.cards.forEach(c => {
+        window.addToDeck(c.id, c.name, c.quantity);
+    });
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// admin.html - Logic lưu kèm check trùng hệt thành phần
+document.getElementById('save-deck-btn').onclick = async () => {
+    const currentId = parseInt(document.getElementById('currentDeckId').value);
+    const name = document.getElementById('deckName').value.trim();
+    const cards = Array.from(document.querySelectorAll('#deck-build-container .selected-row')).map(r => ({
+        cardid: parseInt(r.dataset.id),
+        quantity: parseInt(r.querySelector('.q').value)
+    }));
+
+    if(!name || cards.length === 0) return alert("Vui lòng nhập tên và chọn bài!");
+
+    // Tạo mã định danh cho bộ bài đang soạn (Sắp xếp ID để so sánh chuẩn)
+    const newFingerprint = cards
+        .sort((a, b) => a.cardid - b.cardid)
+        .map(c => `${c.cardid}:${c.quantity}`)
+        .join('|');
+
+    // Kiểm tra trong database hiện tại
+    const duplicate = window.cacheData.decks.find(d => {
+        if (d.id === currentId) return false; // Bỏ qua chính nó nếu đang sửa
+        const existingFingerprint = d.cards
+            .sort((a, b) => a.id - b.id)
+            .map(c => `${c.id}:${c.quantity}`)
+            .join('|');
+        return newFingerprint === existingFingerprint;
+    });
+
+    if (duplicate) {
+        if (!confirm(`Cảnh báo: Bộ bài này giống hệt thành phần của bộ "${duplicate.name}". Bạn vẫn muốn lưu chứ?`)) {
+            return;
         }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
+    }
 
+    await request('/decks', 'POST', { id: currentId, name, cards });
+    window.resetDeckForm();
+    reloadData();
+};
     function checkDuplicateDeck(newCards, currentId) {
         const newSet = newCards.map(c => `${c.cardid}:${c.quantity}`).sort().join('|');
         
@@ -277,28 +330,7 @@ window.addToDeck = (id, name, qty = 1) => {
         document.getElementById('deck-build-container').innerHTML = "";
     };
 
-    document.getElementById('save-deck-btn').onclick = async () => {
-        const currentId = parseInt(document.getElementById('currentDeckId').value);
-        const name = document.getElementById('deckName').value;
-        const cards = Array.from(document.querySelectorAll('#deck-build-container .selected-row')).map(r => ({
-            cardid: parseInt(r.dataset.id),
-            quantity: parseInt(r.querySelector('.q').value)
-        }));
-
-        if(!name || cards.length === 0) return alert("Thiếu tên hoặc chưa chọn bài!");
-
-        // Thực hiện kiểm tra trùng lặp
-        const duplicate = checkDuplicateDeck(cards, currentId);
-        if (duplicate) {
-            const confirmMsg = `Thành phần bộ bài này giống hệt bộ bài "${duplicate.name}". Bạn vẫn muốn tiếp tục lưu?`;
-            if (!confirm(confirmMsg)) return;
-        }
-
-        await request('/decks', 'POST', { id: currentId, name, cards });
-        window.resetDeckForm();
-        reloadData();
-    };
-    window.toggleAcc = (header) => {
+   window.toggleAcc = (header) => {
         const item = header.parentElement;
         item.classList.toggle('active');
         header.querySelector('span').innerText = item.classList.contains('active') ? '−' : '+';
