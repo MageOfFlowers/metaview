@@ -110,17 +110,18 @@
 
     window.cacheData = { users: [], decks: [], comps: [], cards: [] };
 
-    // 🔄 TẢI DỮ LIỆU BAN ĐẦU
+// admin.html - Cập nhật hàm reloadData
 async function reloadData() {
-    const [u, d, c, cards, infos] = await Promise.all([
+    const [u, d, c, cards, infos, uses] = await Promise.all([
         request('/users'), 
         request('/decksget'), 
         request('/competitions'), 
         request('/cards'),
-        request('/deck-infos') // Nạp thêm thông tin chi tiết thẻ
+        request('/deck-infos'),
+        request('/competition-use') // Tự lấy danh sách sử dụng để xem lịch sử
     ]);
     
-    // Gắn thông tin cards vào từng deck dựa trên deck-infos
+    // Map thông tin thẻ vào Deck (giống bản trước)
     const decksWithCards = d.map(deck => {
         const matchingInfos = infos.filter(info => info.deckid === deck.id);
         return {
@@ -136,13 +137,14 @@ async function reloadData() {
     window.cacheData = { 
         users: u || [], 
         decks: decksWithCards, 
-        cards: cards || [] 
+        cards: cards || [],
+        compUses: uses || [] // Lưu để tự tra cứu history
     };
     
     window.renderDeckList();
     renderLibrary();
 }
-    // 🔍 LOGIC GỢI Ý (SUGGESTION)
+   // 🔍 LOGIC GỢI Ý (SUGGESTION)
     window.filterSelect = (selectId, term) => {
         const el = document.getElementById(selectId);
         const val = term.trim().toLowerCase();
@@ -159,20 +161,30 @@ async function reloadData() {
         filtered.length > 0 ? el.classList.add('show') : el.classList.remove('show');
     };
 
-    document.getElementById('regUser').onchange = async (e) => {
-        const userId = e.target.value;
-        document.getElementById('searchRegUser').value = e.target.options[e.target.selectedIndex].text;
-        e.target.classList.remove('show');
+// admin.html - Thay đổi sự kiện onchange của regUser
+document.getElementById('regUser').onchange = (e) => {
+    const userId = parseInt(e.target.value);
+    document.getElementById('searchRegUser').value = e.target.options[e.target.selectedIndex].text;
+    e.target.classList.remove('show');
 
-        // Xem lịch sử người chơi
-        const history = await request(`/users/${userId}/history`);
-        const hint = document.getElementById('user-history-view');
-        hint.style.display = 'block';
-        hint.innerHTML = history?.length 
-            ? `<b>Lịch sử:</b> Đã dùng bài ${history.map(h => h.deckName).join(', ')}` 
-            : 'Người chơi mới, chưa có dữ liệu.';
-    };
-
+    // Tự mò trong competition-use thay vì gọi API /history
+    const userHistory = window.cacheData.compUses.filter(use => use.userid === userId);
+    const hint = document.getElementById('user-history-view');
+    
+    hint.style.display = 'block';
+    if (userHistory.length > 0) {
+        // Lấy tên bộ bài từ danh sách deck dựa trên deckid trong lịch sử
+        const deckNames = userHistory.map(h => {
+            const deck = window.cacheData.decks.find(d => d.id === h.deckid);
+            return deck ? deck.name : `Bộ bài #${h.deckid}`;
+        });
+        // Loại bỏ trùng lặp tên bộ bài để hiển thị gọn
+        const uniqueDecks = [...new Set(deckNames)];
+        hint.innerHTML = `<b>Lịch sử:</b> Đã dùng ${uniqueDecks.join(', ')}`;
+    } else {
+        hint.innerHTML = 'Người chơi mới, chưa đăng ký giải nào.';
+    }
+};
     ['regDeck', 'regComp'].forEach(id => {
         document.getElementById(id).onchange = (e) => {
             const inputId = 'search' + id.charAt(0).toUpperCase() + id.slice(1);
