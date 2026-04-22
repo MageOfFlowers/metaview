@@ -1,9 +1,9 @@
 <div class="accordion-item">
-    <div class="accordion-header">👤 Tạo Người dùng mới <span>+</span></div>
+    <div class="accordion-header" onclick="this.parentElement.classList.toggle('active')">👤 Quản lý Người dùng <span>+</span></div>
     <div class="accordion-content">
         <div class="input-group">
-            <label>Tên người chơi</label>
-            <input type="text" id="userName" placeholder="Nhập tên người dùng...">
+            <label>Tên người dùng</label>
+            <input type="text" id="userName" placeholder="Nhập tên mới...">
         </div>
         <button class="btn-submit" id="save-user-btn">Lưu người dùng</button>
     </div>
@@ -11,27 +11,11 @@
 
 <script type="module">
     import { request } from '../js/api.js';
-
     document.getElementById('save-user-btn').onclick = async () => {
-        const input = document.getElementById('userName');
-        const username = input.value.trim();
-        if (!username) return alert("Vui lòng nhập tên người chơi!");
-
-        try {
-            const res = await request(`/usersadd?username=${encodeURIComponent(username)}`, 'POST');
-            if (res) {
-                alert(`Thành công! Đã tạo người dùng: ${res.username}`);
-                input.value = '';
-                window.refreshAllData(); // Gọi hàm refresh ở file admin.html
-            }
-        } catch (error) {
-            alert("Lỗi khi tạo người dùng.");
-        }
-    };
-    
-    // Xử lý đóng mở accordion cục bộ
-    document.querySelector('#user-admin-slot .accordion-header').onclick = function() {
-        this.parentElement.classList.toggle('active');
-        this.querySelector('span').innerText = this.parentElement.classList.contains('active') ? '−' : '+';
+        const name = document.getElementById('userName').value.trim();
+        if(!name) return alert("Nhập tên!");
+        await request(`/usersadd?username=${encodeURIComponent(name)}`, 'POST');
+        alert("Thành công!");
+        window.refreshAllData();
     };
 </script>
