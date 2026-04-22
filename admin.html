@@ -5,14 +5,20 @@
     <title>Admin - Quản lý Hệ thống</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* CSS bổ trợ cho các tính năng gợi ý và giao diện builder */
+        /* CSS tối ưu giao diện */
         .select-dropdown { display: none; height: 120px; margin-top:5px; border:1px solid #ccc; overflow-y:auto; background: #fff; width: 100%; position: relative; z-index: 10; }
         .select-dropdown.show { display: block; }
         .selected-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; align-items: center; }
         .history-info { background: #f0f7ff; padding: 8px; border-radius: 4px; border-left: 4px solid #2196F3; margin-top: 5px; font-size: 0.85rem; color: #555; }
-        .card-item.editing { border: 2px solid #4CAF50; background: #e8f5e9; }
-        .btn-delete { background: #ff4d4d; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
-        .btn-edit { background: #4CAF50; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-right: 5px; }
+        
+        /* Style cho danh sách bộ bài gọn nhẹ */
+        .deck-management-list { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        .deck-management-list th, .deck-management-list td { padding: 8px; border-bottom: 1px solid #ddd; text-align: left; }
+        .deck-management-list tr:hover { background: #f9f9f9; }
+        .search-box { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn-action { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; color: white; font-size: 0.8rem; }
+        .btn-edit { background: #28a745; margin-right: 5px; }
+        .btn-delete { background: #dc3545; }
     </style>
 </head>
 <body>
@@ -30,7 +36,6 @@
                 <input type="text" id="userName" placeholder="Nhập tên...">
             </div>
             <button class="btn-submit" id="save-user-btn">Lưu người dùng</button>
-            <div id="user-list-admin" style="margin-top:15px; max-height: 200px; overflow-y: auto;"></div>
         </div>
     </div>
 
@@ -60,12 +65,12 @@
     </div>
 
     <div class="accordion-item active">
-        <div class="accordion-header" onclick="toggleAcc(this)">🎴 Deck Builder (Thêm/Sửa/Xóa) <span>−</span></div>
+        <div class="accordion-header" onclick="toggleAcc(this)">🎴 Deck Builder & Danh sách bộ bài <span>−</span></div>
         <div class="accordion-content">
             <input type="hidden" id="currentDeckId" value="0">
             <div class="input-group">
                 <label>Tên bộ bài</label>
-                <input type="text" id="deckName" placeholder="Tên Deck..." style="width:100%; margin-bottom:10px;">
+                <input type="text" id="deckName" placeholder="Nhập tên bộ bài để tạo mới hoặc sửa..." style="width:100%; margin-bottom:10px;">
             </div>
             
             <div class="dashboard-grid">
@@ -74,15 +79,29 @@
                     <div class="card-library" id="card-lib-view"></div>
                 </div>
                 <div>
-                    <label>Danh sách đã chọn</label>
-                    <div id="deck-build-container" style="min-height: 200px; border: 1px dashed #ccc; padding:10px;"></div>
-                    <button class="btn-submit" id="save-deck-btn" style="margin-top:15px;">Lưu bộ bài</button>
+                    <label>Bộ bài đang soạn</label>
+                    <div id="deck-build-container" style="min-height: 150px; border: 1px dashed #ccc; padding:10px; margin-bottom: 10px;"></div>
+                    <button class="btn-submit" id="save-deck-btn">Lưu bộ bài</button>
                     <button class="btn-submit" style="background:#888; margin-top:5px;" onclick="window.resetDeckForm()">Làm mới Form</button>
                 </div>
             </div>
-            <hr>
-            <h4>Danh sách các bộ bài đã lưu</h4>
-            <div id="existing-decks-list" class="dashboard-grid" style="margin-top:15px;"></div>
+
+            <hr style="margin: 20px 0;">
+            
+            <h4>Danh sách bộ bài đã tạo</h4>
+            <input type="text" class="search-box" id="searchDeckList" placeholder="🔍 Tìm kiếm bộ bài trong danh sách..." oninput="window.renderExistingDecks()">
+            
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #eee;">
+                <table class="deck-management-list">
+                    <thead>
+                        <tr>
+                            <th>Tên bộ bài</th>
+                            <th style="width: 120px; text-align: center;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="existing-decks-tbody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -90,7 +109,6 @@
 <script type="module">
     import { request } from './js/api.js';
 
-    // 1. Quản lý Dữ liệu chung
     window.cacheData = { users: [], decks: [], comps: [], cards: [] };
 
     async function initAdmin() {
@@ -99,37 +117,11 @@
         ]);
         window.cacheData = { users: u||[], decks: d||[], comps: c||[], cards: cards||[] };
         
-        renderUsers();
         renderLibrary();
-        renderExistingDecks();
+        window.renderExistingDecks();
     }
 
-    // 2. Logic Người dùng
-    function renderUsers() {
-        const container = document.getElementById('user-list-admin');
-        container.innerHTML = window.cacheData.users.map(u => `
-            <div style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                <span>${u.username}</span>
-                <button class="btn-delete" onclick="window.deleteUser(${u.id})">Xóa</button>
-            </div>
-        `).join('');
-    }
-
-    window.deleteUser = async (id) => {
-        if(!confirm("Xóa người dùng này sẽ ảnh hưởng đến lịch sử giải đấu. Tiếp tục?")) return;
-        await request('/user-delete', 'POST', id);
-        initAdmin();
-    };
-
-    document.getElementById('save-user-btn').onclick = async () => {
-        const input = document.getElementById('userName');
-        if(!input.value.trim()) return alert("Nhập tên!");
-        await request(`/usersadd?username=${encodeURIComponent(input.value.trim())}`, 'POST');
-        input.value = '';
-        initAdmin();
-    };
-
-    // 3. Logic Gợi ý (Suggestion) & Lịch sử
+    // 1. Logic Gợi ý & Lịch sử
     window.filterSelect = (selectId, term) => {
         const el = document.getElementById(selectId);
         const val = term.trim().toLowerCase();
@@ -148,20 +140,17 @@
 
     document.getElementById('regUser').onchange = async (e) => {
         const userId = e.target.value;
-        const input = document.getElementById('searchRegUser');
-        input.value = e.target.options[e.target.selectedIndex].text;
+        document.getElementById('searchRegUser').value = e.target.options[e.target.selectedIndex].text;
         e.target.classList.remove('show');
 
-        // Xem lịch sử (Xem deck đã dùng)
         const history = await request(`/users/${userId}/history`);
         const hint = document.getElementById('user-history-view');
         hint.style.display = 'block';
         hint.innerHTML = history?.length 
             ? `<b>Lịch sử:</b> Đã dùng bài ${history.map(h => h.deckName).join(', ')}` 
-            : 'Người chơi mới, chưa có lịch sử.';
+            : 'Người chơi mới.';
     };
 
-    // Auto-fill cho các select gợi ý khác
     ['regDeck', 'regComp'].forEach(id => {
         document.getElementById(id).onchange = (e) => {
             const inputId = 'search' + id.charAt(0).toUpperCase() + id.slice(1);
@@ -170,19 +159,7 @@
         };
     });
 
-    document.getElementById('btn-reg').onclick = async () => {
-        const body = {
-            competitionid: parseInt(document.getElementById('regComp').value),
-            userid: parseInt(document.getElementById('regUser').value),
-            deckid: parseInt(document.getElementById('regDeck').value),
-            winrate: 50, rank: 1
-        };
-        if(!body.competitionid || !body.userid) return alert("Chọn đủ thông tin!");
-        await request('/competition-use', 'POST', body);
-        alert("Đã đăng ký kết quả thành công!");
-    };
-
-    // 4. Logic Deck Builder (Thêm/Sửa/Xóa)
+    // 2. Logic Deck Builder
     function renderLibrary() {
         const container = document.getElementById('card-lib-view');
         container.innerHTML = window.cacheData.cards.map(c => `
@@ -203,39 +180,38 @@
         container.appendChild(div);
     };
 
-    function renderExistingDecks() {
-        const container = document.getElementById('existing-decks-list');
-        container.innerHTML = window.cacheData.decks.map(d => `
-            <div class="card-item" style="border: 1px solid #ddd; padding: 10px; text-align:center;">
-                <div style="font-weight:bold; font-size:0.8rem; margin-bottom:10px; height:35px; overflow:hidden;">${d.name}</div>
-                <div style="display:flex; gap:5px;">
-                    <button class="btn-edit" onclick="window.loadDeckToEdit(${d.id})">Sửa</button>
-                    <button class="btn-delete" onclick="window.deleteDeck(${d.id})">Xóa</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // Logic SỬA: Lấy chi tiết Deck và đưa vào form
-    window.loadDeckToEdit = async (id) => {
-        const deck = await request(`/decks/${id}`); // Giả định endpoint lấy chi tiết
-        if(!deck) return alert("Không tìm thấy dữ liệu bộ bài.");
+    // 3. Render Danh sách bộ bài (LÀM GỌN + SEARCH)
+    window.renderExistingDecks = () => {
+        const searchTerm = document.getElementById('searchDeckList').value.toLowerCase();
+        const tbody = document.getElementById('existing-decks-tbody');
         
+        const filteredDecks = window.cacheData.decks.filter(d => 
+            d.name.toLowerCase().includes(searchTerm)
+        );
+
+        tbody.innerHTML = filteredDecks.map(d => `
+            <tr>
+                <td><strong>${d.name}</strong></td>
+                <td style="text-align: center;">
+                    <button class="btn-action btn-edit" onclick="window.loadDeckToEdit(${d.id})">Sửa</button>
+                    <button class="btn-action btn-delete" onclick="window.deleteDeck(${d.id})">Xóa</button>
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    window.loadDeckToEdit = async (id) => {
+        const deck = await request(`/decksget/${id}`);
+        if(!deck) return;
         document.getElementById('currentDeckId').value = deck.id;
         document.getElementById('deckName').value = deck.name;
         document.getElementById('deck-build-container').innerHTML = "";
-        
-        deck.deckInfos?.forEach(info => {
-            window.addToDeck(info.cardid, info.cardName, info.quantity);
-        });
-        
-        // Cuộn lên phần builder
-        document.getElementById('deckName').scrollIntoView({ behavior: 'smooth' });
+        deck.deckInfos?.forEach(info => window.addToDeck(info.cardid, info.cardName, info.quantity));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Logic XÓA Deck
     window.deleteDeck = async (id) => {
-        if(!confirm("Bạn có chắc muốn xóa bộ bài này?")) return;
+        if(!confirm("Xác nhận xóa bộ bài?")) return;
         await request('/deck-delete', 'POST', id);
         initAdmin();
     };
@@ -250,29 +226,42 @@
         const body = {
             id: parseInt(document.getElementById('currentDeckId').value),
             name: document.getElementById('deckName').value,
-            cards: Array.from(document.querySelectorAll('.selected-row')).map(r => ({
+            cards: Array.from(document.querySelectorAll('#deck-build-container .selected-row')).map(r => ({
                 cardid: parseInt(r.dataset.id),
                 quantity: parseInt(r.querySelector('.q').value)
             }))
         };
         if(!body.name || body.cards.length === 0) return alert("Thiếu tên hoặc chưa chọn bài!");
-        
-        const res = await request('/decks', 'POST', body);
-        if(res) {
-            alert("Đã lưu bộ bài thành công!");
-            window.resetDeckForm();
-            initAdmin();
-        }
+        await request('/decks', 'POST', body);
+        window.resetDeckForm();
+        initAdmin();
     };
 
-    // UI Helper
+    document.getElementById('save-user-btn').onclick = async () => {
+        const name = document.getElementById('userName').value.trim();
+        if(!name) return;
+        await request(`/usersadd?username=${encodeURIComponent(name)}`, 'POST');
+        document.getElementById('userName').value = '';
+        initAdmin();
+    };
+
+    document.getElementById('btn-reg').onclick = async () => {
+        const body = {
+            competitionid: parseInt(document.getElementById('regComp').value),
+            userid: parseInt(document.getElementById('regUser').value),
+            deckid: parseInt(document.getElementById('regDeck').value),
+            winrate: 50, rank: 1
+        };
+        await request('/competition-use', 'POST', body);
+        alert("Thành công!");
+    };
+
     window.toggleAcc = (header) => {
         const item = header.parentElement;
         item.classList.toggle('active');
         header.querySelector('span').innerText = item.classList.contains('active') ? '−' : '+';
     };
 
-    // Chạy khởi tạo
     initAdmin();
 </script>
 </body>
