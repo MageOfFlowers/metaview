@@ -1,49 +1,58 @@
 <div class="accordion-item">
-    <div class="accordion-header">🏆 Đăng ký Giải & Lịch sử <span>+</span></div>
+    <div class="accordion-header">🏆 Đăng ký kết quả Giải <span>+</span></div>
     <div class="accordion-content">
         <div class="dashboard-grid">
             <div class="input-group">
+                <label>Giải đấu</label>
+                <input type="text" id="searchRegComp" placeholder="Tìm giải đấu..." oninput="window.filterSelect('regComp', this.value)">
+                <select id="regComp" size="4" class="select-dropdown"></select>
+            </div>
+            <div class="input-group">
                 <label>Người chơi</label>
-                <input type="text" id="sUser" placeholder="Tìm người chơi..." oninput="window.filterSelect('regUser', this.value, window.adminState.users, 'username')">
+                <input type="text" id="searchRegUser" placeholder="Tìm người chơi..." oninput="window.filterSelect('regUser', this.value)">
                 <select id="regUser" size="4" class="select-dropdown"></select>
-                <div id="user-history" class="history-box" style="display:none"></div>
             </div>
             <div class="input-group">
                 <label>Bộ bài</label>
-                <input type="text" id="sDeck" placeholder="Tìm bộ bài..." oninput="window.filterSelect('regDeck', this.value, window.adminState.decks)">
+                <input type="text" id="searchRegDeck" placeholder="Tìm bộ bài..." oninput="window.filterSelect('regDeck', this.value)">
                 <select id="regDeck" size="4" class="select-dropdown"></select>
             </div>
-            <div class="input-group">
-                <label>Giải đấu</label>
-                <input type="text" id="sComp" placeholder="Tìm giải..." oninput="window.filterSelect('regComp', this.value, window.adminState.comps)">
-                <select id="regComp" size="4" class="select-dropdown"></select>
+            <div class="form-grid">
+                <div class="input-group"><label>Tỷ lệ thắng (%)</label><input type="number" id="regWin" value="50"></div>
+                <div class="input-group"><label>Thứ hạng (Rank)</label><input type="number" id="regRank" value="1" min="1"></div>
             </div>
         </div>
-        <button class="btn-submit" id="btn-reg">Xác nhận Đăng ký</button>
+        <button class="btn-submit" id="btn-reg">Xác nhận đăng ký</button>
     </div>
 </div>
 
 <script type="module">
     import { request } from '../js/api.js';
 
-    document.getElementById('regUser').onchange = async (e) => {
-        const userId = e.target.value;
-        const history = await request(`/users/${userId}/history`);
-        const box = document.getElementById('user-history');
-        box.style.display = 'block';
-        box.innerHTML = history?.length ? `Đã từng dùng: ${history.map(h => h.deckName).join(', ')}` : 'Chưa có lịch sử.';
-        e.target.classList.remove('show');
-    };
+    document.querySelectorAll('#competition-admin-slot select[size]').forEach(select => {
+        select.onchange = () => {
+            const inputId = 'search' + select.id.charAt(0).toUpperCase() + select.id.slice(1);
+            const input = document.getElementById(inputId);
+            if (input) input.value = select.options[select.selectedIndex].text;
+            select.classList.remove('show');
+        };
+    });
 
     document.getElementById('btn-reg').onclick = async () => {
         const body = {
             competitionid: parseInt(document.getElementById('regComp').value),
             userid: parseInt(document.getElementById('regUser').value),
             deckid: parseInt(document.getElementById('regDeck').value),
-            winrate: 50, rank: 1
+            winrate: parseFloat(document.getElementById('regWin').value) || 0,
+            rank: parseInt(document.getElementById('regRank').value) || 1
         };
-        if(!body.competitionid || !body.userid) return alert("Chọn đủ thông tin!");
-        await request('/competition-use', 'POST', body);
-        alert("Thành công!");
+        if (!body.competitionid || !body.userid || !body.deckid) return alert("Chọn đầy đủ thông tin!");
+        const res = await request('/competition-use', 'POST', body);
+        if (res) alert("✅ Đăng ký hoàn tất!");
+    };
+
+    document.querySelector('#competition-admin-slot .accordion-header').onclick = function() {
+        this.parentElement.classList.toggle('active');
+        this.querySelector('span').innerText = this.parentElement.classList.contains('active') ? '−' : '+';
     };
 </script>

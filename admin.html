@@ -2,78 +2,84 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Quản lý Hệ thống</title>
+    <title>Admin - Quản lý</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .history-box { margin-top: 10px; font-size: 0.85rem; color: #666; background: #f4f4f4; padding: 10px; border-radius: 4px; border-left: 3px solid var(--primary); }
-        .delete-btn { background: #ff4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
-        .delete-btn:hover { background: #cc0000; }
-        .edit-row { cursor: pointer; transition: background 0.2s; }
-        .edit-row:hover { background: #f0f7ff; }
-        .select-dropdown.show { display: block !important; height: 120px !important; }
+        .select-dropdown { display: none; height: 100px; margin-top:5px; }
+        .select-dropdown.show { display: block; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <a href="index.html">← Trang chủ</a>
-            <h1>⚙️ Quản lý hệ thống</h1>
-        </header>
+<div class="container">
+    <header>
+        <a href="index.html">← Trang chủ</a>
+        <h1>⚙️ Quản lý hệ thống</h1>
+    </header>
 
-        <div id="user-section"></div>
-        <div id="competition-section"></div>
-        <div id="deck-section"></div>
-    </div>
+    <div id="user-admin-slot"></div>
+    <div id="competition-admin-slot"></div>
+    <div id="deck-admin-slot"></div>
+</div>
 
-    <script type="module">
-        import { request } from './js/api.js';
-        
-        // State dùng chung cho các component
-        window.adminState = {
-            users: [], decks: [], comps: [], cards: []
-        };
+<script type="module">
+    import { request } from './js/api.js';
+    
+    // Khai báo cacheData toàn cục để các component dùng chung
+    window.cacheData = { users: [], decks: [], comps: [], allCards: [] };
 
-        async function loadComponent(id, file) {
-            const res = await fetch(file);
-            const container = document.getElementById(id);
-            container.innerHTML = await res.text();
-            const scripts = container.querySelectorAll("script");
-            scripts.forEach(oldScript => {
-                const newScript = document.createElement("script");
-                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                oldScript.parentNode.replaceChild(newScript, oldScript);
-            });
+    async function loadComponent(id, file) {
+        const res = await fetch(file);
+        const container = document.getElementById(id);
+        container.innerHTML = await res.text();
+        const scripts = container.querySelectorAll("script");
+        for (const oldScript of scripts) {
+            const newScript = document.createElement("script");
+            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+            oldScript.parentNode.replaceChild(newScript, oldScript);
         }
+    }
 
-        window.refreshData = async () => {
-            const [u, d, c, cards] = await Promise.all([
-                request('/users'), request('/decksget'), request('/competitions'), request('/cards')
-            ]);
-            window.adminState = { users: u, decks: d, comps: c, cards: cards };
-            window.dispatchEvent(new CustomEvent('state-updated'));
+    // Helper filter dùng chung cho các select search
+    window.filterSelect = (selectId, searchTerm) => {
+        const el = document.getElementById(selectId);
+        const term = searchTerm.trim().toLowerCase();
+        if (term === "") { el.classList.remove('show'); return; }
+
+        let data = [];
+        let key = 'name';
+        if (selectId === 'regUser') { data = window.cacheData.users; key = 'username'; }
+        else if (selectId === 'regDeck') { data = window.cacheData.decks; }
+        else if (selectId === 'regComp') { data = window.cacheData.comps; }
+
+        const filtered = data.filter(item => (item[key] || "").toLowerCase().includes(term));
+        el.innerHTML = filtered.map(i => `<option value="${i.id}">${i[key] || i.name}</option>`).join('');
+        filtered.length > 0 ? el.classList.add('show') : el.classList.remove('show');
+    };
+
+    window.refreshAllData = async () => {
+        const [users, decks, comps, cards] = await Promise.all([
+            request('/users'), request('/decksget'), request('/competitions'), request('/cards')
+        ]);
+        window.cacheData = { 
+            users: users || [], 
+            decks: decks || [], 
+            comps: comps || [], 
+            allCards: cards || [] 
         };
+        // Thông báo cho các component rằng dữ liệu đã sẵn sàng
+        window.dispatchEvent(new CustomEvent('data-loaded'));
+    };
 
-        async function init() {
-            await Promise.all([
-                loadComponent('user-section', 'components/user-admin.html'),
-                loadComponent('competition-section', 'components/competition-admin.html'),
-                loadComponent('deck-section', 'components/deck-admin.html')
-            ]);
-            await window.refreshData();
-        }
-
-        // Global Helper cho Search Select
-        window.filterSelect = (selectId, searchTerm, data, key = 'name') => {
-            const el = document.getElementById(selectId);
-            const term = searchTerm.trim().toLowerCase();
-            if (!term) { el.classList.remove('show'); return; }
-            const filtered = data.filter(item => (item[key] || "").toLowerCase().includes(term));
-            el.innerHTML = filtered.map(i => `<option value="${i.id}">${i[key]}</option>`).join('');
-            filtered.length > 0 ? el.classList.add('show') : el.classList.remove('show');
-        };
-
-        init();
-    </script>
+    async function init() {
+        await Promise.all([
+            loadComponent('user-admin-slot', 'components/user-admin.html'),
+            loadComponent('competition-admin-slot', 'components/competition-admin.html'),
+            loadComponent('deck-admin-slot', 'components/deck-admin.html')
+        ]);
+        await window.refreshAllData();
+    }
+    init();
+</script>
 </body>
 </html>
