@@ -2,11 +2,13 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Quản lý</title>
+    <title>Admin - Quản lý Hệ thống</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .select-dropdown { display: none; height: 100px; margin-top:5px; }
+        .select-dropdown { display: none; height: 100px; margin-top:5px; border:1px solid #ccc; overflow-y:auto; }
         .select-dropdown.show { display: block; }
+        .selected-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .history-box { background: #f9f9f9; padding: 8px; border-left: 3px solid var(--primary); margin-top: 5px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -16,35 +18,96 @@
         <h1>⚙️ Quản lý hệ thống</h1>
     </header>
 
-    <div id="user-admin-slot"></div>
-    <div id="competition-admin-slot"></div>
-    <div id="deck-admin-slot"></div>
+    <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAcc(this)">👤 Tạo Người dùng mới <span>+</span></div>
+        <div class="accordion-content">
+            <div class="input-group">
+                <label>Tên người chơi</label>
+                <input type="text" id="userName" placeholder="Nhập tên người dùng...">
+            </div>
+            <button class="btn-submit" id="save-user-btn">Lưu người dùng</button>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAcc(this)">🏆 Đăng ký kết quả Giải <span>+</span></div>
+        <div class="accordion-content">
+            <div class="dashboard-grid">
+                <div class="input-group">
+                    <label>Giải đấu</label>
+                    <input type="text" id="searchRegComp" placeholder="Tìm giải..." oninput="window.filterSelect('regComp', this.value)">
+                    <select id="regComp" size="4" class="select-dropdown"></select>
+                </div>
+                <div class="input-group">
+                    <label>Người chơi</label>
+                    <input type="text" id="searchRegUser" placeholder="Tìm người chơi..." oninput="window.filterSelect('regUser', this.value)">
+                    <select id="regUser" size="4" class="select-dropdown"></select>
+                </div>
+                <div class="input-group">
+                    <label>Bộ bài</label>
+                    <input type="text" id="searchRegDeck" placeholder="Tìm bộ bài..." oninput="window.filterSelect('regDeck', this.value)">
+                    <select id="regDeck" size="4" class="select-dropdown"></select>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group"><label>Thắng (%)</label><input type="number" id="regWin" value="50"></div>
+                    <div class="input-group"><label>Hạng</label><input type="number" id="regRank" value="1" min="1"></div>
+                </div>
+            </div>
+            <button class="btn-submit" id="btn-reg">Xác nhận đăng ký</button>
+        </div>
+    </div>
+
+    <div class="accordion-item active">
+        <div class="accordion-header" onclick="toggleAcc(this)">🎴 Tạo bộ bài & Deck Builder <span>−</span></div>
+        <div class="accordion-content">
+            <div class="input-group">
+                <label>Tên bộ bài</label>
+                <input type="text" id="deckName" placeholder="Tên Deck..." style="width:100%; margin-bottom:15px;">
+            </div>
+            <div class="filter-bar">
+                <input type="text" id="searchCard" placeholder="Tìm tên lá bài..." style="flex:1">
+                <div id="color-filters">
+                    <button class="color-btn active" data-color="all">Tất cả</button>
+                    <button class="color-btn" data-color="R">Đỏ</button>
+                    <button class="color-btn" data-color="G">Xanh</button>
+                </div>
+            </div>
+            <div class="dashboard-grid">
+                <div>
+                    <label>Thư viện (Click để chọn)</label>
+                    <div class="card-library" id="card-library-view"></div>
+                </div>
+                <div>
+                    <label>Lá bài đã chọn</label>
+                    <div id="deck-list-container" style="min-height: 200px; border: 1px dashed #ccc; padding:10px;"></div>
+                    <button class="btn-submit" id="save-deck-btn" style="margin-top:20px;">Lưu vào Database</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script type="module">
-    import { request } from './js/api.js';
-    
-    // Khai báo cacheData toàn cục để các component dùng chung
-    window.cacheData = { users: [], decks: [], comps: [], allCards: [] };
+    import { request } from './js/api.js'; // Đường dẫn tương đối từ admin.html đến js/api.js
 
-    async function loadComponent(id, file) {
-        const res = await fetch(file);
-        const container = document.getElementById(id);
-        container.innerHTML = await res.text();
-        const scripts = container.querySelectorAll("script");
-        for (const oldScript of scripts) {
-            const newScript = document.createElement("script");
-            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-            oldScript.parentNode.replaceChild(newScript, oldScript);
-        }
+    // 1. Quản lý State tập trung
+    window.cacheData = { users: [], decks: [], comps: [], cards: [] };
+    let selectedColor = 'all';
+
+    // 2. Logic Khởi tạo
+    async function init() {
+        const [u, d, c, cards] = await Promise.all([
+            request('/users'), request('/decksget'), request('/competitions'), request('/cards')
+        ]);
+        window.cacheData = { users: u||[], decks: d||[], comps: c||[], cards: cards||[] };
+        renderLibrary();
     }
 
-    // Helper filter dùng chung cho các select search
+    // 3. Logic Filter & Select
     window.filterSelect = (selectId, searchTerm) => {
         const el = document.getElementById(selectId);
         const term = searchTerm.trim().toLowerCase();
-        if (term === "") { el.classList.remove('show'); return; }
+        if (!term) { el.classList.remove('show'); return; }
 
         let data = [];
         let key = 'name';
@@ -57,29 +120,96 @@
         filtered.length > 0 ? el.classList.add('show') : el.classList.remove('show');
     };
 
-    window.refreshAllData = async () => {
-        const [users, decks, comps, cards] = await Promise.all([
-            request('/users'), request('/decksget'), request('/competitions'), request('/cards')
-        ]);
-        window.cacheData = { 
-            users: users || [], 
-            decks: decks || [], 
-            comps: comps || [], 
-            allCards: cards || [] 
-        };
-        // Thông báo cho các component rằng dữ liệu đã sẵn sàng
-        window.dispatchEvent(new CustomEvent('data-loaded'));
+    // 4. Logic Deck Builder
+    function renderLibrary() {
+        const term = document.getElementById('searchCard').value.toLowerCase();
+        const container = document.getElementById('card-library-view');
+        const filtered = window.cacheData.cards.filter(c => 
+            (selectedColor === 'all' || c.color === selectedColor) && c.name.toLowerCase().includes(term)
+        );
+        container.innerHTML = filtered.map(c => `
+            <div class="card-item" onclick="window.addCardToDeck(${c.id}, '${c.name.replace(/'/g, "\\'")}')">
+                <img src="${c.url}"><div class="card-name-mini">${c.name}</div>
+            </div>
+        `).join('');
+    }
+
+    window.addCardToDeck = (id, name) => {
+        const container = document.getElementById('deck-list-container');
+        const existing = container.querySelector(`.selected-row[data-id="${id}"]`);
+        if(existing) {
+            const qty = existing.querySelector('.d-qty');
+            qty.value = Math.min(4, parseInt(qty.value) + 1);
+            return;
+        }
+        const div = document.createElement('div');
+        div.className = 'selected-row'; div.dataset.id = id;
+        div.innerHTML = `<span>${name}</span>
+            <div><input type="number" class="d-qty" value="1" min="1" max="4" style="width:45px">
+            <button onclick="this.parentElement.parentElement.remove()" style="color:red; border:none; background:none; cursor:pointer">✖</button></div>`;
+        container.appendChild(div);
     };
 
-    async function init() {
-        await Promise.all([
-            loadComponent('user-admin-slot', 'components/user-admin.html'),
-            loadComponent('competition-admin-slot', 'components/competition-admin.html'),
-            loadComponent('deck-admin-slot', 'components/deck-admin.html')
-        ]);
-        await window.refreshAllData();
-    }
+    // 5. Gán Event Listeners
+    document.getElementById('save-user-btn').onclick = async () => {
+        const name = document.getElementById('userName').value.trim();
+        if(!name) return alert("Nhập tên!");
+        await request(`/usersadd?username=${encodeURIComponent(name)}`, 'POST');
+        document.getElementById('userName').value = '';
+        init();
+    };
+
+    document.getElementById('btn-reg').onclick = async () => {
+        const body = {
+            competitionid: parseInt(document.getElementById('regComp').value),
+            userid: parseInt(document.getElementById('regUser').value),
+            deckid: parseInt(document.getElementById('regDeck').value),
+            winrate: parseFloat(document.getElementById('regWin').value) || 0,
+            rank: parseInt(document.getElementById('regRank').value) || 1
+        };
+        await request('/competition-use', 'POST', body);
+        alert("Thành công!");
+    };
+
+    document.getElementById('save-deck-btn').onclick = async () => {
+        const name = document.getElementById('deckName').value;
+        const cards = Array.from(document.querySelectorAll('.selected-row')).map(r => ({
+            cardid: parseInt(r.dataset.id),
+            quantity: parseInt(r.querySelector('.d-qty').value)
+        }));
+        if(!name || cards.length === 0) return alert("Thiếu thông tin!");
+        await request('/decks', 'POST', { name, cards });
+        alert("Đã lưu Deck!");
+        init();
+    };
+
+    document.getElementById('searchCard').oninput = renderLibrary;
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedColor = btn.dataset.color;
+            renderLibrary();
+        };
+    });
+
+    // Helper UI
+    window.toggleAcc = (header) => {
+        const item = header.parentElement;
+        item.classList.toggle('active');
+        header.querySelector('span').innerText = item.classList.contains('active') ? '−' : '+';
+    };
+
+    // Xử lý chọn option tự động điền input
+    document.querySelectorAll('select').forEach(sel => {
+        sel.onchange = () => {
+            const input = document.getElementById('search' + sel.id.charAt(0).toUpperCase() + sel.id.slice(1));
+            if(input) input.value = sel.options[sel.selectedIndex].text;
+            sel.classList.remove('show');
+        };
+    });
+
     init();
 </script>
 </body>
-</html>
+</html>sss
