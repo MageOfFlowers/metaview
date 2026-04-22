@@ -2,319 +2,86 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Quản lý</title>
+    <title>Admin - Quản lý Hệ thống</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Style bổ sung để hỗ trợ việc hiển thị các component động */
+        .section-loading { padding: 20px; text-align: center; color: #666; }
+        .select-dropdown.show { display: block !important; }
+    </style>
 </head>
-<div class="container">
-    <header>
-        <a href="index.html">← Trang chủ</a>
-        <h1>⚙️ Quản lý hệ thống</h1>
-    </header>
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html">← Trang chủ</a>
+            <h1>⚙️ Quản lý hệ thống</h1>
+        </header>
 
-    <div class="accordion-item">
-        <div class="accordion-header">👤 Tạo Người dùng mới <span>+</span></div>
-        <div class="accordion-content">
-            <div class="input-group">
-                <label>Tên người chơi</label>
-                <input type="text" id="userName" placeholder="Nhập tên người dùng...">
-            </div>
-            <button class="btn-submit" id="save-user-btn">Lưu người dùng</button>
-        </div>
+        <div id="user-section"></div>
+        <div id="competition-section"></div>
+        <div id="deck-section"></div>
     </div>
 
-    <div class="accordion-item">
-        <div class="accordion-header">🏆 Đăng ký kết quả Giải <span>+</span></div>
-        <div class="accordion-content">
-            <div class="dashboard-grid">
-    <div class="input-group">
-        <label>Giải đấu</label>
-        <input type="text" class="search-input" id="searchRegComp" placeholder="Tìm giải đấu..." oninput="filterSelect('regComp', this.value)">
-        <select id="regComp" size="4" style="height: 100px; margin-top:5px;"></select>
-    </div>
-    <div class="input-group">
-        <label>Người chơi</label>
-        <input type="text" class="search-input" id="searchRegUser" placeholder="Tìm người chơi..." oninput="filterSelect('regUser', this.value)">
-        <select id="regUser" size="4" style="height: 100px; margin-top:5px;"></select>
-    </div>
-    <div class="input-group">
-        <label>Bộ bài</label>
-        <input type="text" class="search-input" id="searchRegDeck" placeholder="Tìm bộ bài..." oninput="filterSelect('regDeck', this.value)">
-        <select id="regDeck" size="4" style="height: 100px; margin-top:5px;"></select>
-    </div>
-    <div class="form-grid">
-        <div class="input-group"><label>Tỷ lệ thắng (%)</label><input type="number" id="regWin" value="50"></div>
-        <div class="input-group"><label>Thứ hạng (Rank)</label><input type="number" id="regRank" value="1" min="1"></div>
-    </div>
-</div>
-            <button class="btn-submit" id="btn-reg">Xác nhận đăng ký</button>
-        </div>
-    </div>
+    <script type="module">
+        import { request } from './js/api.js';
 
-    <div class="accordion-item active">
-        <div class="accordion-header">🎴 Tạo bộ bài & Deck Builder <span>−</span></div>
-        <div class="accordion-content">
-            <div class="input-group">
-                <label>Tên bộ bài</label>
-                <input type="text" id="deckName" placeholder="Tên Deck..." style="width:100%; margin-bottom:15px;">
-            </div>
+        // Hàm nạp component và thực thi script bên trong nó
+        async function loadComponent(id, file) {
+            try {
+                const container = document.getElementById(id);
+                container.innerHTML = '<div class="section-loading">Đang tải thành phần...</div>';
+                
+                const res = await fetch(file);
+                const html = await res.text();
+                container.innerHTML = html;
 
-            <div class="filter-bar">
-                <input type="text" id="searchCard" placeholder="Tìm tên lá bài..." style="flex:1">
-                <button class="color-btn" data-color="all">Tất cả</button>
-                <button class="color-btn" data-color="R">Đỏ (R)</button>
-                <button class="color-btn" data-color="G">Xanh (G)</button>
-                <button class="color-btn" data-color="Y">Vàng (Y)</button>
-                <button class="color-btn" data-color="P">Tím (P)</button>
-            </div>
-
-            <div class="dashboard-grid">
-                <div>
-                    <label>Thư viện lá bài (Click để chọn)</label>
-                    <div class="card-library" id="card-library-view"></div>
-                </div>
-                <div>
-                    <label>Lá bài đã chọn</label>
-                    <div id="deck-list-container" style="min-height: 200px; border: 1px dashed #ccc; padding:10px;">
-                        </div>
-                    <button class="btn-submit" style="background:var(--primary); margin-top:20px;" id="save-deck-btn">Lưu vào cơ sở dữ liệu</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script type="module">
-    import { request } from './js/api.js';
-    let allCards = [];
-    let selectedColor = 'all';
-
-    // Khai báo biến lưu trữ dữ liệu gốc để search
-let cacheData = {
-    users: [],
-    decks: [],
-    comps: []
-};
-
-async function init() {
-    const [users, decks, comps, cards] = await Promise.all([
-        request('/users'), request('/decksget'), request('/competitions'), request('/cards')
-    ]);
-    
-    // Lưu vào cache
-    cacheData.users = users || [];
-    cacheData.decks = decks || [];
-    cacheData.comps = comps || [];
-    allCards = cards || [];
-    
-    // Đổ dữ liệu ban đầu
-    fill('regUser', cacheData.users, 'username');
-    fill('regDeck', cacheData.decks, 'name');
-    fill('regComp', cacheData.comps, 'name');
-    
-    renderLibrary();
-}
-
-window.filterSelect = (selectId, searchTerm) => {
-    const el = document.getElementById(selectId);
-    const term = searchTerm.trim().toLowerCase();
-
-    // Nếu không nhập gì thì ẩn danh sách và thoát
-    if (term === "") {
-        el.classList.remove('show');
-        return;
-    }
-
-    let data = [];
-    let key = 'name';
-
-    if (selectId === 'regUser') { data = cacheData.users; key = 'username'; }
-    else if (selectId === 'regDeck') { data = cacheData.decks; }
-    else if (selectId === 'regComp') { data = cacheData.comps; }
-
-    const filtered = data.filter(item => 
-        (item[key] || item.name).toLowerCase().includes(term)
-    );
-
-    // Cập nhật dữ liệu vào select
-    fill(selectId, filtered, key);
-
-    // Hiện danh sách nếu có kết quả
-    if (filtered.length > 0) {
-        el.classList.add('show');
-    } else {
-        el.classList.remove('show');
-    }
-};
-
-// Thêm sự kiện để khi người dùng click chọn 1 option thì ẩn danh sách đi
-document.querySelectorAll('select[size]').forEach(select => {
-    select.onchange = () => {
-        // Cập nhật ngược lại tên vào ô input cho trực quan (tùy chọn)
-        const inputId = 'search' + select.id.charAt(0).toUpperCase() + select.id.slice(1);
-        const input = document.getElementById(inputId);
-        if (input && select.options[select.selectedIndex]) {
-            input.value = select.options[select.selectedIndex].text;
-        }
-        
-        select.classList.remove('show'); // Ẩn danh sách sau khi chọn
-    };
-});
-
-    // Xử lý Accordion
-    document.querySelectorAll('.accordion-header').forEach(header => {
-        header.onclick = () => {
-            const item = header.parentElement;
-            item.classList.toggle('active');
-            header.querySelector('span').innerText = item.classList.contains('active') ? '−' : '+';
-        };
-    });
-
-    // Hiển thị thư viện ảnh có filter
-    function renderLibrary() {
-        const container = document.getElementById('card-library-view');
-        const searchTerm = document.getElementById('searchCard').value.toLowerCase();
-        
-        const filtered = allCards.filter(c => {
-            const matchColor = selectedColor === 'all' || c.color === selectedColor;
-            const matchName = c.name.toLowerCase().includes(searchTerm);
-            return matchColor && matchName;
-        });
-
-        container.innerHTML = filtered.map(c => `
-            <div class="card-item" onclick="window.addCardToDeck(${c.id}, '${c.name}')">
-                <img src="${c.url}" alt="${c.name}" title="${c.name}">
-                <div class="card-name-mini">${c.name}</div>
-            </div>
-        `).join('');
-    }
-
-    // Thêm bài vào danh sách chọn
-    window.addCardToDeck = (id, name) => {
-        const container = document.getElementById('deck-list-container');
-        // Kiểm tra xem đã có trong danh sách chưa
-        const existing = document.querySelector(`.selected-row[data-id="${id}"]`);
-        if(existing) {
-            const qtyInput = existing.querySelector('.d-qty');
-            qtyInput.value = parseInt(qtyInput.value) + 1;
-            return;
-        }
-
-        const row = document.createElement('div');
-        row.className = 'form-grid selected-row';
-        row.dataset.id = id;
-        row.style.marginBottom = '8px';
-        row.innerHTML = `
-            <span style="font-size:0.8rem">${name}</span>
-            <div style="display:flex; gap:5px">
-                <input type="number" class="d-qty" value="1" min="1" max="4" style="width:60px">
-                <button onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:red; cursor:pointer">✖</button>
-            </div>
-        `;
-        container.appendChild(row);
-    };
-
-    // Sự kiện Filter
-    document.getElementById('searchCard').oninput = renderLibrary;
-    document.querySelectorAll('.color-btn').forEach(btn => {
-        btn.onclick = () => {
-            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            selectedColor = btn.dataset.color;
-            renderLibrary();
-        };
-    });
-
-    // Lưu Deck
-    document.getElementById('save-deck-btn').onclick = async () => {
-        const name = document.getElementById('deckName').value;
-        const rows = document.querySelectorAll('.selected-row');
-        const cards = Array.from(rows).map(row => ({ 
-            cardid: parseInt(row.dataset.id), 
-            quantity: parseInt(row.querySelector('.d-qty').value) 
-        }));
-        
-        if(!name || cards.length === 0) return alert("Vui lòng nhập tên và chọn ít nhất 1 lá bài!");
-        
-        const res = await request('/decks', 'POST', { name, cards });
-        if(res) { alert("Thành công!"); location.reload(); }
-    };
-
-    // ... (Giữ nguyên logic đăng ký giải đấu và tạo user từ code cũ) ...
-    function fill(id, data, key) {
-        const el = document.getElementById(id);
-        if (data && el) el.innerHTML = data.map(i => `<option value="${i.id}">${i[key] || i.name}</option>`).join('');
-    }
-    // Gán sự kiện cho nút Xác nhận đăng ký
-document.getElementById('btn-reg').onclick = async () => {
-    // Thu thập dữ liệu từ các input
-    const compEl = document.getElementById('regComp');
-    const userEl = document.getElementById('regUser');
-    const deckEl = document.getElementById('regDeck');
-    const winRateEl = document.getElementById('regWin');
-    const rankEl = document.getElementById('regRank');
-
-    // Kiểm tra dữ liệu đầu vào cơ bản
-    if (!compEl.value || !userEl.value || !deckEl.value) {
-        alert("Vui lòng chọn đầy đủ Giải đấu, Người chơi và Bộ bài!");
-        return;
-    }
-
-    const body = {
-        competitionid: parseInt(compEl.value),
-        userid: parseInt(userEl.value),
-        deckid: parseInt(deckEl.value),
-        winrate: parseFloat(winRateEl.value) || 0,
-        rank: parseInt(rankEl.value) || 1
-    };
-
-    console.log("Đang gửi dữ liệu đăng ký:", body); // Debug dữ liệu
-
-    try {
-        const res = await request('/competition-use', 'POST', body);
-        if (res) {
-            alert("✅ Đăng ký giải đấu hoàn tất!");
-            // Tùy chọn: Reset form hoặc đóng accordion sau khi thành công
-            // location.reload(); 
-        } else {
-            alert("❌ Lỗi: Server từ chối yêu cầu. Vui lòng kiểm tra lại dữ liệu.");
-        }
-    } catch (error) {
-        console.error("Lỗi khi gọi API đăng ký:", error);
-        alert("❌ Không thể kết nối đến máy chủ.");
-    }
-};
-
-// Lưu người dùng mới
-document.getElementById('save-user-btn').onclick = async () => {
-    const userNameInput = document.getElementById('userName');
-    const username = userNameInput.value.trim();
-
-    if (!username) {
-        return alert("Vui lòng nhập tên người chơi!");
-    }
-
-    try {
-        // Vì Backend dùng @RequestParam, ta cần truyền username qua URL query string
-        const res = await request(`/usersadd?username=${encodeURIComponent(username)}`, 'POST');
-        
-        if (res) {
-            alert(`Thành công! Đã tạo người dùng: ${res.username}`);
-            userNameInput.value = ''; // Reset input
-            
-            // Cập nhật lại danh sách cache và UI để có thể chọn ngay trong phần đăng ký giải
-            const updatedUsers = await request('/users');
-            if (updatedUsers) {
-                cacheData.users = updatedUsers;
-                fill('regUser', cacheData.users, 'username');
+                // Kích hoạt lại các thẻ script để logic add/update/delete hoạt động
+                const scripts = container.querySelectorAll("script");
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement("script");
+                    Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+            } catch (error) {
+                console.error(`Lỗi khi nạp ${file}:`, error);
             }
         }
-    } catch (error) {
-        console.error("Lỗi khi tạo người dùng:", error);
-        alert("Không thể tạo người dùng. Vui lòng thử lại.");
-    }
-};
 
-    init();
+        // Khởi tạo các accordion và nạp dữ liệu
+        async function initAdmin() {
+            // Nạp đồng thời cả 3 tab từ folder components
+            await Promise.all([
+                loadComponent('user-section', 'components/user-admin.html'),
+                loadComponent('competition-section', 'components/competition-admin.html'),
+                loadComponent('deck-section', 'components/deck-admin.html')
+            ]);
 
-</script>
+            // Cấu hình sự kiện đóng mở cho các Accordion vừa nạp
+            document.querySelectorAll('.accordion-header').forEach(header => {
+                header.onclick = () => {
+                    const item = header.parentElement;
+                    const isActive = item.classList.contains('active');
+                    
+                    // Đóng các cái khác (tùy chọn)
+                    // document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('active'));
+                    
+                    item.classList.toggle('active');
+                    header.querySelector('span').innerText = item.classList.contains('active') ? '−' : '+';
+                };
+            });
+
+            console.log("Hệ thống Admin đã sẵn sàng.");
+        }
+
+        // Chạy khởi tạo
+        initAdmin();
+
+        // Lắng nghe sự kiện khi dữ liệu thay đổi để cập nhật các dropdown khác
+        window.addEventListener('data-updated', async (e) => {
+            console.log(`Dữ liệu ${e.detail} đã thay đổi, cập nhật UI...`);
+            // Bạn có thể gọi lại hàm fill dữ liệu ở đây nếu cần
+        });
+    </script>
+</body>
 </html>

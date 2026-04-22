@@ -1,0 +1,27 @@
+<div class="accordion-item active">
+    <div class="accordion-header">🎴 Tạo bộ bài & Deck Builder <span>−</span></div>
+    <div class="accordion-content">
+        <div class="input-group">
+            <label>Tên bộ bài</label>
+            <input type="text" id="deckName" placeholder="Tên Deck..." style="width:100%; margin-bottom:15px;">
+        </div>
+        <div class="filter-bar">
+            <input type="text" id="searchCard" placeholder="Tìm tên lá bài...">
+            <div class="color-filters">
+                <button class="color-btn active" data-color="all">Tất cả</button>
+                <button class="color-btn" data-color="R">Đỏ</button>
+                <button class="color-btn" data-color="G">Xanh</button>
+            </div>
+        </div>
+        <div class="dashboard-grid">
+            <div class="card-library" id="card-library-view"></div>
+            <div id="deck-list-container" class="selected-cards-area"></div>
+        </div>
+        <button class="btn-submit" id="save-deck-btn">Lưu bộ bài</button>
+    </div>
+</div>
+
+<script type="module">
+    import { request } from '../js/api.js';
+    // Logic renderLibrary và addCardToDeck
+</script>

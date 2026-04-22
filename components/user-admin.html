@@ -1,0 +1,30 @@
+<div class="accordion-item">
+    <div class="accordion-header">👤 Tạo Người dùng mới <span>+</span></div>
+    <div class="accordion-content">
+        <div class="input-group">
+            <label>Tên người chơi</label>
+            <input type="text" id="userName" placeholder="Nhập tên người dùng...">
+        </div>
+        <button class="btn-submit" id="save-user-btn">Lưu người dùng</button>
+    </div>
+</div>
+
+<script type="module">
+    import { request } from '../js/api.js';
+
+    document.getElementById('save-user-btn').onclick = async () => {
+        const input = document.getElementById('userName');
+        const username = input.value.trim();
+        if (!username) return alert("Vui lòng nhập tên!");
+
+        try {
+            const res = await request(`/usersadd?username=${encodeURIComponent(username)}`, 'POST');
+            if (res) {
+                alert(`Thành công! Đã tạo: ${res.username}`);
+                input.value = '';
+                // Thông báo cho các component khác cập nhật lại danh sách user
+                window.dispatchEvent(new CustomEvent('user-list-updated'));
+            }
+        } catch (e) { alert("Lỗi khi tạo user"); }
+    };
+</script>

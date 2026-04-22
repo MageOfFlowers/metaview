@@ -1,0 +1,32 @@
+<div class="accordion-item">
+    <div class="accordion-header">🏆 Đăng ký kết quả Giải <span>+</span></div>
+    <div class="accordion-content">
+        <div class="dashboard-grid">
+            <div class="input-group">
+                <label>Giải đấu</label>
+                <input type="text" class="search-input" id="searchRegComp" placeholder="Tìm giải đấu..." oninput="filterSelect('regComp', this.value)">
+                <select id="regComp" size="4" class="select-dropdown"></select>
+            </div>
+            <div class="input-group">
+                <label>Người chơi</label>
+                <input type="text" class="search-input" id="searchRegUser" placeholder="Tìm người chơi..." oninput="filterSelect('regUser', this.value)">
+                <select id="regUser" size="4" class="select-dropdown"></select>
+            </div>
+            <div class="input-group">
+                <label>Bộ bài</label>
+                <input type="text" class="search-input" id="searchRegDeck" placeholder="Tìm bộ bài..." oninput="filterSelect('regDeck', this.value)">
+                <select id="regDeck" size="4" class="select-dropdown"></select>
+            </div>
+            <div class="form-grid">
+                <div class="input-group"><label>Tỷ lệ thắng (%)</label><input type="number" id="regWin" value="50"></div>
+                <div class="input-group"><label>Thứ hạng (Rank)</label><input type="number" id="regRank" value="1" min="1"></div>
+            </div>
+        </div>
+        <button class="btn-submit" id="btn-reg">Xác nhận đăng ký</button>
+    </div>
+</div>
+
+<script type="module">
+    import { request } from '../js/api.js';
+    // Logic fetch data và filterSelect cho riêng phần Competition
+</script>
