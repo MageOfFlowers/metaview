@@ -1,3 +1,4 @@
+import { request } from './api.js';
 document.addEventListener('DOMContentLoaded', () => {
     // Gọi đúng hàm render dữ liệu khi trang tải xong
     renderGuideData();
