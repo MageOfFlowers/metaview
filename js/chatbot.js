@@ -1,133 +1,98 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const chatbotContainer = document.getElementById('than-tich-chatbot');
-    
-    // Nếu trang web có thẻ này thì mới khởi tạo chatbot
-    if (chatbotContainer) {
-        renderChatbot(chatbotContainer);
-        initChatbotLogic();
-    }
-});
+    const container = document.getElementById('than-tich-chatbot');
+    if (!container) return;
 
-// Hàm tạo cấu trúc HTML
-function renderChatbot(container) {
-    const html = `
-        <div id="chatbot-widget">
-            <button id="chat-circle" class="btn">
-                <span class="chat-icon">💬</span>
-            </button>
-            <div class="chat-box">
-                <div class="chat-box-header">
-                    Thần Tích Assistant
-                    <span class="chat-box-toggle">×</span>
+    // 1. Tự động chèn CSS cần thiết để đảm bảo hiển thị
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #chatbot-container { position: fixed; bottom: 20px; right: 20px; z-index: 999999; font-family: sans-serif; }
+        #chat-circle { width: 60px; height: 60px; border-radius: 50%; background: #4e73df; color: white; border: none; cursor: pointer; font-size: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+        #chat-circle:hover { transform: scale(1.1); }
+        .chat-box { display: none; width: 350px; max-width: 90vw; height: 500px; max-height: 70vh; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); flex-direction: column; overflow: hidden; border: 1px solid #ddd; }
+        .chat-header { background: #4e73df; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .chat-close { cursor: pointer; font-size: 20px; padding: 0 5px; }
+        .chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #f8f9fc; display: flex; flex-direction: column; gap: 10px; }
+        .chat-footer { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 5px; }
+        .chat-footer input { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 15px; outline: none; }
+        .chat-footer button { background: none; border: none; cursor: pointer; font-size: 18px; color: #4e73df; }
+        .msg { padding: 8px 12px; border-radius: 15px; font-size: 14px; max-width: 80%; line-height: 1.4; }
+        .msg.bot { background: white; align-self: flex-start; border: 1px solid #e3e6f0; }
+        .msg.user { background: #4e73df; color: white; align-self: flex-end; }
+        .data-card { background: #fff; border-left: 4px solid #1cc88a; padding: 8px; margin-top: 5px; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    `;
+    document.head.appendChild(style);
+
+    // 2. Chèn cấu trúc HTML
+    container.innerHTML = `
+        <div id="chatbot-container">
+            <button id="chat-circle">💬</button>
+            <div class="chat-box" id="chat-box">
+                <div class="chat-header">
+                    <span>Thần Tích Assistant</span>
+                    <span class="chat-close" id="chat-close">×</span>
                 </div>
-                <div class="chat-box-body">
-                    <div class="chat-logs">
-                        <div class="chat-msg bot">
-                            <div class="cm-msg-text">Chào mừng bạn! Tôi có thể giúp gì cho Meta-game hôm nay?</div>
-                        </div>
-                    </div>
+                <div class="chat-body" id="chat-body">
+                    <div class="msg bot">Chào bạn! Tôi có thể giúp gì về dữ liệu Meta-game?</div>
                 </div>
-                <div class="chat-input">
-                    <form id="chat-form">
-                        <input type="text" id="chat-input-field" placeholder="Gửi tin nhắn..."/>
-                        <button type="submit" class="chat-submit">📩</button>
-                    </form>
-                </div>
+                <form class="chat-footer" id="chat-form">
+                    <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." autocomplete="off">
+                    <button type="submit">📩</button>
+                </form>
             </div>
         </div>
     `;
-    container.innerHTML = html;
-}
 
-// Hàm xử lý logic đóng/mở và gửi tin
-function initChatbotLogic() {
-    const chatForm = document.getElementById('chat-form');
-    const chatInputField = document.getElementById('chat-input-field');
-    const chatLogs = document.querySelector('.chat-logs');
+    const circle = document.getElementById('chat-circle');
+    const box = document.getElementById('chat-box');
+    const close = document.getElementById('chat-close');
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const body = document.getElementById('chat-body');
 
-    chatForm.onsubmit = async (e) => {
+    // Logic Đóng/Mở
+    circle.onclick = () => { box.style.display = 'flex'; circle.style.display = 'none'; };
+    close.onclick = () => { box.style.display = 'none'; circle.style.display = 'flex'; };
+
+    // Logic Gửi Tin & Gọi API
+    form.onsubmit = async (e) => {
         e.preventDefault();
-        const msg = chatInputField.value.trim();
+        const msg = input.value.trim();
         if (!msg) return;
 
-        // 1. Hiển thị tin nhắn của User
-        appendMessage(msg, 'user', chatLogs);
-        chatInputField.value = '';
+        appendMsg(msg, 'user');
+        input.value = '';
 
-        // 2. Hiển thị trạng thái đang xử lý
-        const loadingId = "loading-" + Date.now();
-        appendMessage("Đang truy vấn dữ liệu...", 'bot', chatLogs, loadingId);
+        const loading = appendMsg("Đang truy vấn...", 'bot');
 
         try {
-            // 3. Gọi API
-            const response = await fetch('https://metaanalyse.onrender.com/api/chat/ask', {
+            const res = await fetch('https://metaanalyse.onrender.com/api/chat/ask', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: msg })
             });
+            const data = await res.json();
+            loading.remove();
 
-            const result = await response.json();
-            
-            // Xóa dòng loading
-            document.getElementById(loadingId)?.remove();
-
-            // 4. Hiển thị câu trả lời text
-            let botResponseHTML = `<div>${result.reply}</div>`;
-
-            // 5. Xử lý mảng data trả về (User, Card, Deck)
-            if (result.data && result.data.length > 0) {
-                result.data.forEach(item => {
-                    botResponseHTML += renderDataCard(item);
+            let responseHTML = `<div>${data.reply}</div>`;
+            if (data.data) {
+                data.data.forEach(item => {
+                    if (item.username) responseHTML += `<div class="data-card">👤 <b>${item.username}</b>: Winrate ${item.winrate}%</div>`;
+                    if (item.name && item.rarity) responseHTML += `<div class="data-card">🃏 <b>${item.name}</b> (${item.rarity}): ${item.winrate}%</div>`;
+                    if (item.usage_count) responseHTML += `<div class="data-card">🎴 <b>${item.name}</b>: Winrate ${item.avg_winrate}%</div>`;
                 });
             }
-
-            appendMessage(botResponseHTML, 'bot', chatLogs);
-
-        } catch (error) {
-            document.getElementById(loadingId)?.remove();
-            appendMessage("Rất tiếc, đã có lỗi kết nối với hệ thống Thần Tích.", 'bot', chatLogs);
-            console.error("API Error:", error);
+            appendMsg(responseHTML, 'bot');
+        } catch (err) {
+            loading.innerText = "Lỗi kết nối API.";
         }
     };
-}
 
-// Hàm phân loại và hiển thị Card dữ liệu
-function renderDataCard(item) {
-    // Kiểm tra xem là loại dữ liệu nào dựa vào các field đặc trưng
-    if (item.username) { // Loại User
-        return `
-            <div class="data-card">
-                <strong>👤 Người chơi:</strong> ${item.username}<br>
-                Tỷ lệ thắng: <span class="winrate-high">${item.winrate}%</span><br>
-                Rank TB: ${parseFloat(item.avg_rank).toFixed(2)} | Trận: ${item.match_count}
-            </div>`;
-    } 
-    else if (item.rarity) { // Loại Card
-        return `
-            <div class="data-card">
-                <strong>🃏 Thẻ bài:</strong> ${item.name} (<span class="rarity-${item.rarity}">${item.rarity}</span>)<br>
-                Màu: ${item.color} | Winrate: ${item.winrate}%<br>
-                Số lần dùng: ${item.use_count}
-            </div>`;
+    function appendMsg(content, type) {
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.innerHTML = content;
+        body.appendChild(div);
+        body.scrollTop = body.scrollHeight;
+        return div;
     }
-    else if (item.usage_count) { // Loại Deck
-        return `
-            <div class="data-card">
-                <strong>🎴 Bộ bài:</strong> ${item.name}<br>
-                Winrate TB: <span class="winrate-high">${item.avg_winrate}%</span><br>
-                Rank TB: ${parseFloat(item.avg_rank).toFixed(2)}
-            </div>`;
-    }
-    return '';
-}
-
-function appendMessage(content, type, container, id = null) {
-    const div = document.createElement('div');
-    div.className = `chat-msg ${type}`;
-    if(id) div.id = id;
-    div.innerHTML = `<div class="cm-msg-text">${content}</div>`;
-    container.appendChild(div);
-    
-    const body = document.querySelector('.chat-box-body');
-    body.scrollTop = body.scrollHeight;
-}
+});
