@@ -283,3 +283,37 @@
 .guide-section.expanded .section-header i.fa-chevron-down {
     transform: rotate(180deg);
 }
+
+/* CSS cho nút mở link Facebook */
+.open-link-btn {
+    font-size: 0.85rem;
+    color: #007bff;
+    text-decoration: none;
+    padding: 5px 10px;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    transition: 0.3s;
+}
+
+.open-link-btn:hover {
+    background: #007bff;
+    color: white;
+}
+
+/* Ẩn danh sách bên trong Section mặc định[cite: 2] */
+.counter-grid, 
+.fb-preview-wrapper {
+    display: none;
+}
+
+/* Hiện danh sách khi có class expanded[cite: 2] */
+.guide-section.expanded .counter-grid,
+.guide-section.expanded .fb-preview-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Xoay icon mũi tên khi Section mở */
+.guide-section.expanded .section-header i.fa-chevron-down {
+    transform: rotate(180deg);
+}

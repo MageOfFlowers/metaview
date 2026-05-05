@@ -63,8 +63,13 @@ function createBuildElement(guide) {
     wrapper.innerHTML = `
         <div class="build-header">
             <h4>${guide.name}</h4>
+            <!-- Thêm nút mở link trực tiếp -->
+            <a href="${fbLink}" target="_blank" class="open-link-btn">
+                <i class="fas fa-external-link-alt"></i> Xem trên Facebook
+            </a>
         </div>
         <div class="fb-post-content">
+            <!-- Khung nhúng Facebook SDK[cite: 6] -->
             <div class="fb-post" 
                 data-href="${fbLink}" 
                 data-show-text="true" 
@@ -75,6 +80,66 @@ function createBuildElement(guide) {
     return wrapper;
 }
 
+/**
+ * Hàm đóng/mở Section lớn[cite: 6]
+ */
+function toggleSection(headerElement) {
+    const section = headerElement.closest('.guide-section');
+    if (!section) return;
+
+    section.classList.toggle('expanded');
+    
+    // Khi Section mở, yêu cầu Facebook SDK quét và hiển thị nội dung
+    if (section.classList.contains('expanded')) {
+        if (window.FB) {
+            window.FB.XFBML.parse(section);
+        } else {
+            console.warn("Facebook SDK chưa được nạp xong.");
+        }
+    }
+}function createBuildElement(guide) {
+    const fbLink = guide.details ? guide.details.link : '';
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'build-item';
+    wrapper.innerHTML = `
+        <div class="build-header">
+            <h4>${guide.name}</h4>
+            <!-- Thêm nút mở link trực tiếp -->
+            <a href="${fbLink}" target="_blank" class="open-link-btn">
+                <i class="fas fa-external-link-alt"></i> Xem trên Facebook
+            </a>
+        </div>
+        <div class="fb-post-content">
+            <!-- Khung nhúng Facebook SDK[cite: 6] -->
+            <div class="fb-post" 
+                data-href="${fbLink}" 
+                data-show-text="true" 
+                data-width="auto">
+            </div>
+        </div>
+    `;
+    return wrapper;
+}
+
+/**
+ * Hàm đóng/mở Section lớn[cite: 6]
+ */
+function toggleSection(headerElement) {
+    const section = headerElement.closest('.guide-section');
+    if (!section) return;
+
+    section.classList.toggle('expanded');
+    
+    // Khi Section mở, yêu cầu Facebook SDK quét và hiển thị nội dung
+    if (section.classList.contains('expanded')) {
+        if (window.FB) {
+            window.FB.XFBML.parse(section);
+        } else {
+            console.warn("Facebook SDK chưa được nạp xong.");
+        }
+    }
+}
 function createCounterElement(guide) {
     const imageUrls = guide.details ? Object.values(guide.details) : []; 
 
@@ -103,40 +168,11 @@ function createCounterElement(guide) {
     return item;
 }
 
-function createBuildElement(guide) {
-    const fbLink = guide.details ? guide.details.link : '';
-    
-    const wrapper = document.createElement('div');
-    wrapper.className = 'build-item';
-    wrapper.innerHTML = `
-        <div class="build-header">
-            <h4>${guide.name}</h4>
-        </div>
-        <div class="fb-post-content">
-            <div class="fb-post" 
-                data-href="${fbLink}" 
-                data-show-text="true" 
-                data-width="auto">
-            </div>
-        </div>
-    `;
-    return wrapper;
-}
 function toggleExpand(headerElement) {
     // Tìm phần tử cha gần nhất có class .counter-item để toggle class .active
     const parent = headerElement.closest('.counter-item');
     if (parent) {
         parent.classList.toggle('active');
-    }
-}
-
-function toggleSection(headerElement) {
-    const section = headerElement.closest('.guide-section');
-    section.classList.toggle('expanded');
-    
-    // Nếu mở phần Build, cần gọi Facebook SDK render lại[cite: 4]
-    if (section.classList.contains('expanded') && window.FB) {
-        window.FB.XFBML.parse();
     }
 }
 
