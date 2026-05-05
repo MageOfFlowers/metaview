@@ -23,34 +23,52 @@
 
         <main class="guide-content">
     <!-- Section 1: How To Counter -->
-    <section class="guide-section">
-        <div class="section-header">
+<section class="guide-section">
+    <!-- Header giữ nguyên hàm toggleSection -->
+    <div class="section-header" onclick="toggleSection(this)">
+        <div>
             <i class="fas fa-shield-halved"></i>
             <h2>How To Counter</h2>
-            <div class="search-box">
-                <input type="text" id="search-counter" placeholder="Tìm tên bộ bài đối thủ...">
-            </div>
         </div>
+        <i class="fas fa-chevron-down"></i> <!-- Mũi tên của Section -->
+    </div>
+    
+    <!-- Nội dung bên trong Section[cite: 5] -->
+    <div class="section-content">
+        <!-- Thanh tìm kiếm cho Counter -->
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-counter" placeholder="Tìm tên bộ bài...">
+        </div>
+        
         <div id="counter-list" class="counter-grid">
-            <div class="loading">Đang tải dữ liệu...</div>
+            <!-- JS render dữ liệu và các nút mũi tên slider ở đây[cite: 6] -->
         </div>
-    </section>
+    </div>
+</section>
 
-    <hr class="section-divider">
-
-    <!-- Section 2: Build Deck -->
-    <section class="guide-section">
-        <div class="section-header">
+<!-- Section 2: Build Deck -->
+<section class="guide-section">
+    <div class="section-header" onclick="toggleSection(this)">
+        <div>
             <i class="fas fa-layer-group"></i>
             <h2>Build Deck</h2>
-            <div class="search-box">
-                <input type="text" id="search-build" placeholder="Tìm tên bộ bài...">
-            </div>
         </div>
-        <div id="fb-build-container" class="build-list-simple">
-            <!-- Chỉ hiện danh sách nút bấm gọn nhẹ -->
+        <i class="fas fa-chevron-down"></i>
+    </div>
+    
+    <div class="section-content">
+        <!-- Thanh tìm kiếm cho Build[cite: 7] -->
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-build" placeholder="Tìm bộ bài cộng đồng...">
         </div>
-    </section>
+        
+        <div id="fb-build-container" class="fb-preview-wrapper">
+            <!-- JS render dữ liệu dạng list tối giản ở đây[cite: 6] -->
+        </div>
+    </div>
+</section>
 </main>
 
         <footer class="guide-footer">

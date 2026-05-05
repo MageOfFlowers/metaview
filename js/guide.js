@@ -1,10 +1,13 @@
-let allGuides = []; // Biến toàn cục lưu trữ dữ liệu để tìm kiếm[cite: 6]
+/**
+ * BIẾN TOÀN CỤC LƯU TRỮ DỮ LIỆU
+ */
+let allGuides = []; // Lưu trữ dữ liệu gốc từ API để phục vụ việc lọc (filter)[cite: 6]
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Gọi hàm lấy dữ liệu ban đầu từ API[cite: 6]
+    // 1. Tải dữ liệu ban đầu khi trang vừa load[cite: 6]
     renderGuideData();
 
-    // Gắn sự kiện tìm kiếm cho ô nhập liệu Counter
+    // 2. Lắng nghe sự kiện gõ phím tại ô Search của Counter
     const searchCounter = document.getElementById('search-counter');
     if (searchCounter) {
         searchCounter.addEventListener('input', (e) => {
@@ -12,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Gắn sự kiện tìm kiếm cho ô nhập liệu Build
+    // 3. Lắng nghe sự kiện gõ phím tại ô Search của Build[cite: 7]
     const searchBuild = document.getElementById('search-build');
     if (searchBuild) {
         searchBuild.addEventListener('input', (e) => {
@@ -22,19 +25,20 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Lấy dữ liệu từ API và lưu vào biến toàn cục[cite: 3, 6]
+ * HÀM CHÍNH: LẤY DỮ LIỆU VÀ HIỂN THỊ
  */
 async function renderGuideData() {
     allGuides = await request('/guide') || [];[cite: 3]
     if (allGuides.length === 0) return;
     
-    // Hiển thị toàn bộ dữ liệu lần đầu
+    // Hiển thị dữ liệu mặc định cho cả 2 phần[cite: 6]
     filterAndDisplay('counter', '');
     filterAndDisplay('build', '');
 }
 
 /**
- * Hàm lọc dữ liệu dựa trên loại (type) và từ khóa tìm kiếm[cite: 6]
+ * HÀM LỌC (FILTER) VÀ RENDER LẠI DANH SÁCH
+ * Giúp tìm kiếm theo tên mà không làm mất cấu trúc các nút điều hướng[cite: 6, 7]
  */
 function filterAndDisplay(type, term) {
     const searchTerm = term.toLowerCase();
@@ -42,7 +46,7 @@ function filterAndDisplay(type, term) {
     const container = document.getElementById(containerId);
     
     if (!container) return;
-    container.innerHTML = '';
+    container.innerHTML = ''; // Làm sạch danh sách trước khi vẽ lại[cite: 6]
 
     const filtered = allGuides.filter(guide => {
         const guideType = guide.type ? guide.type.toLowerCase() : '';
@@ -59,7 +63,7 @@ function filterAndDisplay(type, term) {
 }
 
 /**
- * Tạo phần tử Build tối giản (không preview)[cite: 6]
+ * TẠO PHẦN TỬ BUILD DECK (Tối giản, không preview)[cite: 6]
  */
 function createBuildElement(guide) {
     const fbLink = guide.details ? guide.details.link : '#';
@@ -76,7 +80,7 @@ function createBuildElement(guide) {
 }
 
 /**
- * Tạo phần tử Counter kèm slider ảnh[cite: 6]
+ * TẠO PHẦN TỬ COUNTER (Kèm slider ảnh và nút mũi tên)[cite: 6]
  */
 function createCounterElement(guide) {
     const imageUrls = guide.details ? Object.values(guide.details) : []; 
@@ -86,7 +90,7 @@ function createCounterElement(guide) {
         <div class="item-header" onclick="toggleExpand(this)">
             <h3>${guide.name}</h3>
             <div class="item-meta">
-                <i class="fas fa-chevron-down arrow"></i>
+                <i class="fas fa-chevron-down arrow"></i> <!-- Mũi tên mở rộng item -->
             </div>
         </div>
         <div class="expand-content">
@@ -105,7 +109,7 @@ function createCounterElement(guide) {
 }
 
 /**
- * Xử lý đóng/mở các Section lớn (Counter/Build)[cite: 6]
+ * ĐIỀU KHIỂN ĐÓNG/MỞ SECTION LỚN[cite: 6]
  */
 function toggleSection(headerElement) {
     const section = headerElement.closest('.guide-section');
@@ -115,7 +119,7 @@ function toggleSection(headerElement) {
 }
 
 /**
- * Xử lý đóng/mở chi tiết từng Counter[cite: 6]
+ * ĐIỀU KHIỂN ĐÓNG/MỞ CHI TIẾT COUNTER[cite: 6]
  */
 function toggleExpand(headerElement) {
     const parent = headerElement.closest('.counter-item');
@@ -125,10 +129,10 @@ function toggleExpand(headerElement) {
 }
 
 /**
- * Điều hướng Slider ảnh trong Counter[cite: 6]
+ * XỬ LÝ SLIDER ẢNH (Nút tiến/lùi)[cite: 6]
  */
 function moveSlide(event, btn, step) {
-    event.stopPropagation();
+    event.stopPropagation(); // Không làm đóng card khi bấm nút slide
     const slider = btn.closest('.slider');
     const images = slider.querySelectorAll('.slide-images img');
     if (images.length <= 1) return;
@@ -140,7 +144,7 @@ function moveSlide(event, btn, step) {
 }
 
 /**
- * Hàm gọi API chung[cite: 6]
+ * HÀM GỌI API CHUNG[cite: 6]
  */
 async function request(endpoint, method = 'GET', body = null) {
     try {
@@ -157,31 +161,6 @@ async function request(endpoint, method = 'GET', body = null) {
         return await response.json();
     } catch (error) {
         console.error("Lỗi kết nối:", error);
-        return null;
-    }
-}
-async function request(endpoint, method = 'GET', body = null) {
-    try {
-        const API_BASE = "https://metaanalyse.onrender.com/api";
-        const options = {
-            method,
-            headers: { 'Content-Type': 'application/json' }
-        };
-        
-        // Chỉ thêm body nếu phương thức không phải GET và có dữ liệu body thực sự
-        if (body && method !== 'GET') {
-            options.body = JSON.stringify(body);
-        }
-        
-        const response = await fetch(`${API_BASE}${endpoint}`, options);
-        
-        if (!response.ok) {
-            console.error(`Server trả về lỗi: ${response.status}`);
-            return null;
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Lỗi kết nối mạng hoặc Server:", error);
         return null;
     }
 }
