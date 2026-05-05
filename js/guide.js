@@ -33,23 +33,46 @@ async function request(endpoint, method = 'GET', body = null) {
     }
 }
 async function renderGuideData() {
-    const guides = await request('/guide');
+    const guides = await request('/guide'); //[cite: 3]
     const counterContainer = document.getElementById('counter-list');
+    const buildContainer = document.getElementById('fb-build-container');
     
-    if (!guides || !counterContainer) {
-        if (counterContainer) counterContainer.innerHTML = 'Lỗi tải dữ liệu.';
-        return;
-    }
+    if (!guides) return;
 
-    counterContainer.innerHTML = ''; 
+    if (counterContainer) counterContainer.innerHTML = '';
+    if (buildContainer) buildContainer.innerHTML = '';
 
     guides.forEach(guide => {
-        // Kiểm tra type không phân biệt hoa thường
-        if (guide.type && guide.type.toLowerCase() === 'counter') {
-            const item = createCounterElement(guide);
-            counterContainer.appendChild(item);
+        const type = guide.type ? guide.type.toLowerCase() : ''; //[cite: 3]
+        if (type === 'counter') {
+            counterContainer.appendChild(createCounterElement(guide));
+        } else if (type === 'build') {
+            buildContainer.appendChild(createBuildElement(guide));
         }
     });
+}
+
+/**
+ * Tạo khung hiển thị cho Build Deck (Facebook Post)
+ */
+function createBuildElement(guide) {
+    const fbLink = guide.details ? guide.details.link : '';
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'build-item';
+    wrapper.innerHTML = `
+        <div class="build-header">
+            <h4>${guide.name}</h4>
+        </div>
+        <div class="fb-post-content">
+            <div class="fb-post" 
+                data-href="${fbLink}" 
+                data-show-text="true" 
+                data-width="auto">
+            </div>
+        </div>
+    `;
+    return wrapper;
 }
 
 function createCounterElement(guide) {
@@ -80,18 +103,40 @@ function createCounterElement(guide) {
     return item;
 }
 
-/**
- * Tạo HTML cho từng mục Counter
- */
-
-/**
- * Hàm đóng/mở nội dung bài viết
- */
+function createBuildElement(guide) {
+    const fbLink = guide.details ? guide.details.link : '';
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'build-item';
+    wrapper.innerHTML = `
+        <div class="build-header">
+            <h4>${guide.name}</h4>
+        </div>
+        <div class="fb-post-content">
+            <div class="fb-post" 
+                data-href="${fbLink}" 
+                data-show-text="true" 
+                data-width="auto">
+            </div>
+        </div>
+    `;
+    return wrapper;
+}
 function toggleExpand(headerElement) {
     // Tìm phần tử cha gần nhất có class .counter-item để toggle class .active
     const parent = headerElement.closest('.counter-item');
     if (parent) {
         parent.classList.toggle('active');
+    }
+}
+
+function toggleSection(headerElement) {
+    const section = headerElement.closest('.guide-section');
+    section.classList.toggle('expanded');
+    
+    // Nếu mở phần Build, cần gọi Facebook SDK render lại[cite: 4]
+    if (section.classList.contains('expanded') && window.FB) {
+        window.FB.XFBML.parse();
     }
 }
 

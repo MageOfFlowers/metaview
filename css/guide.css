@@ -212,3 +212,74 @@
     align-items: center;
     padding: 18px 25px; /* Tăng padding cho thoáng giống ảnh */
 }
+
+/* CSS cho phần Build Deck */
+#fb-build-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 10px 0;
+}
+
+.build-item {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.build-header {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.build-header h4 {
+    margin: 0;
+    color: #007bff;
+    font-size: 1rem;
+}
+
+.fb-post-content {
+    display: flex;
+    justify-content: center;
+    padding: 15px;
+    background: white;
+}
+
+/* Đảm bảo khung Facebook không vượt quá chiều ngang màn hình */
+.fb-post, .fb-post span, .fb-post iframe {
+    max-width: 100% !important;
+}
+
+/* Ẩn danh sách mặc định */
+.counter-grid, 
+#fb-build-container {
+    display: none; /* Mặc định đóng */
+    padding: 15px 0;
+}
+
+/* Hiển thị khi section có class expanded */
+.guide-section.expanded .counter-grid,
+.guide-section.expanded #fb-build-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Hiệu ứng xoay icon mũi tên của Section */
+.section-header {
+    cursor: pointer; /* Cho phép click vào header để mở[cite: 2] */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.guide-section .section-header i.fa-chevron-down {
+    transition: transform 0.3s;
+}
+
+.guide-section.expanded .section-header i.fa-chevron-down {
+    transform: rotate(180deg);
+}
