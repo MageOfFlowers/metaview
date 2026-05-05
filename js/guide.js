@@ -1,3 +1,63 @@
+document.addEventListener('DOMContentLoaded', () => {
+    loadGuides();
+});
+
+async function loadGuides() {
+    try {
+        const response = await fetch('/api/guide');
+        const guides = await response.json();
+        
+        const counterContainer = document.querySelector('.counter-list');
+        const buildContainer = document.querySelector('.fb-wrapper');
+
+        // Xóa nội dung cũ
+        counterContainer.innerHTML = '';
+
+        guides.forEach(guide => {
+            if (guide.type === 'counter') {
+                counterContainer.appendChild(createCounterItem(guide));
+            } else if (guide.type === 'build') {
+                // Xử lý render Facebook preview nếu có fb_url trong details
+                const fbUrl = guide.details.fb_url; 
+                if(fbUrl) renderFacebookPost(fbUrl);
+            }
+        });
+    } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu guide:', error);
+    }
+}
+
+function createCounterItem(guide) {
+    // Chuyển đổi Object details thành mảng các URL ảnh
+    const imageUrls = Object.values(guide.details); 
+    
+    const item = document.createElement('div');
+    item.className = 'counter-item';
+    item.innerHTML = `
+        <div class="item-header" onclick="toggleExpand(this)">
+            <h3>${guide.name}</h3>
+            <div class="item-meta">
+                <span class="badge">${imageUrls.length} Thẻ bài</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </div>
+        </div>
+        <div class="expand-content">
+            <div class="slider">
+                <button class="slide-btn prev" onclick="moveSlide(this, -1)">&#10094;</button>
+                <div class="slide-images">
+                    ${imageUrls.map((url, index) => `
+                        <img src="${url}" class="${index === 0 ? 'active' : ''}">
+                    `).join('')}
+                </div>
+                <button class="slide-btn next" onclick="moveSlide(this, 1)">&#10095;</button>
+            </div>
+        </div>
+    `;
+    return item;
+}
+
+// Giữ nguyên hàm moveSlide và toggleExpand từ phiên bản trước
+
 // Hàm đóng/mở bài viết
 function toggleExpand(card) {
     // Đóng các card khác nếu muốn (optional)
