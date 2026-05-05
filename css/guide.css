@@ -6,12 +6,6 @@
 .guide-section.expanded .section-content { display: block; }
 .guide-section.expanded .arrow-main { transform: rotate(180deg); }
 
-/* Hiệu ứng đóng mở Counter Item[cite: 5] */
-.counter-item { border: 1px solid #eee; margin-bottom: 10px; border-radius: 5px; }
-.item-header { padding: 12px; display: flex; justify-content: space-between; cursor: pointer; }
-.expand-content { display: none; padding: 15px; background: #fafafa; }
-.counter-item.active .expand-content { display: block; }
-.counter-item.active .arrow { transform: rotate(180deg); color: #007bff; }
 
 /* Slider[cite: 5] */
 .slider { display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -22,3 +16,43 @@
 /* Build Deck Link */
 .build-link-box { display: block; padding: 12px; text-decoration: none; color: #333; border-bottom: 1px solid #eee; }
 .build-link-box:hover { background: #f0f7ff; }
+
+/* Layout danh sách Counter */
+.counter-grid {
+    display: flex;
+    flex-direction: column; /* Đưa các item về dạng hàng dọc */
+    gap: 15px; /* Khoảng cách giữa các hàng */
+    width: 100%; /* Đảm bảo container chiếm hết chiều ngang */
+}
+
+/* Từng item trong danh sách */
+.counter-item {
+    width: 100%; /* Chiếm trọn 1 hàng */
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+    overflow: hidden;
+    box-sizing: border-box; /* Đảm bảo padding không làm tràn chiều ngang */
+}
+
+/* Phần header của item (Tên bộ bài và mũi tên) */
+.item-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    cursor: pointer;
+}
+
+/* Phần nội dung mở rộng (Slider ảnh) */
+.expand-content {
+    display: none;
+    padding: 20px;
+    border-top: 1px solid #eee;
+    text-align: center; /* Căn giữa ảnh trong hàng */
+}
+
+.counter-item.active .expand-content {
+    display: block;
+}
