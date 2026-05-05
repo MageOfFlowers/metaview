@@ -96,9 +96,8 @@ function createCounterElement(guide) {
  */
 function toggleExpand(headerElement) {
     // Lấy phần tử cha (counter-item) và toggle class 'active' hoặc 'expanded' tùy CSS của bạn
-    const parent = headerElement.parentElement;
-    parent.classList.toggle('active');
-}
+    const parent = headerElement.closest('.counter-item');
+        parent.classList.toggle('active');
 
 /**
  * Hàm điều hướng slide ảnh
