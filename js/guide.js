@@ -2,35 +2,34 @@ document.addEventListener('DOMContentLoaded', () => {
     loadGuides();
 });
 
-async function loadGuides() {
-    try {
-        const response = await fetch('/api/guide');
-        const guides = await response.json();
-        
-        const counterContainer = document.querySelector('.counter-list');
-        const buildContainer = document.querySelector('.fb-wrapper');
+import { request } from "./api";
 
-        // Xóa nội dung cũ
-        counterContainer.innerHTML = '';
+async function renderGuideData() {
+    // Gọi API thông qua hàm request dùng chung
+    // Endpoint là /guide vì API_BASE đã có sẵn /api
+    const guides = await request('/guide');
 
-        guides.forEach(guide => {
-            if (guide.type === 'counter') {
-                counterContainer.appendChild(createCounterItem(guide));
-            } else if (guide.type === 'build') {
-                // Xử lý render Facebook preview nếu có fb_url trong details
-                const fbUrl = guide.details.fb_url; 
-                if(fbUrl) renderFacebookPost(fbUrl);
-            }
-        });
-    } catch (error) {
-        console.error('Lỗi khi lấy dữ liệu guide:', error);
+    if (!guides) {
+        console.error("Không thể tải dữ liệu từ server.");
+        return;
     }
+
+    const counterContainer = document.querySelector('.counter-list');
+    counterContainer.innerHTML = ''; // Xóa nội dung cũ
+
+    guides.forEach(guide => {
+        if (guide.type === 'counter') {
+            const item = createCounterElement(guide);
+            counterContainer.appendChild(item);
+        }
+        // Thêm logic cho 'build' nếu cần render preview Facebook
+    });
 }
 
-function createCounterItem(guide) {
-    // Chuyển đổi Object details thành mảng các URL ảnh
+function createCounterElement(guide) {
+    // details chứa các cặp key-value như {"1": "url1", "2": "url2"}
     const imageUrls = Object.values(guide.details); 
-    
+
     const item = document.createElement('div');
     item.className = 'counter-item';
     item.innerHTML = `

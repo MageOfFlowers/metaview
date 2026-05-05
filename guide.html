@@ -3,70 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guide & Counter - Thần Tích</title>
+    <title>Cẩm Nang Chiến Thuật - Thần Tích</title>
+    <!-- Thư viện Icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css"> <!-- File dùng chung -->
-    <link rel="stylesheet" href="css/guide.css"> <!-- File riêng cho trang này -->
+    <!-- CSS dùng chung của hệ thống -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- CSS riêng cho trang Guide -->
+    <link rel="stylesheet" href="css/guide.css">
 </head>
 <body class="guide-body">
     <div class="container">
+        <!-- Thanh điều hướng nhanh -->
         <header class="guide-header">
-            <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Quay lại Portal</a>
-            <h1>📖 Cẩm Nang Chiến Thuật</h1>
+            <a href="index.html" class="back-link">
+                <i class="fas fa-chevron-left"></i> Quay lại Portal
+            </a>
+            <h1>📊 Hệ Thống <span class="highlight">Cẩm Nang</span></h1>
         </header>
 
-        <!-- Section 1: How To Counter -->
-        <section class="guide-card">
-            <div class="section-title">
-                <i class="fas fa-shield-virus"></i>
-                <h2>How To Counter</h2>
-            </div>
-            
-            <div class="counter-list">
-                <!-- Post 1 -->
-                <div class="counter-item">
-                    <div class="item-header" onclick="toggleExpand(this)">
-                        <h3>Vs. Meta Deck Alpha</h3>
-                        <div class="item-meta">
-                            <span class="badge">3 Thẻ bài</span>
-                            <i class="fas fa-chevron-down arrow"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="expand-content">
-                        <div class="slider">
-                            <button class="slide-btn prev" onclick="moveSlide(this, -1)">&#10094;</button>
-                            <div class="slide-images">
-                                <img src="https://via.placeholder.com/200x280?text=Card+1" class="active">
-                                <img src="https://via.placeholder.com/200x280?text=Card+2">
-                                <img src="https://via.placeholder.com/200x280?text=Card+3">
-                            </div>
-                            <button class="slide-btn next" onclick="moveSlide(this, 1)">&#10095;</button>
-                        </div>
-                        <p class="description">Ghi chú: Ưu tiên dùng Card 1 để ngắt chuỗi combo chính.</p>
-                    </div>
+        <main class="guide-content">
+            <!-- Section 1: How To Counter -->
+            <section class="guide-section">
+                <div class="section-header">
+                    <i class="fas fa-shield-halved"></i>
+                    <h2>How To Counter</h2>
+                    <p>Chiến thuật đối đầu với các bộ bài Meta hiện tại</p>
                 </div>
-            </div>
-        </section>
+                
+                <!-- Vùng này sẽ được JavaScript đổ dữ liệu vào -->
+                <div id="counter-list" class="counter-grid">
+                    <div class="loading">Đang tải dữ liệu chiến thuật...</div>
+                </div>
+            </section>
 
-        <!-- Section 2: Build Deck -->
-        <section class="guide-card">
-            <div class="section-title">
-                <i class="fas fa-tools"></i>
-                <h2>Build Deck</h2>
-            </div>
-            <div class="fb-wrapper">
-                <!-- Nếu link lỗi, nó sẽ hiện placeholder đẹp thay vì khung trắng -->
-                <div class="fb-post" 
-                     data-href="https://www.facebook.com/FacebookDevelopers/posts/10151471074398553" 
-                     data-width="auto">
+            <hr class="section-divider">
+
+            <!-- Section 2: Build Deck -->
+            <section class="guide-section">
+                <div class="section-header">
+                    <i class="fas fa-layer-group"></i>
+                    <h2>Build Deck</h2>
+                    <p>Tham khảo các bộ bài tiêu biểu từ cộng đồng</p>
                 </div>
-            </div>
-        </section>
+                
+                <div id="fb-build-container" class="fb-preview-wrapper">
+                    <!-- Facebook posts sẽ được render tại đây -->
+                </div>
+            </section>
+        </main>
+
+        <footer class="guide-footer">
+            <p>© 2026 Thần Tích Portal - Dữ liệu thời gian thực</p>
+        </footer>
     </div>
 
+    <!-- Tích hợp Facebook SDK -->
     <div id="fb-root"></div>
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/vi_VN/sdk.js#xfbml=1&version=v18.0"></script>
+
+    <!-- NẠP SCRIPT THEO THỨ TỰ -->
+    <!-- 1. File chứa hàm request() dùng chung -->
+    <script src="js/api.js"></script> 
+    <!-- 2. File logic xử lý riêng cho trang này -->
     <script src="js/guide.js"></script>
 </body>
 </html>
