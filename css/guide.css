@@ -71,7 +71,17 @@
     border: 1px solid #dee2e6;
     transition: all 0.3s ease;
     overflow: hidden;
+    width: 100%; 
+    box-sizing: border-box;
 }
+
+.counter-grid {
+    display: flex;
+    flex-direction: column; /* Chuyển sang dạng danh sách dọc */
+    gap: 15px;
+    padding: 10px 0;
+}
+
 
 .counter-item:hover {
     border-color: #007bff;
@@ -188,4 +198,17 @@
     padding: 40px;
     color: #6c757d;
     font-style: italic;
+}
+
+/* Ẩn phần badge "3 Thẻ bài" theo yêu cầu */
+.item-meta .badge {
+    display: none;
+}
+
+/* Giữ header gọn gàng */
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 25px; /* Tăng padding cho thoáng giống ảnh */
 }

@@ -33,46 +33,35 @@ async function request(endpoint, method = 'GET', body = null) {
     }
 }
 async function renderGuideData() {
-    // API_BASE trong hàm request đã có sẵn "/api", nên endpoint chỉ cần "/guide"
     const guides = await request('/guide');
-
-    if (!guides) {
-        const container = document.getElementById('counter-list');
-        if (container) {
-            container.innerHTML = '<div class="error">Không thể kết nối với máy chủ. Vui lòng thử lại sau.</div>';
-        }
+    const counterContainer = document.getElementById('counter-list');
+    
+    if (!guides || !counterContainer) {
+        if (counterContainer) counterContainer.innerHTML = 'Lỗi tải dữ liệu.';
         return;
     }
 
-    const counterContainer = document.getElementById('counter-list');
-    if (!counterContainer) return;
-    
-    counterContainer.innerHTML = ''; // Xóa thông báo loading
+    counterContainer.innerHTML = ''; 
 
     guides.forEach(guide => {
-        // Lọc các guide có type là 'counter'
-        if (guide.type === 'Counter') {
+        // Kiểm tra type không phân biệt hoa thường
+        if (guide.type && guide.type.toLowerCase() === 'counter') {
             const item = createCounterElement(guide);
             counterContainer.appendChild(item);
         }
-        // Bạn có thể thêm xử lý cho guide.type === 'build' ở đây nếu cần
     });
 }
 
-/**
- * Tạo HTML cho từng mục Counter
- */
 function createCounterElement(guide) {
-    // Chuyển đổi Object details {"1": "url1", "2": "url2"} thành mảng [url1, url2]
     const imageUrls = guide.details ? Object.values(guide.details) : []; 
 
     const item = document.createElement('div');
-    item.className = 'counter-item'; // Class này phải khớp với CSS của bạn
+    item.className = 'counter-item';
     item.innerHTML = `
         <div class="item-header" onclick="toggleExpand(this)">
             <h3>${guide.name}</h3>
             <div class="item-meta">
-                <span class="badge">${imageUrls.length} Thẻ bài</span>
+                <!-- Đã loại bỏ text badge ở đây -->
                 <i class="fas fa-chevron-down arrow"></i>
             </div>
         </div>
@@ -81,7 +70,7 @@ function createCounterElement(guide) {
                 ${imageUrls.length > 1 ? `<button class="slide-btn prev" onclick="moveSlide(event, this, -1)">&#10094;</button>` : ''}
                 <div class="slide-images">
                     ${imageUrls.map((url, index) => `
-                        <img src="${url}" class="${index === 0 ? 'active' : ''}" alt="Card ${index + 1}">
+                        <img src="${url}" class="${index === 0 ? 'active' : ''}" alt="Guide Image">
                     `).join('')}
                 </div>
                 ${imageUrls.length > 1 ? `<button class="slide-btn next" onclick="moveSlide(event, this, 1)">&#10095;</button>` : ''}
@@ -90,6 +79,10 @@ function createCounterElement(guide) {
     `;
     return item;
 }
+
+/**
+ * Tạo HTML cho từng mục Counter
+ */
 
 /**
  * Hàm đóng/mở nội dung bài viết
