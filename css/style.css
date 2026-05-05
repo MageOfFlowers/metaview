@@ -646,3 +646,70 @@ select[size] {
 select[size].show {
     display: block;
 }
+
+/* Layout chung */
+.counter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* Card ban đầu */
+.counter-card {
+    background: #2d2d2d;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    height: 60px; /* Thu gọn */
+}
+
+.counter-card.expanded {
+    height: auto;
+    border: 2px solid #007bff;
+}
+
+/* Slider Logic */
+.slider-container {
+    display: none; /* Ẩn khi chưa mở rộng */
+    position: relative;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.counter-card.expanded .slider-container {
+    display: block;
+}
+
+.slides img {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    display: none;
+}
+
+.slides img.active {
+    display: block;
+    animation: fadeIn 0.5s;
+}
+
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.prev { left: 0; }
+.next { right: 0; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

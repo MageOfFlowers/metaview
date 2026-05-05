@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng dẫn & Chiến thuật</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav id="sidebar">
+        <!-- Menu cũ của bạn -->
+        <a href="/admin">Dashboard</a>
+        <a href="/guide" class="active">Guide</a>
+    </nav>
+
+    <main class="content">
+        <!-- Section 1: How To Counter -->
+        <section id="how-to-counter">
+            <h2><i class="fas fa-shield-alt"></i> How To Counter</h2>
+            <div class="counter-grid">
+                <!-- Một bài counter mẫu -->
+                <div class="counter-card" onclick="toggleExpand(this)">
+                    <div class="card-header">
+                        <h3>Vs. Meta Deck Alpha</h3>
+                        <span class="badge">3 Slide</span>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <button class="nav-btn prev" onclick="moveSlide(event, this, -1)">&#10094;</button>
+                        <div class="slides">
+                            <img src="path/to/card1.jpg" class="active">
+                            <img src="path/to/card2.jpg">
+                            <img src="path/to/card3.jpg">
+                        </div>
+                        <button class="nav-btn next" onclick="moveSlide(event, this, 1)">&#10095;</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <!-- Section 2: Build Deck -->
+        <section id="build-deck">
+            <h2><i class="fas fa-hammer"></i> Build Deck</h2>
+            <div class="fb-preview-container">
+                <!-- Chèn link bài viết Facebook -->
+                <div class="fb-post" 
+                     data-href="https://www.facebook.com/trang-cua-ban/posts/123456789" 
+                     data-width="500" 
+                     data-show-text="true">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Facebook SDK cho phần Build Deck -->
+    <div id="fb-root"></div>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/vi_VN/sdk.js#xfbml=1&version=v18.0"></script>
+    <script src="js/guide.js"></script>
+</body>
+</html>

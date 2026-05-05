@@ -3,39 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thần Tích Portal</title>
+    <title>Quản lý Card Game Portal</title>
     <link rel="stylesheet" href="css/style.css">
+    <!-- FontAwesome để dùng icon cho đẹp -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="index-body">
-    <div class="container portal-container">
-        <header class="portal-header">
-            <h1>📊 Thần Tích <span class="highlight">Portal</span></h1>
-            <p>Hệ thống quản lý dữ liệu và phân tích Meta-game chuyên sâu</p>
-        </header>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar">
+            <div class="sidebar-header">
+                <h3>Card Game Tool</h3>
+            </div>
+            <nav class="menu-list">
+                <a href="/" class="menu-item">
+                    <i class="fas fa-chart-line"></i> <span>Dashboard</span>
+                </a>
+                <a href="/meta-analysis" class="menu-item">
+                    <i class="fas fa-search-dollar"></i> <span>Phân tích Meta</span>
+                </a>
+                <a href="/admin" class="menu-item">
+                    <i class="fas fa-user-shield"></i> <span>Admin Panel</span>
+                </a>
+                
+                <!-- Option mới thêm vào theo yêu cầu của bạn -->
+                <a href="/guide" class="menu-item active">
+                    <i class="fas fa-book-open"></i> <span>Guide & Counters</span>
+                </a>
+            </nav>
+        </aside>
 
-        <div class="menu-grid">
-            <a href="analysis.html" class="menu-card-v2">
-                <div class="card-icon">📈</div>
-                <div class="card-info">
-                    <h3>Phân Tích Meta</h3>
-                    <p>Thống kê tỷ lệ thắng, xu hướng các bộ bài và biểu đồ trực quan.</p>
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header>
+                <div class="user-info">
+                    <span>Xin chào, <strong>Admin</strong></span>
                 </div>
-                <div class="card-arrow">→</div>
-            </a>
+            </header>
 
-            <a href="admin.html" class="menu-card-v2">
-                <div class="card-icon">⚙️</div>
-                <div class="card-info">
-                    <h3>Quản Trị Hệ Thống</h3>
-                    <p>Quản lý người chơi, đăng ký giải đấu và xây dựng bộ bài.</p>
-                </div>
-                <div class="card-arrow">→</div>
-            </a>
-        </div>
-        
+            <div id="content-viewport">
+                <!-- Nội dung các trang micro frontend sẽ được load vào đây 
+                     hoặc chuyển hướng sang guide.html -->
+                <h1>Chào mừng đến với hệ thống quản lý</h1>
+                <p>Chọn một mục từ menu bên trái để bắt đầu.</p>
+            </div>
+        </main>
+
         <footer class="portal-footer">
             <p>© 2026 MetaAnalyse Portal - by MageOfFlowers</p>
         </footer>
     </div>
+
+    <script src="js/main.js"></script>
 </body>
 </html>
