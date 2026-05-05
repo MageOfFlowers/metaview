@@ -95,19 +95,15 @@ function createCounterElement(guide) {
  * Hàm đóng/mở nội dung bài viết
  */
 function toggleExpand(headerElement) {
-    // Lấy phần tử cha (counter-item) và toggle class 'active' hoặc 'expanded' tùy CSS của bạn
+    // Tìm phần tử cha gần nhất có class .counter-item để toggle class .active
     const parent = headerElement.closest('.counter-item');
+    if (parent) {
         parent.classList.toggle('active');
+    }
 }
 
-/**
- * Hàm điều hướng slide ảnh
- * @param {Event} event - Sự kiện click
- * @param {HTMLElement} btn - Nút được nhấn
- * @param {number} step - Hướng di chuyển (1 hoặc -1)
- */
 function moveSlide(event, btn, step) {
-    event.stopPropagation(); // Ngăn chặn sự kiện click lan ra ngoài làm đóng card
+    event.stopPropagation(); // Ngăn sự kiện click lan ra ngoài làm đóng card
     
     const slider = btn.closest('.slider');
     const images = slider.querySelectorAll('.slide-images img');
@@ -116,12 +112,8 @@ function moveSlide(event, btn, step) {
 
     let currentIndex = Array.from(images).findIndex(img => img.classList.contains('active'));
     
-    // Xóa class active cũ
+    // Xóa class active cũ và cập nhật index mới xoay vòng
     images[currentIndex].classList.remove('active');
-    
-    // Tính toán index mới (xoay vòng)
     currentIndex = (currentIndex + step + images.length) % images.length;
-    
-    // Thêm class active cho ảnh mới
     images[currentIndex].classList.add('active');
 }
