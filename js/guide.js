@@ -1,35 +1,47 @@
 document.addEventListener('DOMContentLoaded', () => {
-    loadGuides();
+    // Gọi đúng hàm render dữ liệu khi trang tải xong
+    renderGuideData();
 });
 
+/**
+ * Lấy dữ liệu từ API và render ra giao diện
+ */
 async function renderGuideData() {
-    // Gọi API thông qua hàm request dùng chung
-    // Endpoint là /guide vì API_BASE đã có sẵn /api
+    // API_BASE trong hàm request đã có sẵn "/api", nên endpoint chỉ cần "/guide"
     const guides = await request('/guide');
 
     if (!guides) {
-        console.error("Không thể tải dữ liệu từ server.");
+        const container = document.getElementById('counter-list');
+        if (container) {
+            container.innerHTML = '<div class="error">Không thể kết nối với máy chủ. Vui lòng thử lại sau.</div>';
+        }
         return;
     }
 
-    const counterContainer = document.querySelector('.counter-list');
-    counterContainer.innerHTML = ''; // Xóa nội dung cũ
+    const counterContainer = document.getElementById('counter-list');
+    if (!counterContainer) return;
+    
+    counterContainer.innerHTML = ''; // Xóa thông báo loading
 
     guides.forEach(guide => {
+        // Lọc các guide có type là 'counter'
         if (guide.type === 'counter') {
             const item = createCounterElement(guide);
             counterContainer.appendChild(item);
         }
-        // Thêm logic cho 'build' nếu cần render preview Facebook
+        // Bạn có thể thêm xử lý cho guide.type === 'build' ở đây nếu cần
     });
 }
 
+/**
+ * Tạo HTML cho từng mục Counter
+ */
 function createCounterElement(guide) {
-    // details chứa các cặp key-value như {"1": "url1", "2": "url2"}
-    const imageUrls = Object.values(guide.details); 
+    // Chuyển đổi Object details {"1": "url1", "2": "url2"} thành mảng [url1, url2]
+    const imageUrls = guide.details ? Object.values(guide.details) : []; 
 
     const item = document.createElement('div');
-    item.className = 'counter-item';
+    item.className = 'counter-item'; // Class này phải khớp với CSS của bạn
     item.innerHTML = `
         <div class="item-header" onclick="toggleExpand(this)">
             <h3>${guide.name}</h3>
@@ -40,44 +52,49 @@ function createCounterElement(guide) {
         </div>
         <div class="expand-content">
             <div class="slider">
-                <button class="slide-btn prev" onclick="moveSlide(this, -1)">&#10094;</button>
+                ${imageUrls.length > 1 ? `<button class="slide-btn prev" onclick="moveSlide(event, this, -1)">&#10094;</button>` : ''}
                 <div class="slide-images">
                     ${imageUrls.map((url, index) => `
-                        <img src="${url}" class="${index === 0 ? 'active' : ''}">
+                        <img src="${url}" class="${index === 0 ? 'active' : ''}" alt="Card ${index + 1}">
                     `).join('')}
                 </div>
-                <button class="slide-btn next" onclick="moveSlide(this, 1)">&#10095;</button>
+                ${imageUrls.length > 1 ? `<button class="slide-btn next" onclick="moveSlide(event, this, 1)">&#10095;</button>` : ''}
             </div>
         </div>
     `;
     return item;
 }
 
-// Giữ nguyên hàm moveSlide và toggleExpand từ phiên bản trước
-
-// Hàm đóng/mở bài viết
-function toggleExpand(card) {
-    // Đóng các card khác nếu muốn (optional)
-    // document.querySelectorAll('.counter-card').forEach(c => c !== card && c.classList.remove('expanded'));
-    
-    card.classList.toggle('expanded');
+/**
+ * Hàm đóng/mở nội dung bài viết
+ */
+function toggleExpand(headerElement) {
+    // Lấy phần tử cha (counter-item) và toggle class 'active' hoặc 'expanded' tùy CSS của bạn
+    const parent = headerElement.parentElement;
+    parent.classList.toggle('active');
 }
 
-// Hàm điều hướng slide ảnh
+/**
+ * Hàm điều hướng slide ảnh
+ * @param {Event} event - Sự kiện click
+ * @param {HTMLElement} btn - Nút được nhấn
+ * @param {number} step - Hướng di chuyển (1 hoặc -1)
+ */
 function moveSlide(event, btn, step) {
-    event.stopPropagation(); // Ngăn sự kiện click làm đóng card
+    event.stopPropagation(); // Ngăn chặn sự kiện click lan ra ngoài làm đóng card
     
-    const container = btn.closest('.slider-container');
-    const images = container.querySelectorAll('.slides img');
+    const slider = btn.closest('.slider');
+    const images = slider.querySelectorAll('.slide-images img');
+    
+    if (images.length <= 1) return;
+
     let currentIndex = Array.from(images).findIndex(img => img.classList.contains('active'));
     
-    // Xóa class active hiện tại
+    // Xóa class active cũ
     images[currentIndex].classList.remove('active');
     
-    // Tính toán index mới
-    currentIndex += step;
-    if (currentIndex >= images.length) currentIndex = 0;
-    if (currentIndex < 0) currentIndex = images.length - 1;
+    // Tính toán index mới (xoay vòng)
+    currentIndex = (currentIndex + step + images.length) % images.length;
     
     // Thêm class active cho ảnh mới
     images[currentIndex].classList.add('active');
