@@ -51,7 +51,7 @@ async function renderGuideData() {
 
     guides.forEach(guide => {
         // Lọc các guide có type là 'counter'
-        if (guide.type === 'counter') {
+        if (guide.type === 'Counter') {
             const item = createCounterElement(guide);
             counterContainer.appendChild(item);
         }
