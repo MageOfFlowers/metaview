@@ -317,3 +317,37 @@
 .guide-section.expanded .section-header i.fa-chevron-down {
     transform: rotate(180deg);
 }
+
+/* Mặc định ẩn nội dung bên trong các Section lớn[cite: 2] */
+.section-content {
+    display: none; 
+    padding: 0 15px;
+}
+
+/* Hiển thị nội dung khi Section có class .expanded (do JS thêm vào)[cite: 2] */
+.guide-section.expanded .section-content {
+    display: block;
+}
+
+/* Xoay mũi tên của Section khi mở[cite: 2] */
+.guide-section.expanded .section-header i.fa-chevron-down {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+}
+
+/* Ẩn nội dung chi tiết của từng Counter mặc định[cite: 2] */
+.expand-content {
+    display: none;
+    overflow: hidden;
+}
+
+/* Hiển thị chi tiết (slider) khi Counter item có class .active */
+.counter-item.active .expand-content {
+    display: block;
+}
+
+/* Xoay mũi tên nhỏ của từng dòng Counter[cite: 2] */
+.counter-item.active .item-header i.arrow {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+}

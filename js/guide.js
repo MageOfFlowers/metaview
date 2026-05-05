@@ -114,20 +114,19 @@ function createCounterElement(guide) {
 function toggleSection(headerElement) {
     const section = headerElement.closest('.guide-section');
     if (section) {
-        section.classList.toggle('expanded');
+        section.classList.toggle('expanded'); // Toggle class để hiện nội dung và xoay mũi tên
     }
 }
 
 /**
- * ĐIỀU KHIỂN ĐÓNG/MỞ CHI TIẾT COUNTER[cite: 6]
+ * ĐIỀU KHIỂN ĐÓNG/MỞ CHI TIẾT COUNTER (Nút mũi tên nhỏ từng dòng)
  */
 function toggleExpand(headerElement) {
     const parent = headerElement.closest('.counter-item');
     if (parent) {
-        parent.classList.toggle('active');
+        parent.classList.toggle('active'); // Thêm/xóa class active để hiện slider
     }
 }
-
 /**
  * XỬ LÝ SLIDER ẢNH (Nút tiến/lùi)[cite: 6]
  */
