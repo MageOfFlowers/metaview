@@ -1,27 +1,24 @@
-/* Layout cơ bản */
-.guide-section { background: white; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e9ecef; overflow: hidden; }
-.section-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #fff; }
+.guide-section { background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; }
+.section-header { padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
 
-/* Trạng thái ĐÓNG/MỞ Section lớn[cite: 2] */
-.section-content { display: none; padding: 0 20px 20px 20px; border-top: 1px solid #eee; }
+/* Hiệu ứng đóng mở Section lớn[cite: 5] */
+.section-content { display: none; padding: 15px; border-top: 1px solid #eee; }
 .guide-section.expanded .section-content { display: block; }
-.guide-section.expanded .arrow-main { transform: rotate(180deg); transition: 0.3s; }
+.guide-section.expanded .arrow-main { transform: rotate(180deg); }
 
-/* Ô Search */
-.search-box { margin-bottom: 15px; padding-top: 15px; }
-.search-box input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; }
-
-/* Item con (Counter)[cite: 2, 4] */
-.counter-item { border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; }
-.item-header { padding: 15px; cursor: pointer; display: flex; justify-content: space-between; }
-.expand-content { display: none; padding: 15px; background: #f9f9f9; text-align: center; }
-
-/* Trạng thái MỞ Item con */
+/* Hiệu ứng đóng mở Counter Item[cite: 5] */
+.counter-item { border: 1px solid #eee; margin-bottom: 10px; border-radius: 5px; }
+.item-header { padding: 12px; display: flex; justify-content: space-between; cursor: pointer; }
+.expand-content { display: none; padding: 15px; background: #fafafa; }
 .counter-item.active .expand-content { display: block; }
-.counter-item.active .arrow { transform: rotate(180deg); transition: 0.3s; color: #007bff; }
+.counter-item.active .arrow { transform: rotate(180deg); color: #007bff; }
 
-/* Slider ảnh */
+/* Slider[cite: 5] */
 .slider { display: flex; align-items: center; justify-content: center; gap: 10px; }
-.slide-images img { display: none; max-height: 400px; border-radius: 8px; }
+.slide-images img { display: none; max-width: 100%; border-radius: 5px; }
 .slide-images img.active { display: block; }
-.slide-btn { cursor: pointer; border: none; background: #eee; padding: 10px; border-radius: 50%; }
+.slide-btn { background: #eee; border: none; padding: 8px 12px; cursor: pointer; border-radius: 50%; }
+
+/* Build Deck Link */
+.build-link-box { display: block; padding: 12px; text-decoration: none; color: #333; border-bottom: 1px solid #eee; }
+.build-link-box:hover { background: #f0f7ff; }
