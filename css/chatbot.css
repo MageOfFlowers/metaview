@@ -115,3 +115,21 @@
 .data-card strong { color: #2e59d9; }
 .rarity-UR { color: #e74a3b; font-weight: bold; } /* Màu đỏ cho UR */
 .winrate-high { color: #1cc88a; font-weight: bold; }
+
+.link-card {
+    background: #fff;
+    border: 1px dashed #4e73df;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 8px;
+    text-align: center;
+}
+.link-card a {
+    color: #4e73df;
+    text-decoration: none;
+    font-weight: bold;
+    word-break: break-all;
+}
+.link-card a:hover {
+    text-decoration: underline;
+}

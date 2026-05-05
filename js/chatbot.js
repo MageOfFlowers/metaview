@@ -74,14 +74,13 @@ document.addEventListener('DOMContentLoaded', function() {
             loading.remove();
 
             let responseHTML = `<div>${data.reply}</div>`;
-            if (data.data) {
-                data.data.forEach(item => {
-                    if (item.username) responseHTML += `<div class="data-card">👤 <b>${item.username}</b>: Winrate ${item.winrate}%</div>`;
-                    if (item.name && item.rarity) responseHTML += `<div class="data-card">🃏 <b>${item.name}</b> (${item.rarity}): ${item.winrate}%</div>`;
-                    if (item.usage_count) responseHTML += `<div class="data-card">🎴 <b>${item.name}</b>: Winrate ${item.avg_winrate}%</div>`;
-                });
-            }
-            appendMsg(responseHTML, 'bot');
+            if (result.data && result.data.length > 0) {
+            result.data.forEach(item => {
+                responseHTML += renderAdvancedContent(item);
+            });
+        }
+
+        appendMsg(responseHTML, 'bot');
         } catch (err) {
             loading.innerText = "Lỗi kết nối API.";
         }
@@ -95,4 +94,48 @@ document.addEventListener('DOMContentLoaded', function() {
         body.scrollTop = body.scrollHeight;
         return div;
     }
+
+    function renderAdvancedContent(item) {
+    // 1. Trường hợp đặc biệt: Chứa LINK (từ YouTube hoặc tài liệu ngoài)
+    if (item.link) {
+        return `
+            <div class="link-card">
+                <a href="${item.link}" target="_blank" rel="noopener noreferrer">
+                    🔗 Truy cập liên kết tại đây
+                </a>
+            </div>`;
+    }
+
+    // 2. Trường hợp đặc biệt: Chứa TEXT thuần túy (thông báo hoặc hướng dẫn)
+    if (item.text) {
+        return `<div class="data-card">ℹ️ ${item.text}</div>`;
+    }
+
+    // 3. Các trường hợp dữ liệu DB (User, Card, Deck) như cũ
+    if (item.username) {
+        return `
+            <div class="data-card">
+                👤 <b>${item.username}</b><br>
+                Winrate: ${item.winrate}% | Trận: ${item.match_count}
+            </div>`;
+    } 
+    
+    if (item.name && item.rarity) { // Card detail
+        return `
+            <div class="data-card">
+                🃏 <b>${item.name}</b> (${item.rarity})<br>
+                Winrate: ${item.winrate}% | Số lượng: ${item.use_count || item.quantity}
+            </div>`;
+    }
+
+    if (item.usage_count || item.avg_winrate) { // Deck rankings
+        return `
+            <div class="data-card">
+                🎴 <b>${item.name}</b><br>
+                Winrate TB: ${item.avg_winrate}% | Sử dụng: ${item.usage_count}
+            </div>`;
+    }
+
+    return '';
+}
 });
