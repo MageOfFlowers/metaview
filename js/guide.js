@@ -2,8 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadGuides();
 });
 
-import { request } from "./api";
-
 async function renderGuideData() {
     // Gọi API thông qua hàm request dùng chung
     // Endpoint là /guide vì API_BASE đã có sẵn /api
