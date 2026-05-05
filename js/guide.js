@@ -1,25 +1,22 @@
 let allGuides = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Tải dữ liệu từ API ngay lập tức
     await renderGuideData();
 
-    // 2. Gán sự kiện tìm kiếm
-    document.getElementById('search-counter')?.addEventListener('input', (e) => {
-        filterAndDisplay('counter', e.target.value);
-    });
+    const searchCounter = document.getElementById('search-counter');
+    if (searchCounter) {
+        searchCounter.addEventListener('input', (e) => filterAndDisplay('counter', e.target.value));
+    }
 
-    document.getElementById('search-build')?.addEventListener('input', (e) => {
-        filterAndDisplay('build', e.target.value);
-    });
+    const searchBuild = document.getElementById('search-build');
+    if (searchBuild) {
+        searchBuild.addEventListener('input', (e) => filterAndDisplay('build', e.target.value));
+    }
 });
 
 async function renderGuideData() {
-    allGuides = await request('/guide') || [];[cite: 3]
-    
-    // Hiển thị dữ liệu mặc định (chuỗi rỗng sẽ hiện tất cả)
-    // Quan trọng: Dùng 'counter' và 'build' làm từ khóa phân loại
-    filterAndDisplay('counter', ''); 
+    allGuides = await request('/guide') || [];
+    filterAndDisplay('counter', '');
     filterAndDisplay('build', '');
 }
 
@@ -31,17 +28,15 @@ function filterAndDisplay(type, term) {
     container.innerHTML = '';
     const searchTerm = term.toLowerCase().trim();
 
-    // LỌC DỮ LIỆU: Chuyển cả type trong data và type truyền vào về chữ thường để so khớp
     const filtered = allGuides.filter(g => {
-        const targetType = type.toLowerCase(); // 'counter' hoặc 'build'
-        const currentType = (g.type || '').toLowerCase(); // 'Counter' -> 'counter'
+        const targetType = type.toLowerCase();
+        const currentType = (g.type || '').toLowerCase();
         const currentName = (g.name || '').toLowerCase();
-        
         return currentType === targetType && currentName.includes(searchTerm);
     });
 
     if (filtered.length === 0) {
-        container.innerHTML = `<p style="padding:20px; color:#999;">Không có dữ liệu phù hợp...</p>`;
+        container.innerHTML = `<p style="padding:20px; color:#999;">Không tìm thấy dữ liệu...</p>`;
         return;
     }
 
@@ -76,17 +71,16 @@ function filterAndDisplay(type, term) {
     });
 }
 
-// Các hàm bổ trợ giữ nguyên logic từ guide_5.js[cite: 4]
 function toggleSection(el) {
-    el.closest('.guide-section').classList.toggle('expanded');[cite: 6]
+    el.closest('.guide-section').classList.toggle('expanded');
 }
 
 function toggleExpand(el) {
-    el.closest('.counter-item').classList.toggle('active');[cite: 6]
+    el.closest('.counter-item').classList.toggle('active');
 }
 
 function moveSlide(event, btn, step) {
-    event.stopPropagation();[cite: 6]
+    event.stopPropagation();
     const images = btn.closest('.slider').querySelectorAll('.slide-images img');
     if (images.length <= 1) return;
     let idx = Array.from(images).findIndex(img => img.classList.contains('active'));
@@ -96,7 +90,7 @@ function moveSlide(event, btn, step) {
 
 async function request(endpoint) {
     try {
-        const res = await fetch(`https://metaanalyse.onrender.com/api${endpoint}`);[cite: 3]
+        const res = await fetch(`https://metaanalyse.onrender.com/api${endpoint}`);
         return res.ok ? await res.json() : null;
     } catch (e) { return null; }
 }
