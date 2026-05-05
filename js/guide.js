@@ -1,4 +1,3 @@
-import { request } from './api.js';
 document.addEventListener('DOMContentLoaded', () => {
     // Gọi đúng hàm render dữ liệu khi trang tải xong
     renderGuideData();
@@ -7,6 +6,32 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Lấy dữ liệu từ API và render ra giao diện
  */
+
+async function request(endpoint, method = 'GET', body = null) {
+    try {
+        const API_BASE = "https://metaanalyse.onrender.com/api";
+        const options = {
+            method,
+            headers: { 'Content-Type': 'application/json' }
+        };
+        
+        // Chỉ thêm body nếu phương thức không phải GET và có dữ liệu body thực sự
+        if (body && method !== 'GET') {
+            options.body = JSON.stringify(body);
+        }
+        
+        const response = await fetch(`${API_BASE}${endpoint}`, options);
+        
+        if (!response.ok) {
+            console.error(`Server trả về lỗi: ${response.status}`);
+            return null;
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Lỗi kết nối mạng hoặc Server:", error);
+        return null;
+    }
+}
 async function renderGuideData() {
     // API_BASE trong hàm request đã có sẵn "/api", nên endpoint chỉ cần "/guide"
     const guides = await request('/guide');
