@@ -22,35 +22,36 @@
         </header>
 
         <main class="guide-content">
-            <!-- Section 1: How To Counter -->
-            <<!-- Section 1 -->
-<section class="guide-section">
-    <div class="section-header" onclick="toggleSection(this)">
-        <div>
+    <!-- Section 1: How To Counter -->
+    <section class="guide-section">
+        <div class="section-header">
             <i class="fas fa-shield-halved"></i>
             <h2>How To Counter</h2>
+            <div class="search-box">
+                <input type="text" id="search-counter" placeholder="Tìm tên bộ bài đối thủ...">
+            </div>
         </div>
-        <i class="fas fa-chevron-down"></i> <!-- Thêm mũi tên -->
-    </div>
-    <div id="counter-list" class="counter-grid">
-        <!-- JS render dữ liệu ở đây -->
-    </div>
-</section>
+        <div id="counter-list" class="counter-grid">
+            <div class="loading">Đang tải dữ liệu...</div>
+        </div>
+    </section>
 
-<!-- Section 2 -->
-<section class="guide-section">
-    <div class="section-header" onclick="toggleSection(this)">
-        <div>
+    <hr class="section-divider">
+
+    <!-- Section 2: Build Deck -->
+    <section class="guide-section">
+        <div class="section-header">
             <i class="fas fa-layer-group"></i>
             <h2>Build Deck</h2>
+            <div class="search-box">
+                <input type="text" id="search-build" placeholder="Tìm tên bộ bài...">
+            </div>
         </div>
-        <i class="fas fa-chevron-down"></i> <!-- Thêm mũi tên[cite: 4] -->
-    </div>
-    <div id="fb-build-container" class="fb-preview-wrapper">
-        <!-- JS render dữ liệu ở đây -->
-    </div>
-</section>
-        </main>
+        <div id="fb-build-container" class="build-list-simple">
+            <!-- Chỉ hiện danh sách nút bấm gọn nhẹ -->
+        </div>
+    </section>
+</main>
 
         <footer class="guide-footer">
             <p>© 2026 Thần Tích Portal</p>
