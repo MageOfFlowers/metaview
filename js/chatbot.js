@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('than-tich-chatbot');
     if (!container) return;
 
-    // 1. Tự động chèn CSS cần thiết để đảm bảo hiển thị
+    // 1. Tự động chèn CSS
     const style = document.createElement('style');
     style.innerHTML = `
         #chatbot-container { position: fixed; bottom: 20px; right: 20px; z-index: 999999; font-family: sans-serif; }
@@ -15,10 +15,13 @@ document.addEventListener('DOMContentLoaded', function() {
         .chat-footer { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 5px; }
         .chat-footer input { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 15px; outline: none; }
         .chat-footer button { background: none; border: none; cursor: pointer; font-size: 18px; color: #4e73df; }
-        .msg { padding: 8px 12px; border-radius: 15px; font-size: 14px; max-width: 80%; line-height: 1.4; }
+        .msg { padding: 8px 12px; border-radius: 15px; font-size: 14px; max-width: 80%; line-height: 1.4; word-wrap: break-word; }
         .msg.bot { background: white; align-self: flex-start; border: 1px solid #e3e6f0; }
         .msg.user { background: #4e73df; color: white; align-self: flex-end; }
-        .data-card { background: #fff; border-left: 4px solid #1cc88a; padding: 8px; margin-top: 5px; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .data-card { background: #fff; border-left: 4px solid #1cc88a; padding: 10px; margin-top: 5px; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-radius: 4px; }
+        .guide-img { width: 100%; border-radius: 5px; margin-top: 5px; cursor: pointer; border: 1px solid #eee; }
+        .link-card a { color: #4e73df; text-decoration: none; font-weight: bold; font-size: 13px; }
+        .link-card a:hover { text-decoration: underline; }
     `;
     document.head.appendChild(style);
 
@@ -49,11 +52,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('chat-input');
     const body = document.getElementById('chat-body');
 
-    // Logic Đóng/Mở
     circle.onclick = () => { box.style.display = 'flex'; circle.style.display = 'none'; };
     close.onclick = () => { box.style.display = 'none'; circle.style.display = 'flex'; };
 
-    // Logic Gửi Tin & Gọi API
     form.onsubmit = async (e) => {
         e.preventDefault();
         const msg = input.value.trim();
@@ -70,19 +71,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: msg })
             });
-            const data = await res.json();
+            
+            const result = await res.json();
             loading.remove();
 
-            let responseHTML = `<div>${data.reply}</div>`;
+            // Hiển thị phần text reply chính
+            let responseHTML = `<div>${result.reply}</div>`;
+            
+            // Xử lý dữ liệu đi kèm (nếu có)
             if (result.data && result.data.length > 0) {
-            result.data.forEach(item => {
-                responseHTML += renderAdvancedContent(item);
-            });
-        }
+                result.data.forEach(item => {
+                    responseHTML += renderAdvancedContent(item, result.action);
+                });
+            }
 
-        appendMsg(responseHTML, 'bot');
+            appendMsg(responseHTML, 'bot');
         } catch (err) {
             loading.innerText = "Lỗi kết nối API.";
+            console.error(err);
         }
     };
 
@@ -95,47 +101,72 @@ document.addEventListener('DOMContentLoaded', function() {
         return div;
     }
 
-    function renderAdvancedContent(item) {
-    // 1. Trường hợp đặc biệt: Chứa LINK (từ YouTube hoặc tài liệu ngoài)
-    if (item.link) {
-        return `
-            <div class="link-card">
-                <a href="${item.link}" target="_blank" rel="noopener noreferrer">
-                    🔗 Truy cập liên kết tại đây
-                </a>
-            </div>`;
-    }
+    function renderAdvancedContent(item, action) {
+        // 1. Xử lý dữ liệu từ bảng GUIDE (HOW_TO_BUILD, HOW_TO_COUNTER)
+        if (item.details) {
+            try {
+                const details = typeof item.details === 'string' ? JSON.parse(item.details) : item.details;
+                
+                // Trường hợp Counter: Hiển thị các ảnh guide
+                if (action === 'HOW_TO_COUNTER' || (item.type && item.type.toLowerCase() === 'counter')) {
+                    let imgs = `<div class="data-card">🎯 <b>${item.name}</b><br>`;
+                    Object.values(details).forEach(url => {
+                        if (url.startsWith('http')) {
+                            imgs += `<img src="${url}" class="guide-img" onclick="window.open('${url}', '_blank')">`;
+                        }
+                    });
+                    imgs += `</div>`;
+                    return imgs;
+                }
+                
+                // Trường hợp Build: Hiển thị link bài viết
+                if (action === 'HOW_TO_BUILD' || details.link) {
+                    return `
+                        <div class="data-card link-card">
+                            📘 <b>Hướng dẫn Build: ${item.name}</b><br>
+                            <a href="${details.link}" target="_blank" rel="noopener noreferrer">🔗 Xem bài viết trên Facebook</a>
+                        </div>`;
+                }
+            } catch (e) {
+                console.error("Lỗi parse JSON details:", e);
+            }
+        }
 
-    // 2. Trường hợp đặc biệt: Chứa TEXT thuần túy (thông báo hoặc hướng dẫn)
-    if (item.text) {
-        return `<div class="data-card">ℹ️ ${item.text}</div>`;
-    }
+        // 2. Trường hợp Link tĩnh (YouTube hoặc URL từ CSV)
+        if (item.link) {
+            return `
+                <div class="data-card link-card">
+                    <a href="${item.link}" target="_blank" rel="noopener noreferrer">
+                        🔗 Truy cập liên kết tại đây
+                    </a>
+                </div>`;
+        }
 
-    // 3. Các trường hợp dữ liệu DB (User, Card, Deck) như cũ
-    if (item.username) {
-        return `
-            <div class="data-card">
-                👤 <b>${item.username}</b><br>
-                Winrate: ${item.winrate}% | Trận: ${item.match_count}
-            </div>`;
-    } 
-    
-    if (item.name && item.rarity) { // Card detail
-        return `
-            <div class="data-card">
-                🃏 <b>${item.name}</b> (${item.rarity})<br>
-                Winrate: ${item.winrate}% | Số lượng: ${item.use_count || item.quantity}
-            </div>`;
-    }
+        // 3. Các trường hợp dữ liệu thống kê (User, Card, Deck)
+        if (item.username) {
+            return `
+                <div class="data-card">
+                    👤 <b>${item.username}</b><br>
+                    Winrate: ${item.winrate}% | Trận: ${item.match_count}
+                </div>`;
+        } 
+        
+        if (item.name && item.rarity) {
+            return `
+                <div class="data-card">
+                    🃏 <b>${item.name}</b> (${item.rarity})<br>
+                    Winrate: ${item.winrate}% | Sử dụng: ${item.use_count || item.quantity || 0}
+                </div>`;
+        }
 
-    if (item.usage_count || item.avg_winrate) { // Deck rankings
-        return `
-            <div class="data-card">
-                🎴 <b>${item.name}</b><br>
-                Winrate TB: ${item.avg_winrate}% | Sử dụng: ${item.usage_count}
-            </div>`;
-    }
+        if (item.usage_count || item.avg_winrate) {
+            return `
+                <div class="data-card">
+                    🎴 <b>${item.name}</b><br>
+                    Winrate TB: ${item.avg_winrate}% | Tổng dùng: ${item.usage_count}
+                </div>`;
+        }
 
-    return '';
-}
+        return '';
+    }
 });
