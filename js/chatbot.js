@@ -136,18 +136,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return linksHTML;
     }
 
-    // 2. Xử lý các link đơn bình thường (cho các trường hợp khác)
-    if (item.link || item.staticData) {
-        const targetLink = item.link || item.staticData;
-        if (!targetLink.includes('||')) {
-             return `
-                <div class="data-card link-card">
-                    <a href="${targetLink}" target="_blank" rel="noopener noreferrer">
-                        🔗 Truy cập liên kết tại đây
-                    </a>
-                </div>`;
-        }
-    }
             // Trường hợp Counter: Hiển thị danh sách ảnh từ JSON
             if (action === 'HOW_TO_COUNTER' || (item.details.type === 'json')) {
                 let imgs = `<div class="data-card">🎯 <b>${item.name}</b><br>`;
