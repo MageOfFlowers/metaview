@@ -109,7 +109,45 @@ document.addEventListener('DOMContentLoaded', function() {
             const detailsValue = typeof item.details.value === 'string' 
                 ? JSON.parse(item.details.value) 
                 : item.details.value;
+            if (action === 'APP' || (item.link && item.link.includes('||')) || (item.staticData && item.staticData.includes('||'))) {
+        const rawLinks = item.link || item.staticData || "";
+        const links = rawLinks.split('||');
+        
+        let linksHTML = `<div class="data-card link-card">`;
+        linksHTML += `<b>📥 Tải ứng dụng Thần Tích:</b><br>`;
+        
+        links.forEach((url, index) => {
+            // Tự động nhận diện nhãn dựa trên nội dung link hoặc thứ tự trong CSV
+            let label = "Tải cho Windows"; 
+            if (url.toLowerCase().includes('apk') || index === 1) {
+                label = "Tải cho Android";
+            }
             
+            linksHTML += `
+                <div style="margin-top: 8px;">
+                    <a href="${url.trim()}" target="_blank" rel="noopener noreferrer" 
+                       style="display: block; padding: 8px; background: #eef2ff; border: 1px solid #4e73df; border-radius: 6px; text-align: center;">
+                        ${label}
+                    </a>
+                </div>`;
+        });
+        
+        linksHTML += `</div>`;
+        return linksHTML;
+    }
+
+    // 2. Xử lý các link đơn bình thường (cho các trường hợp khác)
+    if (item.link || item.staticData) {
+        const targetLink = item.link || item.staticData;
+        if (!targetLink.includes('||')) {
+             return `
+                <div class="data-card link-card">
+                    <a href="${targetLink}" target="_blank" rel="noopener noreferrer">
+                        🔗 Truy cập liên kết tại đây
+                    </a>
+                </div>`;
+        }
+    }
             // Trường hợp Counter: Hiển thị danh sách ảnh từ JSON
             if (action === 'HOW_TO_COUNTER' || (item.details.type === 'json')) {
                 let imgs = `<div class="data-card">🎯 <b>${item.name}</b><br>`;
