@@ -19,9 +19,11 @@ document.addEventListener('DOMContentLoaded', function() {
         .msg.bot { background: white; align-self: flex-start; border: 1px solid #e3e6f0; }
         .msg.user { background: #4e73df; color: white; align-self: flex-end; }
         .data-card { background: #fff; border-left: 4px solid #1cc88a; padding: 10px; margin-top: 5px; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-radius: 4px; }
-        .guide-img { width: 100%; border-radius: 5px; margin-top: 5px; cursor: pointer; border: 1px solid #eee; }
+        .guide-img { width: 100%; border-radius: 5px; margin-top: 5px; cursor: pointer; border: 1px solid #eee; transition: 0.3s; }
+        .guide-img:hover { opacity: 0.8; }
         .link-card a { color: #4e73df; text-decoration: none; font-weight: bold; font-size: 13px; }
-        .link-card a:hover { text-decoration: underline; }
+        .app-btn { display: block; padding: 8px; margin-top: 8px; background: #eef2ff; border: 1px solid #4e73df; border-radius: 6px; text-align: center; color: #4e73df !important; text-decoration: none; transition: 0.2s; }
+        .app-btn:hover { background: #4e73df; color: white !important; }
     `;
     document.head.appendChild(style);
 
@@ -35,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="chat-close" id="chat-close">×</span>
                 </div>
                 <div class="chat-body" id="chat-body">
-                    <div class="msg bot">Chào bạn! Tôi có thể giúp gì về dữ liệu Meta-game?</div>
+                    <div class="msg bot">Chào Duy! Tôi có thể giúp gì về dữ liệu Meta-game?</div>
                 </div>
                 <form class="chat-footer" id="chat-form">
                     <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." autocomplete="off">
@@ -75,10 +77,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await res.json();
             loading.remove();
 
-            // Hiển thị phần text reply chính
             let responseHTML = `<div>${result.reply}</div>`;
             
-            // Xử lý dữ liệu đi kèm (nếu có)
             if (result.data && result.data.length > 0) {
                 result.data.forEach(item => {
                     responseHTML += renderAdvancedContent(item, result.action);
@@ -102,104 +102,68 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderAdvancedContent(item, action) {
-    // 1. Xử lý dữ liệu từ bảng GUIDE (HOW_TO_BUILD, HOW_TO_COUNTER)
-    if (item.details) {
-        try {
-            // Lấy giá trị chuỗi JSON từ item.details.value
-            const detailsValue = typeof item.details.value === 'string' 
-                ? JSON.parse(item.details.value) 
-                : item.details.value;
-            if (action === 'APP' || (item.link && item.link.includes('||')) || (item.staticData && item.staticData.includes('||'))) {
+        // 1. Xử lý trường hợp Tải App (Nhiều link tách bởi ||)
         const rawLinks = item.link || item.staticData || "";
-        const links = rawLinks.split('||');
-        
-        let linksHTML = `<div class="data-card link-card">`;
-        linksHTML += `<b>📥 Tải ứng dụng Thần Tích:</b><br>`;
-        
-        links.forEach((url, index) => {
-            // Tự động nhận diện nhãn dựa trên nội dung link hoặc thứ tự trong CSV
-            let label = "Tải cho Windows"; 
-            if (url.toLowerCase().includes('apk') || index === 1) {
-                label = "Tải cho Android";
-            }
-            
-            linksHTML += `
-                <div style="margin-top: 8px;">
-                    <a href="${url.trim()}" target="_blank" rel="noopener noreferrer" 
-                       style="display: block; padding: 8px; background: #eef2ff; border: 1px solid #4e73df; border-radius: 6px; text-align: center;">
-                        ${label}
-                    </a>
-                </div>`;
-        });
-        
-        linksHTML += `</div>`;
-        return linksHTML;
-    }
-
-            // Trường hợp Counter: Hiển thị danh sách ảnh từ JSON
-            if (action === 'HOW_TO_COUNTER' || (item.details.type === 'json')) {
-                let imgs = `<div class="data-card">🎯 <b>${item.name}</b><br>`;
-                
-                // Duyệt qua các values trong object (các link ảnh)
-                Object.values(detailsValue).forEach(url => {
-                    if (typeof url === 'string' && url.startsWith('http')) {
-                        imgs += `<img src="${url}" class="guide-img" onclick="window.open('${url}', '_blank')">`;
-                    }
-                });
-                
-                imgs += `</div>`;
-                return imgs;
-            }
-            
-            // Trường hợp Build: Hiển thị link bài viết
-            if (action === 'HOW_TO_BUILD' || detailsValue.link) {
-                const link = detailsValue.link || "#";
-                return `
-                    <div class="data-card link-card">
-                        📘 <b>Hướng dẫn Build: ${item.name}</b><br>
-                        <a href="${link}" target="_blank" rel="noopener noreferrer">🔗 Xem bài viết trên Facebook</a>
-                    </div>`;
-            }
-        } catch (e) {
-            console.error("Lỗi parse JSON trong details.value:", e);
+        if (action === 'APP' || rawLinks.includes('||')) {
+            const links = rawLinks.split('||');
+            let linksHTML = `<div class="data-card"><b>📥 Link tải ứng dụng:</b>`;
+            links.forEach((url, index) => {
+                let label = "Tải cho Windows"; 
+                if (url.toLowerCase().includes('apk') || index === 1) label = "Tải cho Android";
+                linksHTML += `<a href="${url.trim()}" target="_blank" class="app-btn">${label}</a>`;
+            });
+            return linksHTML + `</div>`;
         }
-    }
 
-    // 2. Trường hợp Link tĩnh (YouTube hoặc URL từ CSV)
-    if (item.link) {
-        return `
-            <div class="data-card link-card">
-                <a href="${item.link}" target="_blank" rel="noopener noreferrer">
-                    🔗 Truy cập liên kết tại đây
-                </a>
-            </div>`;
-    }
+        // 2. Xử lý dữ liệu GUIDE (Counter/Build từ JSON)
+        if (item.details) {
+            try {
+                const detailsValue = typeof item.details.value === 'string' 
+                    ? JSON.parse(item.details.value) 
+                    : item.details.value;
 
-    // 3. Các trường hợp dữ liệu thống kê (User, Card, Deck)
-    if (item.username) {
-        return `
-            <div class="data-card">
-                👤 <b>${item.username}</b><br>
-                Winrate: ${item.winrate}% | Trận: ${item.match_count}
-            </div>`;
-    } 
-    
-    if (item.name && item.rarity) {
-        return `
-            <div class="data-card">
-                🃏 <b>${item.name}</b> (${item.rarity})<br>
-                Winrate: ${item.winrate}% | Sử dụng: ${item.use_count || item.quantity || 0}
-            </div>`;
-    }
+                // Ảnh khắc chế
+                if (action === 'HOW_TO_COUNTER' || item.details.type === 'json') {
+                    let imgs = `<div class="data-card">🎯 <b>${item.name}</b><br>`;
+                    Object.values(detailsValue).forEach(url => {
+                        if (typeof url === 'string' && url.startsWith('http')) {
+                            imgs += `<img src="${url}" class="guide-img" onclick="window.open('${url}', '_blank')">`;
+                        }
+                    });
+                    return imgs + `</div>`;
+                }
+                
+                // Link Build Facebook
+                if (action === 'HOW_TO_BUILD' || detailsValue.link) {
+                    const link = detailsValue.link || "#";
+                    return `
+                        <div class="data-card link-card">
+                            📘 <b>Hướng dẫn Build: ${item.name}</b><br>
+                            <a href="${link}" target="_blank" rel="noopener noreferrer">🔗 Xem bài viết trên Facebook</a>
+                        </div>`;
+                }
+            } catch (e) {
+                console.error("Lỗi parse JSON:", e);
+            }
+        }
 
-    if (item.usage_count || item.avg_winrate) {
-        return `
-            <div class="data-card">
-                🎴 <b>${item.name}</b><br>
-                Winrate TB: ${item.avg_winrate}% | Tổng dùng: ${item.usage_count}
-            </div>`;
-    }
+        // 3. Link tĩnh đơn giản
+        if (item.link && !item.link.includes('||')) {
+            return `
+                <div class="data-card link-card">
+                    <a href="${item.link}" target="_blank" rel="noopener noreferrer">🔗 Truy cập liên kết tại đây</a>
+                </div>`;
+        }
 
-    return '';
-}
+        // 4. Thống kê User/Card
+        if (item.username) {
+            return `<div class="data-card">👤 <b>${item.username}</b><br>Winrate: ${item.winrate}% | Trận: ${item.match_count}</div>`;
+        } 
+        
+        if (item.name && (item.rarity || item.winrate)) {
+            return `<div class="data-card">🃏 <b>${item.name}</b> ${item.rarity ? '('+item.rarity+')' : ''}<br>Winrate: ${item.winrate}% | Sử dụng: ${item.use_count || item.quantity || 0}</div>`;
+        }
+
+        return '';
+    }
 });
