@@ -102,71 +102,78 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderAdvancedContent(item, action) {
-        // 1. Xử lý dữ liệu từ bảng GUIDE (HOW_TO_BUILD, HOW_TO_COUNTER)
-        if (item.details) {
-            try {
-                const details = typeof item.details === 'string' ? JSON.parse(item.details) : item.details;
+    // 1. Xử lý dữ liệu từ bảng GUIDE (HOW_TO_BUILD, HOW_TO_COUNTER)
+    if (item.details) {
+        try {
+            // Lấy giá trị chuỗi JSON từ item.details.value
+            const detailsValue = typeof item.details.value === 'string' 
+                ? JSON.parse(item.details.value) 
+                : item.details.value;
+            
+            // Trường hợp Counter: Hiển thị danh sách ảnh từ JSON
+            if (action === 'HOW_TO_COUNTER' || (item.details.type === 'json')) {
+                let imgs = `<div class="data-card">🎯 <b>${item.name}</b><br>`;
                 
-                // Trường hợp Counter: Hiển thị các ảnh guide
-                if (action === 'HOW_TO_COUNTER' || (item.type && item.type.toLowerCase() === 'counter')) {
-                    let imgs = `<div class="data-card">🎯 <b>${item.name}</b><br>`;
-                    Object.values(details).forEach(url => {
-                        if (url.startsWith('http')) {
-                            imgs += `<img src="${url}" class="guide-img" onclick="window.open('${url}', '_blank')">`;
-                        }
-                    });
-                    imgs += `</div>`;
-                    return imgs;
-                }
+                // Duyệt qua các values trong object (các link ảnh)
+                Object.values(detailsValue).forEach(url => {
+                    if (typeof url === 'string' && url.startsWith('http')) {
+                        imgs += `<img src="${url}" class="guide-img" onclick="window.open('${url}', '_blank')">`;
+                    }
+                });
                 
-                // Trường hợp Build: Hiển thị link bài viết
-                if (action === 'HOW_TO_BUILD' || details.link) {
-                    return `
-                        <div class="data-card link-card">
-                            📘 <b>Hướng dẫn Build: ${item.name}</b><br>
-                            <a href="${details.link}" target="_blank" rel="noopener noreferrer">🔗 Xem bài viết trên Facebook</a>
-                        </div>`;
-                }
-            } catch (e) {
-                console.error("Lỗi parse JSON details:", e);
+                imgs += `</div>`;
+                return imgs;
             }
+            
+            // Trường hợp Build: Hiển thị link bài viết
+            if (action === 'HOW_TO_BUILD' || detailsValue.link) {
+                const link = detailsValue.link || "#";
+                return `
+                    <div class="data-card link-card">
+                        📘 <b>Hướng dẫn Build: ${item.name}</b><br>
+                        <a href="${link}" target="_blank" rel="noopener noreferrer">🔗 Xem bài viết trên Facebook</a>
+                    </div>`;
+            }
+        } catch (e) {
+            console.error("Lỗi parse JSON trong details.value:", e);
         }
-
-        // 2. Trường hợp Link tĩnh (YouTube hoặc URL từ CSV)
-        if (item.link) {
-            return `
-                <div class="data-card link-card">
-                    <a href="${item.link}" target="_blank" rel="noopener noreferrer">
-                        🔗 Truy cập liên kết tại đây
-                    </a>
-                </div>`;
-        }
-
-        // 3. Các trường hợp dữ liệu thống kê (User, Card, Deck)
-        if (item.username) {
-            return `
-                <div class="data-card">
-                    👤 <b>${item.username}</b><br>
-                    Winrate: ${item.winrate}% | Trận: ${item.match_count}
-                </div>`;
-        } 
-        
-        if (item.name && item.rarity) {
-            return `
-                <div class="data-card">
-                    🃏 <b>${item.name}</b> (${item.rarity})<br>
-                    Winrate: ${item.winrate}% | Sử dụng: ${item.use_count || item.quantity || 0}
-                </div>`;
-        }
-
-        if (item.usage_count || item.avg_winrate) {
-            return `
-                <div class="data-card">
-                    🎴 <b>${item.name}</b><br>
-                    Winrate TB: ${item.avg_winrate}% | Tổng dùng: ${item.usage_count}
-                </div>`;
-        }
-
-        return '';
     }
+
+    // 2. Trường hợp Link tĩnh (YouTube hoặc URL từ CSV)
+    if (item.link) {
+        return `
+            <div class="data-card link-card">
+                <a href="${item.link}" target="_blank" rel="noopener noreferrer">
+                    🔗 Truy cập liên kết tại đây
+                </a>
+            </div>`;
+    }
+
+    // 3. Các trường hợp dữ liệu thống kê (User, Card, Deck)
+    if (item.username) {
+        return `
+            <div class="data-card">
+                👤 <b>${item.username}</b><br>
+                Winrate: ${item.winrate}% | Trận: ${item.match_count}
+            </div>`;
+    } 
+    
+    if (item.name && item.rarity) {
+        return `
+            <div class="data-card">
+                🃏 <b>${item.name}</b> (${item.rarity})<br>
+                Winrate: ${item.winrate}% | Sử dụng: ${item.use_count || item.quantity || 0}
+            </div>`;
+    }
+
+    if (item.usage_count || item.avg_winrate) {
+        return `
+            <div class="data-card">
+                🎴 <b>${item.name}</b><br>
+                Winrate TB: ${item.avg_winrate}% | Tổng dùng: ${item.usage_count}
+            </div>`;
+    }
+
+    return '';
+}
 });
