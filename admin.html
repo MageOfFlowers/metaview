@@ -11,12 +11,21 @@
         .selected-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; align-items: center; }
         .history-info { background: #f0f7ff; padding: 8px; border-radius: 4px; border-left: 4px solid #2196F3; margin-top: 5px; font-size: 0.85rem; color: #555; }
         
-        /* Bảng danh sách bộ bài gọn nhẹ */
         .deck-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
         .deck-table th, .deck-table td { padding: 10px; border: 1px solid #eee; text-align: left; }
         .deck-table th { background: #f4f4f4; font-size: 0.85rem; }
         .search-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box; }
         .btn-sm { padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; color: white; font-size: 0.75rem; }
+
+        /* Color Filter Styles */
+        .filter-tools { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+        .color-group { display: flex; gap: 4px; }
+        .btn-color { width: 32px; height: 32px; border: 2px solid transparent; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; opacity: 0.5; transition: 0.2s; }
+        .btn-color.active { opacity: 1; border-color: #333; transform: scale(1.1); }
+        .c-y { background: #ffd700; color: #000; }
+        .c-g { background: #28a745; }
+        .c-r { background: #dc3545; }
+        .c-p { background: #6f42c1; }
     </style>
 </head>
 <body>
@@ -27,7 +36,7 @@
     </header>
 
     <div class="accordion-item">
-        <div class="accordion-header" onclick="toggleAcc(this)">👤 Quản lý Người dùng <span>+</span></div>
+        <div class="accordion-header" onclick="window.toggleAcc(this)">👤 Quản lý Người dùng <span>+</span></div>
         <div class="accordion-content">
             <div class="input-group">
                 <label>Tên người dùng mới</label>
@@ -38,7 +47,7 @@
     </div>
 
     <div class="accordion-item">
-        <div class="accordion-header" onclick="toggleAcc(this)">🏆 Đăng ký Giải & Xem Lịch sử <span>+</span></div>
+        <div class="accordion-header" onclick="window.toggleAcc(this)">🏆 Đăng ký Giải & Xem Lịch sử <span>+</span></div>
         <div class="accordion-content">
             <div class="dashboard-grid">
                 <div class="input-group">
@@ -62,8 +71,8 @@
         </div>
     </div>
 
-<div class="accordion-item active">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('active')">🎴 Deck Builder (Soạn bộ bài) <span>−</span></div>
+    <div class="accordion-item active">
+        <div class="accordion-header" onclick="window.toggleAcc(this)">🎴 Deck Builder (Soạn bộ bài) <span>−</span></div>
         <div class="accordion-content">
             <input type="hidden" id="currentDeckId" value="0">
             <div class="input-group">
@@ -74,6 +83,15 @@
             <div class="dashboard-grid">
                 <div>
                     <label>Thư viện bài</label>
+                    <div class="filter-tools">
+                        <input type="text" id="libSearch" placeholder="Tìm tên lá bài..." style="flex:1; padding:8px;" oninput="window.updateLibFilter()">
+                        <div class="color-group">
+                            <button class="btn-color c-y" data-color="Y" onclick="window.toggleLibColor(this)">Y</button>
+                            <button class="btn-color c-g" data-color="G" onclick="window.toggleLibColor(this)">G</button>
+                            <button class="btn-color c-r" data-color="R" onclick="window.toggleLibColor(this)">R</button>
+                            <button class="btn-color c-p" data-color="P" onclick="window.toggleLibColor(this)">P</button>
+                        </div>
+                    </div>
                     <div class="card-library" id="card-lib-view"></div>
                 </div>
                 <div>
@@ -87,7 +105,7 @@
     </div>
 
     <div class="accordion-item active">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('active')">📋 Danh sách bộ bài đã tạo <span>−</span></div>
+        <div class="accordion-header" onclick="window.toggleAcc(this)">📋 Danh sách bộ bài đã tạo <span>−</span></div>
         <div class="accordion-content">
             <input type="text" id="deckListSearch" class="search-input" placeholder="🔍 Tìm kiếm tên bộ bài hoặc lá bài..." oninput="window.renderDeckList()">
             <div style="max-height: 500px; overflow-y: auto;">
@@ -108,43 +126,78 @@
 <script type="module">
     import { request } from './js/api.js';
 
-    window.cacheData = { users: [], decks: [], comps: [], cards: [] };
+    window.cacheData = { users: [], decks: [], comps: [], cards: [], compUses: [] };
+    window.libFilter = { name: '', color: '' };
 
-// admin.html - Cập nhật hàm reloadData
-async function reloadData() {
-    const [u, d, c, cards, infos, uses] = await Promise.all([
-        request('/users'), 
-        request('/decksget'), 
-        request('/competitions'), 
-        request('/cards'),
-        request('/deck-infos'),
-        request('/competition-use') // Tự lấy danh sách sử dụng để xem lịch sử
-    ]);
-    
-    // Map thông tin thẻ vào Deck (giống bản trước)
-    const decksWithCards = d.map(deck => {
-        const matchingInfos = infos.filter(info => info.deckid === deck.id);
-        return {
-            ...deck,
-            cards: matchingInfos.map(info => ({
-                id: info.cardid,
-                name: info.cardName || cards.find(c => c.id === info.cardid)?.name || "Unknown",
-                quantity: info.quantity
-            }))
+    async function reloadData() {
+        const [u, d, c, cards, infos, uses] = await Promise.all([
+            request('/users'), 
+            request('/decksget'), 
+            request('/competitions'), 
+            request('/cards'),
+            request('/deck-infos'),
+            request('/competition-use')
+        ]);
+        
+        const decksWithCards = (d || []).map(deck => {
+            const matchingInfos = (infos || []).filter(info => info.deckid === deck.id);
+            return {
+                ...deck,
+                cards: matchingInfos.map(info => ({
+                    id: info.cardid,
+                    name: info.cardName || cards.find(card => card.id === info.cardid)?.name || "Unknown",
+                    quantity: info.quantity
+                }))
+            };
+        });
+
+        window.cacheData = { 
+            users: u || [], 
+            decks: decksWithCards, 
+            comps: c || [],
+            cards: cards || [],
+            compUses: uses || []
         };
-    });
+        
+        window.renderDeckList();
+        window.renderLibrary();
+    }
 
-    window.cacheData = { 
-        users: u || [], 
-        decks: decksWithCards, 
-        cards: cards || [],
-        compUses: uses || [] // Lưu để tự tra cứu history
+    // 🔍 LIBRARY FILTER LOGIC
+    window.updateLibFilter = () => {
+        window.libFilter.name = document.getElementById('libSearch').value.toLowerCase();
+        window.renderLibrary();
     };
-    
-    window.renderDeckList();
-    renderLibrary();
-}
-   // 🔍 LOGIC GỢI Ý (SUGGESTION)
+
+    window.toggleLibColor = (btn) => {
+        const color = btn.dataset.color;
+        if (window.libFilter.color === color) {
+            window.libFilter.color = '';
+            btn.classList.remove('active');
+        } else {
+            document.querySelectorAll('.btn-color').forEach(b => b.classList.remove('active'));
+            window.libFilter.color = color;
+            btn.classList.add('active');
+        }
+        window.renderLibrary();
+    };
+
+    window.renderLibrary = () => {
+        const container = document.getElementById('card-lib-view');
+        const filtered = window.cacheData.cards.filter(c => {
+            const matchName = c.name.toLowerCase().includes(window.libFilter.name);
+            const matchColor = !window.libFilter.color || c.color === window.libFilter.color;
+            return matchName && matchColor;
+        });
+
+        container.innerHTML = filtered.map(c => `
+            <div class="card-item" onclick="window.addToDeck(${c.id}, '${c.name.replace(/'/g, "\\'")}')">
+                <img src="${c.url}"><div class="card-name-mini">${c.name}</div>
+            </div>
+        `).join('');
+    };
+
+    // 🔍 SUGGESTION LOGIC
     window.filterSelect = (selectId, term) => {
         const el = document.getElementById(selectId);
         const val = term.trim().toLowerCase();
@@ -161,30 +214,26 @@ async function reloadData() {
         filtered.length > 0 ? el.classList.add('show') : el.classList.remove('show');
     };
 
-// admin.html - Thay đổi sự kiện onchange của regUser
-document.getElementById('regUser').onchange = (e) => {
-    const userId = parseInt(e.target.value);
-    document.getElementById('searchRegUser').value = e.target.options[e.target.selectedIndex].text;
-    e.target.classList.remove('show');
+    document.getElementById('regUser').onchange = (e) => {
+        const userId = parseInt(e.target.value);
+        document.getElementById('searchRegUser').value = e.target.options[e.target.selectedIndex].text;
+        e.target.classList.remove('show');
 
-    // Tự mò trong competition-use thay vì gọi API /history
-    const userHistory = window.cacheData.compUses.filter(use => use.userid === userId);
-    const hint = document.getElementById('user-history-view');
-    
-    hint.style.display = 'block';
-    if (userHistory.length > 0) {
-        // Lấy tên bộ bài từ danh sách deck dựa trên deckid trong lịch sử
-        const deckNames = userHistory.map(h => {
-            const deck = window.cacheData.decks.find(d => d.id === h.deckid);
-            return deck ? deck.name : `Bộ bài #${h.deckid}`;
-        });
-        // Loại bỏ trùng lặp tên bộ bài để hiển thị gọn
-        const uniqueDecks = [...new Set(deckNames)];
-        hint.innerHTML = `<b>Lịch sử:</b> Đã dùng ${uniqueDecks.join(', ')}`;
-    } else {
-        hint.innerHTML = 'Người chơi mới, chưa đăng ký giải nào.';
-    }
-};
+        const userHistory = window.cacheData.compUses.filter(use => use.userid === userId);
+        const hint = document.getElementById('user-history-view');
+        hint.style.display = 'block';
+        if (userHistory.length > 0) {
+            const deckNames = userHistory.map(h => {
+                const deck = window.cacheData.decks.find(d => d.id === h.deckid);
+                return deck ? deck.name : `Bộ bài #${h.deckid}`;
+            });
+            const uniqueDecks = [...new Set(deckNames)];
+            hint.innerHTML = `<b>Lịch sử:</b> Đã dùng ${uniqueDecks.join(', ')}`;
+        } else {
+            hint.innerHTML = 'Người chơi mới, chưa đăng ký giải nào.';
+        }
+    };
+
     ['regDeck', 'regComp'].forEach(id => {
         document.getElementById(id).onchange = (e) => {
             const inputId = 'search' + id.charAt(0).toUpperCase() + id.slice(1);
@@ -193,9 +242,8 @@ document.getElementById('regUser').onchange = (e) => {
         };
     });
 
-    // 🎴 LOGIC DECK BUILDER
-
-window.addToDeck = (id, name, qty = 1) => {
+    // 🎴 DECK BUILDER LOGIC
+    window.addToDeck = (id, name, qty = 1) => {
         const container = document.getElementById('deck-build-container');
         if(container.querySelector(`[data-id="${id}"]`)) return;
         const div = document.createElement('div');
@@ -206,109 +254,67 @@ window.addToDeck = (id, name, qty = 1) => {
         container.appendChild(div);
     };
 
-    // 📋 DANH SÁCH RÚT GỌN
-// admin.html - Cập nhật renderDeckList
-window.renderDeckList = () => {
-    const term = document.getElementById('deckListSearch').value.toLowerCase();
-    const tbody = document.getElementById('deck-list-tbody');
-    
-    const filtered = window.cacheData.decks.filter(d => {
-        const deckNameMatch = d.name.toLowerCase().includes(term);
-        const cardsMatch = d.cards?.some(c => c.name.toLowerCase().includes(term));
-        return deckNameMatch || cardsMatch;
-    });
-
-    tbody.innerHTML = filtered.map(d => `
-        <tr>
-            <td>
-                <strong>${d.name}</strong>
-                <div class="card-tags" style="font-size: 0.75rem; color: #666; margin-top: 4px;">
-                    ${d.cards.map(c => `${c.name} x${c.quantity}`).join(', ')}
-                </div>
-            </td>
-            <td style="text-align:center">
-                <button class="btn-sm" style="background:#28a745" onclick="window.loadDeckToEdit(${d.id})">Sửa</button>
-                <button class="btn-sm" style="background:#dc3545" onclick="window.deleteDeck(${d.id})">Xóa</button>
-            </td>
-        </tr>
-    `).join('');
-};
-    function renderLibrary() {
-        const container = document.getElementById('card-lib-view');
-        container.innerHTML = window.cacheData.cards.map(c => `
-            <div class="card-item" onclick="window.addToDeck(${c.id}, '${c.name.replace(/'/g, "\\'")}')">
-                <img src="${c.url}"><div class="card-name-mini">${c.name}</div>
-            </div>
-        `).join('');
-    }
-
-    // ✏️ LOGIC NHẤN SỬA: Nạp thẻ vào ô
-// admin.html - Hàm nạp thẻ khi sửa
-window.loadDeckToEdit = (id) => {
-    const deck = window.cacheData.decks.find(d => d.id === id);
-    if (!deck) return;
-
-    document.getElementById('currentDeckId').value = deck.id;
-    document.getElementById('deckName').value = deck.name;
-    const container = document.getElementById('deck-build-container');
-    container.innerHTML = "";
-
-    // Nạp thẻ vào ô soạn thảo
-    deck.cards.forEach(c => {
-        window.addToDeck(c.id, c.name, c.quantity);
-    });
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-// admin.html - Logic lưu kèm check trùng hệt thành phần
-document.getElementById('save-deck-btn').onclick = async () => {
-    const currentId = parseInt(document.getElementById('currentDeckId').value);
-    const name = document.getElementById('deckName').value.trim();
-    const cards = Array.from(document.querySelectorAll('#deck-build-container .selected-row')).map(r => ({
-        cardid: parseInt(r.dataset.id),
-        quantity: parseInt(r.querySelector('.q').value)
-    }));
-
-    if(!name || cards.length === 0) return alert("Vui lòng nhập tên và chọn bài!");
-
-    // Tạo mã định danh cho bộ bài đang soạn (Sắp xếp ID để so sánh chuẩn)
-    const newFingerprint = cards
-        .sort((a, b) => a.cardid - b.cardid)
-        .map(c => `${c.cardid}:${c.quantity}`)
-        .join('|');
-
-    // Kiểm tra trong database hiện tại
-    const duplicate = window.cacheData.decks.find(d => {
-        if (d.id === currentId) return false; // Bỏ qua chính nó nếu đang sửa
-        const existingFingerprint = d.cards
-            .sort((a, b) => a.id - b.id)
-            .map(c => `${c.id}:${c.quantity}`)
-            .join('|');
-        return newFingerprint === existingFingerprint;
-    });
-
-    if (duplicate) {
-        if (!confirm(`Cảnh báo: Bộ bài này giống hệt thành phần của bộ "${duplicate.name}". Bạn vẫn muốn lưu chứ?`)) {
-            return;
-        }
-    }
-
-    await request('/decks', 'POST', { id: currentId, name, cards });
-    window.resetDeckForm();
-    reloadData();
-};
-    function checkDuplicateDeck(newCards, currentId) {
-        const newSet = newCards.map(c => `${c.cardid}:${c.quantity}`).sort().join('|');
+    window.renderDeckList = () => {
+        const term = document.getElementById('deckListSearch').value.toLowerCase();
+        const tbody = document.getElementById('deck-list-tbody');
         
-        return window.cacheData.decks.find(d => {
-            if (d.id === currentId) return false; // Không tự check chính nó khi sửa
-            const existingSet = d.cards?.map(c => `${c.id}:${c.quantity || 1}`).sort().join('|');
-            return newSet === existingSet;
+        const filtered = window.cacheData.decks.filter(d => {
+            const deckNameMatch = d.name.toLowerCase().includes(term);
+            const cardsMatch = d.cards?.some(c => c.name.toLowerCase().includes(term));
+            return deckNameMatch || cardsMatch;
         });
-    }
 
-    // 💾 LƯU NGƯỜI DÙNG & GIẢI ĐẤU
+        tbody.innerHTML = filtered.map(d => `
+            <tr>
+                <td>
+                    <strong>${d.name}</strong>
+                    <div class="card-tags" style="font-size: 0.75rem; color: #666; margin-top: 4px;">
+                        ${d.cards.map(c => `${c.name} x${c.quantity}`).join(', ')}
+                    </div>
+                </td>
+                <td style="text-align:center">
+                    <button class="btn-sm" style="background:#28a745" onclick="window.loadDeckToEdit(${d.id})">Sửa</button>
+                    <button class="btn-sm" style="background:#dc3545" onclick="window.deleteDeck(${d.id})">Xóa</button>
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    window.loadDeckToEdit = (id) => {
+        const deck = window.cacheData.decks.find(d => d.id === id);
+        if (!deck) return;
+        document.getElementById('currentDeckId').value = deck.id;
+        document.getElementById('deckName').value = deck.name;
+        const container = document.getElementById('deck-build-container');
+        container.innerHTML = "";
+        deck.cards.forEach(c => window.addToDeck(c.id, c.name, c.quantity));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    document.getElementById('save-deck-btn').onclick = async () => {
+        const currentId = parseInt(document.getElementById('currentDeckId').value);
+        const name = document.getElementById('deckName').value.trim();
+        const cards = Array.from(document.querySelectorAll('#deck-build-container .selected-row')).map(r => ({
+            cardid: parseInt(r.dataset.id),
+            quantity: parseInt(r.querySelector('.q').value)
+        }));
+
+        if(!name || cards.length === 0) return alert("Vui lòng nhập tên và chọn bài!");
+
+        const newFingerprint = cards.sort((a, b) => a.cardid - b.cardid).map(c => `${c.cardid}:${c.quantity}`).join('|');
+        const duplicate = window.cacheData.decks.find(d => {
+            if (d.id === currentId) return false;
+            const existingFingerprint = d.cards.sort((a, b) => a.id - b.id).map(c => `${c.id}:${c.quantity}`).join('|');
+            return newFingerprint === existingFingerprint;
+        });
+
+        if (duplicate && !confirm(`Cảnh báo: Giống hệt bộ "${duplicate.name}". Vẫn lưu?`)) return;
+
+        await request('/decks', 'POST', { id: currentId, name, cards });
+        window.resetDeckForm();
+        reloadData();
+    };
+
     document.getElementById('save-user-btn').onclick = async () => {
         const name = document.getElementById('userName').value.trim();
         if(!name) return;
@@ -324,12 +330,12 @@ document.getElementById('save-deck-btn').onclick = async () => {
             deckid: parseInt(document.getElementById('regDeck').value),
             winrate: 50, rank: 1
         };
-        if(!body.competitionid || !body.userid) return alert("Vui lòng chọn đủ thông tin!");
+        if(!body.competitionid || !body.userid || !body.deckid) return alert("Vui lòng chọn đủ thông tin!");
         await request('/competition-use', 'POST', body);
         alert("Đăng ký thành công!");
+        reloadData();
     };
 
-    // 🗑️ XÓA & LÀM MỚI
     window.deleteDeck = async (id) => {
         if(!confirm("Xác nhận xóa bộ bài này?")) return;
         await request('/deck-delete', 'POST', id);
@@ -342,7 +348,7 @@ document.getElementById('save-deck-btn').onclick = async () => {
         document.getElementById('deck-build-container').innerHTML = "";
     };
 
-   window.toggleAcc = (header) => {
+    window.toggleAcc = (header) => {
         const item = header.parentElement;
         item.classList.toggle('active');
         header.querySelector('span').innerText = item.classList.contains('active') ? '−' : '+';
