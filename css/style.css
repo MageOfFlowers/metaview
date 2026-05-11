@@ -730,3 +730,16 @@ select[size].show {
     border-color: #000;
     transform: scale(1.1);
 }
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+/* Đảm bảo các input số có độ rộng đồng nhất */
+input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}

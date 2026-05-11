@@ -66,6 +66,14 @@
                     <input type="text" id="searchRegComp" placeholder="Tìm giải..." oninput="window.filterSelect('regComp', this.value)">
                     <select id="regComp" size="4" class="select-dropdown"></select>
                 </div>
+                <div class="input-group">
+                    <label>Rank (Thứ hạng)</label>
+                    <input type="number" id="regRank" placeholder="Ví dụ: 1" min="1" value="1">
+                </div>
+                <div class="input-group">
+                    <label>Winrate (%)</label>
+                    <input type="number" id="regWinrate" placeholder="Ví dụ: 75" min="0" max="100" value="50">
+                </div>
             </div>
             <button class="btn-submit" id="btn-reg">Xác nhận đăng ký kết quả</button>
         </div>
@@ -328,7 +336,8 @@
             competitionid: parseInt(document.getElementById('regComp').value),
             userid: parseInt(document.getElementById('regUser').value),
             deckid: parseInt(document.getElementById('regDeck').value),
-            winrate: 50, rank: 1
+            rank: parseInt(document.getElementById('regRank').value) || 1,
+            winrate: parseFloat(document.getElementById('regWinrate').value) || 0
         };
         if(!body.competitionid || !body.userid || !body.deckid) return alert("Vui lòng chọn đủ thông tin!");
         await request('/competition-use', 'POST', body);
