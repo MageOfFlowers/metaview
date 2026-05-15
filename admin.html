@@ -66,6 +66,20 @@
                     <input type="text" id="searchRegComp" placeholder="Tìm giải..." oninput="window.filterSelect('regComp', this.value)">
                     <select id="regComp" size="4" class="select-dropdown"></select>
                 </div>
+                <div id="comp-stats-view" style="display:none; margin-top: 15px;">
+                    <h4 style="font-size: 0.9rem; margin-bottom: 5px;">📊 Thống kê giải đấu này:</h4>
+                    <table class="deck-table" style="font-size: 0.8rem;">
+                        <thead>
+                            <tr>
+                                <th>Người chơi</th>
+                                <th>Rank</th>
+                                <th>Winrate</th>
+                                <th>Bộ bài (Cấu trúc)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comp-stats-tbody"></tbody>
+                    </table>
+                </div>
                 <div class="input-group">
                     <label>Rank (Thứ hạng)</label>
                     <input type="number" id="regRank" placeholder="Ví dụ: 1" min="1" value="1">
@@ -242,13 +256,49 @@
         }
     };
 
-    ['regDeck', 'regComp'].forEach(id => {
-        document.getElementById(id).onchange = (e) => {
-            const inputId = 'search' + id.charAt(0).toUpperCase() + id.slice(1);
-            document.getElementById(inputId).value = e.target.options[e.target.selectedIndex].text;
-            e.target.classList.remove('show');
-        };
-    });
+    document.getElementById('regDeck').onchange = (e) => {
+    document.getElementById('searchRegDeck').value = e.target.options[e.target.selectedIndex].text;
+    e.target.classList.remove('show');
+};
+
+document.getElementById('regComp').onchange = (e) => {
+    const compId = parseInt(e.target.value);
+    document.getElementById('searchRegComp').value = e.target.options[e.target.selectedIndex].text;
+    e.target.classList.remove('show');
+
+    // Logic hiển thị bảng thống kê
+    const statsView = document.getElementById('comp-stats-view');
+    const tbody = document.getElementById('comp-stats-tbody');
+    
+    // Lọc danh sách đăng ký của giải này
+    const participants = window.cacheData.compUses.filter(use => use.competitionid === compId);
+
+    if (participants.length > 0) {
+        statsView.style.display = 'block';
+        tbody.innerHTML = participants.map(p => {
+            const user = window.cacheData.users.find(u => u.id === p.userid);
+            const deck = window.cacheData.decks.find(d => d.id === p.deckid);
+            const deckStructure = deck ? deck.cards.map(c => `${c.name} x${c.quantity}`).join(', ') : 'N/A';
+            
+            return `
+                <tr>
+                    <td>${user ? user.username : 'Ẩn danh'}</td>
+                    <td><b>#${p.rank}</b></td>
+                    <td>${p.winrate}%</td>
+                    <td>
+                        <details>
+                            <summary style="cursor:pointer; color:#2196F3">${deck ? deck.name : 'Không rõ'}</summary>
+                            <div style="font-size: 0.7rem; color: #666; padding: 5px;">${deckStructure}</div>
+                        </details>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } else {
+        statsView.style.display = 'block';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">Chưa có ai đăng ký giải này.</td></tr>';
+    }
+};
 
     // 🎴 DECK BUILDER LOGIC
     window.addToDeck = (id, name, qty = 1) => {
