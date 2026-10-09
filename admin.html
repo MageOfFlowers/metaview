@@ -33,6 +33,12 @@
         .teamfight-duel-row { grid-template-columns: repeat(5, minmax(100px, 1fr)) auto; }
         .teamfight-row select, .teamfight-row input, .teamfight-panel select, .teamfight-panel input { width: 100%; padding: 8px; box-sizing: border-box; }
         .teamfight-match { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin: 8px 0; }
+        .teamfight-bracket { display: flex; align-items: stretch; gap: 24px; overflow-x: auto; padding: 12px 4px 20px; }
+        .teamfight-bracket-round { flex: 0 0 240px; display: flex; flex-direction: column; gap: 16px; }
+        .teamfight-bracket-round h4 { margin: 0; }
+        .teamfight-bracket-match { border: 1px solid #dbe2ea; border-radius: 8px; padding: 10px; background: #fff; }
+        .teamfight-bracket-match button { width: 100%; border: 0; background: none; text-align: left; padding: 8px; }
+        .teamfight-bracket-match .winner { font-weight: 700; color: #15803d; background: #f0fdf4; }
         @media (max-width: 700px) {
             .teamfight-roster-row, .teamfight-duel-row { grid-template-columns: 1fr 1fr; }
         }
@@ -125,6 +131,8 @@
         <div class="card">
             <h3>Danh sách đội</h3>
             <div id="teamfightTeamList"></div>
+            <h3 id="teamfightBracketHeading" style="display:none;">Nhánh loại trực tiếp</h3>
+            <div id="teamfightBracket" class="teamfight-bracket" style="display:none;"></div>
             <h3>Lịch sử trận đấu</h3>
             <div id="teamfightMatchList"></div>
         </div>

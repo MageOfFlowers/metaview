@@ -78,6 +78,7 @@ function clearTeamfightData() {
     state.duels = [];
     renderTeams();
     renderMatches();
+    renderBracket();
     fillSelect(byId('teamfightTeam1'), [], (item) => item.id, (item) => item.name, 'Chọn đội 1');
     fillSelect(byId('teamfightTeam2'), [], (item) => item.id, (item) => item.name, 'Chọn đội 2');
     fillSelect(byId('teamfightTieBreak'), [], (item) => item.id, (item) => item.name, 'Không có đội thắng tie-break');
@@ -108,6 +109,7 @@ async function loadTeamfightData() {
     fillSelect(byId('teamfightTieBreak'), teams, (team) => team.id, (team) => team.name, 'Không có đội thắng tie-break');
     renderTeams();
     renderMatches();
+    renderBracket();
     renderDuelRows();
 }
 
@@ -295,6 +297,59 @@ function renderMatches() {
             await loadTeamfightData();
         };
     });
+}
+
+function renderBracket() {
+    const container = byId('teamfightBracket');
+    const heading = byId('teamfightBracketHeading');
+    const competition = state.competitions.find(
+        (item) => String(item.id) === byId('teamfightCompetition').value
+    );
+    const isElimination = competition?.tournamentFormat === 'SINGLE_ELIMINATION';
+    container.style.display = isElimination ? '' : 'none';
+    heading.style.display = isElimination ? '' : 'none';
+    if (!isElimination) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const rounds = new Map();
+    state.matches.forEach((match) => {
+        const round = Number(match.roundNumber);
+        if (!rounds.has(round)) rounds.set(round, []);
+        rounds.get(round).push(match);
+    });
+    const roundNumbers = Array.from(rounds.keys()).sort((a, b) => a - b);
+    if (!roundNumbers.length) {
+        container.innerHTML = '<p>Chưa có trận đấu. Hãy tạo trận ở phần ghi kết quả để bắt đầu nhánh.</p>';
+        return;
+    }
+    const finalRound = Math.max(...roundNumbers);
+    const roundName = (round) => {
+        if (round === finalRound && round > 1) return 'Chung kết';
+        if (round === finalRound - 1 && finalRound > 2) return 'Bán kết';
+        return `Vòng ${round}`;
+    };
+    container.innerHTML = roundNumbers.map((round) => {
+        const matches = rounds.get(round).sort((a, b) => a.id - b.id);
+        return `<section class="teamfight-bracket-round">
+            <h4>${roundName(round)}</h4>
+            ${matches.map((match) => {
+                const team1 = state.teams.find((team) => team.id === match.team1Id);
+                const team2 = state.teams.find((team) => team.id === match.team2Id);
+                const winner1 = match.winnerTeamId === match.team1Id;
+                const winner2 = match.winnerTeamId === match.team2Id;
+                const duels = state.duels.filter((duel) => duel.matchId === match.id);
+                const score1 = duels.filter((duel) => duel.winnerSide === 'TEAM1').length;
+                const score2 = duels.filter((duel) => duel.winnerSide === 'TEAM2').length;
+                return `<div class="teamfight-bracket-match" data-match-id="${Number(match.id)}">
+                    <button class="${winner1 ? 'winner' : ''}" type="button">${escapeHtml(team1?.name || 'Chưa xác định')} ${score1}</button>
+                    <button class="${winner2 ? 'winner' : ''}" type="button">${escapeHtml(team2?.name || 'Chưa xác định')} ${score2}</button>
+                    <small>${match.winnerTeamId == null ? 'Chưa có kết quả' : `Thắng: ${escapeHtml(state.teams.find((team) => team.id === match.winnerTeamId)?.name || '')}`}</small>
+                </div>`;
+            }).join('')}
+        </section>`;
+    }).join('');
 }
 
 async function createTournament() {
