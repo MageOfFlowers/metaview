@@ -19,6 +19,30 @@ function fillSelect(select, rows, valueOf, labelOf, placeholder) {
     if (rows.some((row) => String(valueOf(row)) === selectedValue)) select.value = selectedValue;
 }
 
+function fillSearchableDeck(select, search, rows, placeholder) {
+    const selectedValue = select.value;
+    const term = search.value.trim().toLocaleLowerCase();
+    const filtered = rows.filter((row) => String(row.name ?? '').toLocaleLowerCase().includes(term));
+    fillSelect(select, filtered, (row) => row.id, (row) => row.name, placeholder);
+    if (filtered.some((row) => String(row.id) === selectedValue)) {
+        select.value = selectedValue;
+    } else if (selectedValue) {
+        select.value = '';
+    }
+}
+
+function fillSearchablePlayer(select, search, rows, placeholder) {
+    const selectedValue = select.value;
+    const term = search.value.trim().toLocaleLowerCase();
+    const filtered = rows.filter((row) => String(row.name ?? '').toLocaleLowerCase().includes(term));
+    fillSelect(select, filtered, (row) => row.id, (row) => row.name, placeholder);
+    if (filtered.some((row) => String(row.id) === selectedValue)) {
+        select.value = selectedValue;
+    } else if (selectedValue) {
+        select.value = '';
+    }
+}
+
 async function loadSourceData() {
     const [users, decks, competitions] = await Promise.all([
         request('/users'), request('/decksget'), request('/competitions')
@@ -106,10 +130,10 @@ function renderRosterRows() {
     const users = state.users;
     const decks = state.decks;
     rows.forEach((row) => {
-        fillSelect(row.querySelector('.roster-user'), users,
-            (user) => user.id, (user) => user.username || user.name, 'Chọn người chơi');
-        fillSelect(row.querySelector('.roster-deck'), decks,
-            (deck) => deck.id, (deck) => deck.name, 'Chọn bộ bài');
+        fillSearchablePlayer(row.querySelector('.roster-user'), row.querySelector('.roster-user-search'),
+            users.map((user) => ({ id: user.id, name: user.username || user.name })), 'Chọn người chơi');
+        fillSearchableDeck(row.querySelector('.roster-deck'), row.querySelector('.roster-deck-search'),
+            decks.map((deck) => ({ id: deck.id, name: deck.name })), 'Chọn bộ bài');
         row.querySelector('.remove-roster-member').disabled = memberCount <= 3;
     });
 }
@@ -118,9 +142,13 @@ function addRosterRow() {
     const row = document.createElement('div');
     row.className = 'teamfight-roster-row teamfight-row';
     row.innerHTML = `
-        <div><label>Người chơi</label><select class="roster-user"></select></div>
-        <div><label>Bộ bài thành viên</label><select class="roster-deck"></select></div>
+        <div><label>Tìm người chơi</label><input class="roster-user-search" type="search" placeholder="Tìm người chơi...">
+        <select class="roster-user"></select></div>
+        <div><label>Tìm bộ bài thành viên</label><input class="roster-deck-search" type="search" placeholder="Tìm bộ bài...">
+        <select class="roster-deck"></select></div>
         <button type="button" class="remove-roster-member btn-sm" style="background:#dc3545">Xóa</button>`;
+    row.querySelector('.roster-user-search').oninput = () => renderRosterRows();
+    row.querySelector('.roster-deck-search').oninput = () => renderRosterRows();
     row.querySelector('.remove-roster-member').onclick = () => {
         if (byId('teamfightRoster').querySelectorAll('.teamfight-roster-row').length > 3) {
             row.remove();
@@ -163,12 +191,12 @@ function renderDuelRows() {
     rows.forEach((row) => {
         fillSelect(row.querySelector('.duel-player1'), teamOptions(team1Id, 'player'),
             (item) => item.id, (item) => item.name, 'Người chơi đội 1');
-        fillSelect(row.querySelector('.duel-deck1'), teamOptions(team1Id, 'deck'),
-            (item) => item.id, (item) => item.name, 'Bộ bài đội 1');
+        fillSearchableDeck(row.querySelector('.duel-deck1'), row.querySelector('.duel-deck1-search'),
+            teamOptions(team1Id, 'deck'), 'Bộ bài đội 1');
         fillSelect(row.querySelector('.duel-player2'), teamOptions(team2Id, 'player'),
             (item) => item.id, (item) => item.name, 'Người chơi đội 2');
-        fillSelect(row.querySelector('.duel-deck2'), teamOptions(team2Id, 'deck'),
-            (item) => item.id, (item) => item.name, 'Bộ bài đội 2');
+        fillSearchableDeck(row.querySelector('.duel-deck2'), row.querySelector('.duel-deck2-search'),
+            teamOptions(team2Id, 'deck'), 'Bộ bài đội 2');
     });
 }
 
@@ -177,14 +205,18 @@ function addDuelRow() {
     row.className = 'teamfight-duel-row teamfight-row';
     row.innerHTML = `
         <div><label>Người chơi đội 1</label><select class="duel-player1"></select></div>
-        <div><label>Bộ bài sử dụng</label><select class="duel-deck1"></select></div>
+        <div><label>Tìm bộ bài đội 1</label><input class="duel-deck1-search" type="search" placeholder="Tìm bộ bài...">
+        <select class="duel-deck1"></select></div>
         <div><label>Người chơi đội 2</label><select class="duel-player2"></select></div>
-        <div><label>Bộ bài sử dụng</label><select class="duel-deck2"></select></div>
+        <div><label>Tìm bộ bài đội 2</label><input class="duel-deck2-search" type="search" placeholder="Tìm bộ bài...">
+        <select class="duel-deck2"></select></div>
         <div><label>Kết quả cặp đấu</label><select class="duel-winner">
             <option value="TEAM1">Đội 1 thắng</option><option value="TEAM2">Đội 2 thắng</option><option value="DRAW">Hòa</option>
         </select></div>
         <button type="button" class="remove-duel btn-sm" style="background:#dc3545">Xóa</button>`;
     row.querySelector('.remove-duel').onclick = () => row.remove();
+    row.querySelector('.duel-deck1-search').oninput = () => renderDuelRows();
+    row.querySelector('.duel-deck2-search').oninput = () => renderDuelRows();
     byId('teamfightDuels').appendChild(row);
     renderDuelRows();
 }
@@ -201,8 +233,42 @@ function renderTeams() {
             const deck = state.decks.find((item) => item.id === member.deckId);
             return `${escapeHtml(user?.username || user?.name || `Player ${member.userId}`)} — ${escapeHtml(deck?.name || `Deck ${member.deckId}`)}`;
         }).join(', ');
-        return `<div class="teamfight-match"><strong>${escapeHtml(team.name)}</strong><div>${roster}</div></div>`;
+        return `<div class="teamfight-match">
+            <strong>${escapeHtml(team.name)}</strong><div>${roster}</div>
+            <button type="button" class="btn-sm edit-teamfight-team" data-id="${Number(team.id)}" style="background:#2563eb">Chỉnh sửa</button>
+        </div>`;
     }).join('');
+    teams.querySelectorAll('.edit-teamfight-team').forEach((button) => {
+        button.onclick = () => editTeam(Number(button.dataset.id));
+    });
+}
+
+function editTeam(teamId) {
+    const team = state.teams.find((item) => item.id === teamId);
+    if (!team) return;
+    const members = teamMembers(teamId);
+    byId('teamfightEditingTeamId').value = String(team.id);
+    byId('teamfightTeamName').value = team.name;
+    byId('teamfightRoster').innerHTML = '';
+    members.forEach((member) => {
+        addRosterRow();
+        const row = byId('teamfightRoster').lastElementChild;
+        row.querySelector('.roster-user').value = String(member.userId);
+        row.querySelector('.roster-deck').value = String(member.deckId);
+    });
+    renderRosterRows();
+    byId('saveTeamfightTeam').textContent = 'Lưu thay đổi';
+    byId('cancelTeamfightTeamEdit').style.display = '';
+    byId('teamfightTeamName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function resetTeamEditor() {
+    byId('teamfightEditingTeamId').value = '';
+    byId('teamfightTeamName').value = '';
+    byId('teamfightRoster').innerHTML = '';
+    for (let i = 0; i < 3; i++) addRosterRow();
+    byId('saveTeamfightTeam').textContent = 'Lưu đội';
+    byId('cancelTeamfightTeamEdit').style.display = 'none';
 }
 
 function renderMatches() {
@@ -283,12 +349,13 @@ async function saveTeam() {
         return alert('Chọn giải đấu, nhập tên đội và điền đủ cặp người chơi/bộ bài (3-4 thành viên).');
     }
     const result = await request('/teamfight/teams', 'POST', {
+        id: byId('teamfightEditingTeamId').value ? Number(byId('teamfightEditingTeamId').value) : null,
         competitionId,
         name: byId('teamfightTeamName').value.trim(),
         members
     });
     if (!result) return alert('Không lưu được đội. Kiểm tra người chơi/bộ bài trùng và trạng thái SQL migration.');
-    byId('teamfightTeamName').value = '';
+    resetTeamEditor();
     await loadTeamfightData();
 }
 
@@ -325,11 +392,15 @@ async function saveMatch() {
 
 byId('managerMode').onchange = refreshCompetitionOptions;
 byId('createCompetitionBtn').onclick = createTournament;
-byId('teamfightCompetition').onchange = loadTeamfightData;
+byId('teamfightCompetition').onchange = () => {
+    resetTeamEditor();
+    loadTeamfightData();
+};
 byId('addRosterMember').onclick = () => {
     if (byId('teamfightRoster').querySelectorAll('.teamfight-roster-row').length < 4) addRosterRow();
 };
 byId('saveTeamfightTeam').onclick = saveTeam;
+byId('cancelTeamfightTeamEdit').onclick = resetTeamEditor;
 byId('teamfightTeam1').onchange = renderDuelRows;
 byId('teamfightTeam2').onchange = renderDuelRows;
 byId('addTeamfightDuel').onclick = addDuelRow;
