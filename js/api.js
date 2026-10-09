@@ -1,4 +1,11 @@
+let lastRequestError = '';
+
+export function getLastRequestError() {
+    return lastRequestError;
+}
+
 export async function request(endpoint, method = 'GET', body = null) {
+    lastRequestError = '';
     try {
         const API_BASE = "https://metaanalyse.onrender.com/api";
         const options = {
@@ -14,12 +21,15 @@ export async function request(endpoint, method = 'GET', body = null) {
         const response = await fetch(`${API_BASE}${endpoint}`, options);
         
         if (!response.ok) {
-            console.error(`Server trả về lỗi: ${response.status}`);
+            const errorBody = await response.text();
+            lastRequestError = errorBody || response.statusText || `HTTP ${response.status}`;
+            console.error(`Server trả về lỗi ${response.status}: ${lastRequestError}`);
             return null;
         }
         const responseText = await response.text();
         return responseText ? JSON.parse(responseText) : true;
     } catch (error) {
+        lastRequestError = error instanceof Error ? error.message : String(error);
         console.error("Lỗi kết nối mạng hoặc Server:", error);
         return null;
     }

@@ -1,4 +1,4 @@
-import { request } from './api.js';
+import { getLastRequestError, request } from './api.js';
 
 const byId = (id) => document.getElementById(id);
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -384,7 +384,11 @@ async function saveMatch() {
         tieBreakWinnerTeamId: byId('teamfightTieBreak').value ? Number(byId('teamfightTieBreak').value) : null,
         duels
     });
-    if (!result) return alert('Không lưu được trận. Mỗi người chơi chỉ xuất hiện một lần và bộ bài phải thuộc đội đó.');
+    if (!result) {
+        const error = getLastRequestError();
+        alert(`Không lưu được trận.${error ? ` Chi tiết: ${error}` : ' Hãy kiểm tra kết nối hoặc triển khai backend mới nhất.'}`);
+        return;
+    }
     byId('teamfightDuels').innerHTML = '';
     addDuelRow();
     await loadTeamfightData();
