@@ -263,7 +263,7 @@
                 ...deck,
                 cards: matchingInfos.map(info => ({
                     id: info.cardid,
-                    name: info.cardName || cards.find(card => card.id === info.cardid)?.name || "Unknown",
+                    name: info.cardName || (cards || []).find(card => Number(card.id) === Number(info.cardid))?.name || "Unknown",
                     quantity: info.quantity
                 }))
             };
@@ -279,6 +279,7 @@
         
         window.renderDeckList();
         window.renderLibrary();
+        return true;
     }
 
     // 🔍 LIBRARY FILTER LOGIC
@@ -425,9 +426,9 @@ document.getElementById('regComp').onchange = (e) => {
         const term = document.getElementById('deckListSearch').value.toLowerCase();
         const tbody = document.getElementById('deck-list-tbody');
         
-        const filtered = window.cacheData.decks.filter(d => {
-            const deckNameMatch = d.name.toLowerCase().includes(term);
-            const cardsMatch = d.cards?.some(c => c.name.toLowerCase().includes(term));
+        const filtered = (window.cacheData.decks || []).filter(d => {
+            const deckNameMatch = (d.name || "").toLowerCase().includes(term);
+            const cardsMatch = (d.cards || []).some(c => (c.name || "").toLowerCase().includes(term));
             return deckNameMatch || cardsMatch;
         });
 
@@ -436,7 +437,7 @@ document.getElementById('regComp').onchange = (e) => {
                 <td>
                     <strong>${d.name}</strong>
                     <div class="card-tags" style="font-size: 0.75rem; color: #666; margin-top: 4px;">
-                        ${d.cards.map(c => `${c.name} x${c.quantity}`).join(', ')}
+                        ${(d.cards || []).map(c => `${c.name} x${c.quantity}`).join(', ')}
                     </div>
                 </td>
                 <td style="text-align:center">
@@ -454,7 +455,7 @@ document.getElementById('regComp').onchange = (e) => {
         document.getElementById('deckName').value = deck.name;
         const container = document.getElementById('deck-build-container');
         container.innerHTML = "";
-        deck.cards.forEach(c => window.addToDeck(c.id, c.name, c.quantity));
+        (deck.cards || []).forEach(c => window.addToDeck(c.id, c.name, c.quantity));
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -471,23 +472,28 @@ document.getElementById('regComp').onchange = (e) => {
         const newFingerprint = cards.sort((a, b) => a.cardid - b.cardid).map(c => `${c.cardid}:${c.quantity}`).join('|');
         const duplicate = window.cacheData.decks.find(d => {
             if (d.id === currentId) return false;
-            const existingFingerprint = d.cards.sort((a, b) => a.id - b.id).map(c => `${c.id}:${c.quantity}`).join('|');
+            const existingFingerprint = (d.cards || [])
+                .map(c => ({ id: c.id, quantity: c.quantity }))
+                .sort((a, b) => a.id - b.id)
+                .map(c => `${c.id}:${c.quantity}`).join('|');
             return newFingerprint === existingFingerprint;
         });
 
         if (duplicate && !confirm(`Cảnh báo: Giống hệt bộ "${duplicate.name}". Vẫn lưu?`)) return;
 
-        await request('/decks', 'POST', { id: currentId, name, cards });
+        const saved = await request('/decks', 'POST', { id: currentId, name, cards });
+        if (!saved) return alert("Không lưu được bộ bài. Vui lòng thử lại.");
         window.resetDeckForm();
-        reloadData();
+        await reloadData();
     };
 
     document.getElementById('save-user-btn').onclick = async () => {
         const name = document.getElementById('userName').value.trim();
         if(!name) return;
-        await request(`/usersadd?username=${encodeURIComponent(name)}`, 'POST');
+        const saved = await request(`/usersadd?username=${encodeURIComponent(name)}`, 'POST');
+        if (!saved) return alert("Không lưu được người dùng. Vui lòng thử lại.");
         document.getElementById('userName').value = '';
-        reloadData();
+        await reloadData();
     };
 
     document.getElementById('btn-reg').onclick = async () => {
@@ -499,15 +505,17 @@ document.getElementById('regComp').onchange = (e) => {
             winrate: parseFloat(document.getElementById('regWinrate').value) || 0
         };
         if(!body.competitionid || !body.userid || !body.deckid) return alert("Vui lòng chọn đủ thông tin!");
-        await request('/competition-use', 'POST', body);
+        const saved = await request('/competition-use', 'POST', body);
+        if (!saved) return alert("Không lưu được kết quả giải đấu. Vui lòng thử lại.");
         alert("Đăng ký thành công!");
-        reloadData();
+        await reloadData();
     };
 
     window.deleteDeck = async (id) => {
         if(!confirm("Xác nhận xóa bộ bài này?")) return;
-        await request('/deck-delete', 'POST', id);
-        reloadData();
+        const deleted = await request('/deck-delete', 'POST', id);
+        if (!deleted) return alert("Không xóa được bộ bài. Vui lòng thử lại.");
+        await reloadData();
     };
 
     window.resetDeckForm = () => {

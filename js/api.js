@@ -17,7 +17,8 @@ export async function request(endpoint, method = 'GET', body = null) {
             console.error(`Server trả về lỗi: ${response.status}`);
             return null;
         }
-        return await response.json();
+        const responseText = await response.text();
+        return responseText ? JSON.parse(responseText) : true;
     } catch (error) {
         console.error("Lỗi kết nối mạng hoặc Server:", error);
         return null;
