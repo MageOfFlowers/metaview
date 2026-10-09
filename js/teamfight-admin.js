@@ -323,7 +323,7 @@ function renderMatches() {
             if (duel.winnerSide === 'TEAM2') scores[1]++;
         });
         return `<div class="teamfight-match">
-            <strong>Vòng ${match.roundNumber}: ${escapeHtml(team1?.name || 'Đội 1')} ${scores[0]} - ${scores[1]} ${escapeHtml(team2?.name || 'Đội 2')}</strong>
+            <strong>${match.thirdPlace ? 'Tranh hạng ba' : `Vòng ${match.roundNumber}`}: ${escapeHtml(team1?.name || 'Đội 1')} ${scores[0]} - ${scores[1]} ${escapeHtml(team2?.name || 'Đội 2')}</strong>
             <span> — ${winner ? `${escapeHtml(winner.name)} thắng` : 'Hòa'}</span>
             <button type="button" class="btn-sm delete-teamfight-match" data-id="${Number(match.id)}" style="background:#dc3545">Xóa</button>
             <div>${duels.map((duel) => {
@@ -361,43 +361,51 @@ function renderBracket() {
         return;
     }
 
+    const bracketMatches = state.matches.filter((match) => !match.thirdPlace);
+    const thirdPlaceMatches = state.matches.filter((match) => match.thirdPlace);
     const rounds = new Map();
-    state.matches.forEach((match) => {
+    bracketMatches.forEach((match) => {
         const round = Number(match.roundNumber);
         if (!rounds.has(round)) rounds.set(round, []);
         rounds.get(round).push(match);
     });
     const roundNumbers = Array.from(rounds.keys()).sort((a, b) => a - b);
-    if (!roundNumbers.length) {
-        container.innerHTML = '<p>Chưa có trận đấu. Hãy tạo trận ở phần ghi kết quả để bắt đầu nhánh.</p>';
-        return;
-    }
-    const finalRound = Math.max(...roundNumbers);
+    const finalRound = roundNumbers.length ? Math.max(...roundNumbers) : 0;
     const roundName = (round) => {
         if (round === finalRound && round > 1) return 'Chung kết';
         if (round === finalRound - 1 && finalRound > 2) return 'Bán kết';
         return `Vòng ${round}`;
     };
-    container.innerHTML = roundNumbers.map((round) => {
+    const roundsHtml = roundNumbers.map((round) => {
         const matches = rounds.get(round).sort((a, b) => a.id - b.id);
         return `<section class="teamfight-bracket-round">
             <h4>${roundName(round)}</h4>
-            ${matches.map((match) => {
-                const team1 = state.teams.find((team) => team.id === match.team1Id);
-                const team2 = state.teams.find((team) => team.id === match.team2Id);
-                const winner1 = match.winnerTeamId === match.team1Id;
-                const winner2 = match.winnerTeamId === match.team2Id;
-                const duels = state.duels.filter((duel) => duel.matchId === match.id);
-                const score1 = duels.filter((duel) => duel.winnerSide === 'TEAM1').length;
-                const score2 = duels.filter((duel) => duel.winnerSide === 'TEAM2').length;
-                return `<div class="teamfight-bracket-match" data-match-id="${Number(match.id)}">
-                    <button class="${winner1 ? 'winner' : ''}" type="button">${escapeHtml(team1?.name || 'Chưa xác định')} ${score1}</button>
-                    <button class="${winner2 ? 'winner' : ''}" type="button">${escapeHtml(team2?.name || 'Chưa xác định')} ${score2}</button>
-                    <small>${match.winnerTeamId == null ? 'Chưa có kết quả' : `Thắng: ${escapeHtml(state.teams.find((team) => team.id === match.winnerTeamId)?.name || '')}`}</small>
-                </div>`;
-            }).join('')}
+            ${matches.map(renderBracketMatch).join('')}
         </section>`;
     }).join('');
+    const thirdPlaceHtml = thirdPlaceMatches.length ? `<section class="teamfight-bracket-round">
+        <h4>Tranh hạng ba</h4>
+        ${thirdPlaceMatches.map((match) => renderBracketMatch(match)).join('')}
+    </section>` : '';
+    container.innerHTML = roundsHtml + thirdPlaceHtml;
+    if (!container.innerHTML) {
+        container.innerHTML = '<p>Chưa có trận đấu. Hãy tạo trận ở phần ghi kết quả để bắt đầu nhánh.</p>';
+    }
+}
+
+function renderBracketMatch(match) {
+    const team1 = state.teams.find((team) => team.id === match.team1Id);
+    const team2 = state.teams.find((team) => team.id === match.team2Id);
+    const winner1 = match.winnerTeamId === match.team1Id;
+    const winner2 = match.winnerTeamId === match.team2Id;
+    const duels = state.duels.filter((duel) => duel.matchId === match.id);
+    const score1 = duels.filter((duel) => duel.winnerSide === 'TEAM1').length;
+    const score2 = duels.filter((duel) => duel.winnerSide === 'TEAM2').length;
+    return `<div class="teamfight-bracket-match" data-match-id="${Number(match.id)}">
+        <button class="${winner1 ? 'winner' : ''}" type="button">${escapeHtml(team1?.name || 'Chưa xác định')} ${score1}</button>
+        <button class="${winner2 ? 'winner' : ''}" type="button">${escapeHtml(team2?.name || 'Chưa xác định')} ${score2}</button>
+        <small>${match.winnerTeamId == null ? 'Chưa có kết quả' : `Thắng: ${escapeHtml(state.teams.find((team) => team.id === match.winnerTeamId)?.name || '')}`}</small>
+    </div>`;
 }
 
 async function createTournament() {
@@ -469,6 +477,7 @@ async function saveMatch() {
         roundNumber,
         team1Id: Number(byId('teamfightTeam1').value),
         team2Id: Number(byId('teamfightTeam2').value),
+        thirdPlace: byId('teamfightThirdPlace').checked,
         tieBreakWinnerTeamId: byId('teamfightTieBreak').value ? Number(byId('teamfightTieBreak').value) : null,
         duels
     });
