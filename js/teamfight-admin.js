@@ -76,6 +76,7 @@ function clearTeamfightData() {
     state.members = [];
     state.matches = [];
     state.duels = [];
+    if (window.cacheData) window.cacheData.teamfightMembers = [];
     renderTeams();
     renderMatches();
     renderBracket();
@@ -104,6 +105,7 @@ async function loadTeamfightData() {
     }
     byId('teamfightStatus').textContent = '';
     Object.assign(state, { teams, members, matches, duels });
+    if (window.cacheData) window.cacheData.teamfightMembers = members;
     fillSelect(byId('teamfightTeam1'), teams, (team) => team.id, (team) => team.name, 'Chọn đội 1');
     fillSelect(byId('teamfightTeam2'), teams, (team) => team.id, (team) => team.name, 'Chọn đội 2');
     fillSelect(byId('teamfightTieBreak'), teams, (team) => team.id, (team) => team.name, 'Không có đội thắng tie-break');
@@ -160,6 +162,24 @@ function teamMembers(teamId) {
     return state.members.filter((member) => String(member.teamId) === String(teamId));
 }
 
+function teamOptions(teamId, type) {
+    const members = teamMembers(teamId);
+    if (type === 'player') {
+        return members.map((member) => {
+            const user = state.users.find((item) => String(item.id) === String(member.userId));
+            return { id: member.userId, name: user?.username || user?.name || `Player ${member.userId}` };
+        });
+    }
+    return members.map((member) => {
+        const deck = state.decks.find((item) => String(item.id) === String(member.deckId));
+        const user = state.users.find((item) => String(item.id) === String(member.userId));
+        return {
+            id: member.deckId,
+            name: `${deck?.name || `Deck ${member.deckId}`} (${user?.username || user?.name || 'member'})`
+        };
+    });
+}
+
 function renderDuelRows() {
     const team1Id = byId('teamfightTeam1').value;
     const team2Id = byId('teamfightTeam2').value;
@@ -171,32 +191,40 @@ function renderDuelRows() {
     const duelsContainer = byId('teamfightDuels');
     const rows = duelsContainer.querySelectorAll('.teamfight-duel-row');
     rows.forEach((row) => {
-        fillSelect(row.querySelector('.duel-player1'), state.users,
-            (user) => user.id, (user) => user.username || user.name, 'Chọn người chơi');
+        const player1Select = row.querySelector('.duel-player1');
+        const player2Select = row.querySelector('.duel-player2');
+        player1Select.dataset.teamId = team1Id;
+        player2Select.dataset.teamId = team2Id;
+        fillSelect(player1Select, teamOptions(team1Id, 'player'),
+            (user) => user.id, (user) => user.name, 'Người chơi đội 1');
         fillSearchableDeck(row.querySelector('.duel-deck1'), row.querySelector('.duel-deck1-search'),
-            state.decks.map((deck) => ({ id: deck.id, name: deck.name })), 'Chọn bộ bài');
-        fillSelect(row.querySelector('.duel-player2'), state.users,
-            (user) => user.id, (user) => user.username || user.name, 'Chọn người chơi');
+            teamOptions(team1Id, 'deck'), 'Bộ bài đội 1');
+        fillSelect(player2Select, teamOptions(team2Id, 'player'),
+            (user) => user.id, (user) => user.name, 'Người chơi đội 2');
         fillSearchableDeck(row.querySelector('.duel-deck2'), row.querySelector('.duel-deck2-search'),
-            state.decks.map((deck) => ({ id: deck.id, name: deck.name })), 'Chọn bộ bài');
+            teamOptions(team2Id, 'deck'), 'Bộ bài đội 2');
+        const search1 = row.querySelector('.duel-player1-search').value;
+        const search2 = row.querySelector('.duel-player2-search').value;
+        if (search1) window.filterSelect(player1Select.id, search1);
+        if (search2) window.filterSelect(player2Select.id, search2);
     });
 }
 
 function addDuelRow() {
     const row = document.createElement('div');
     row.className = 'teamfight-duel-row teamfight-row';
-    const player1SelectId = `teamfightUser-${++rosterPlayerSearchId}`;
-    const player2SelectId = `teamfightUser-${++rosterPlayerSearchId}`;
+    const player1SelectId = `teamfightDuelUser-${++rosterPlayerSearchId}`;
+    const player2SelectId = `teamfightDuelUser-${++rosterPlayerSearchId}`;
     row.innerHTML = `
-        <div><label>Tìm người chơi (đội 1)</label><input class="duel-player1-search" type="search" placeholder="Tìm trong tất cả người chơi..."
+        <div><label>Tìm người chơi đội 1</label><input class="duel-player1-search" type="search" placeholder="Tìm người chơi trong đội 1..."
         oninput="window.filterSelect('${player1SelectId}', this.value)">
         <select class="duel-player1 select-dropdown" id="${player1SelectId}" size="4"></select></div>
-        <div><label>Tìm bộ bài sử dụng (toàn bộ bộ bài)</label><input class="duel-deck1-search" type="search" placeholder="Tìm bộ bài...">
+        <div><label>Tìm bộ bài đội 1</label><input class="duel-deck1-search" type="search" placeholder="Tìm bộ bài trong đội 1...">
         <select class="duel-deck1"></select></div>
-        <div><label>Tìm người chơi (đội 2)</label><input class="duel-player2-search" type="search" placeholder="Tìm trong tất cả người chơi..."
+        <div><label>Tìm người chơi đội 2</label><input class="duel-player2-search" type="search" placeholder="Tìm người chơi trong đội 2..."
         oninput="window.filterSelect('${player2SelectId}', this.value)">
         <select class="duel-player2 select-dropdown" id="${player2SelectId}" size="4"></select></div>
-        <div><label>Tìm bộ bài sử dụng (toàn bộ bộ bài)</label><input class="duel-deck2-search" type="search" placeholder="Tìm bộ bài...">
+        <div><label>Tìm bộ bài đội 2</label><input class="duel-deck2-search" type="search" placeholder="Tìm bộ bài trong đội 2...">
         <select class="duel-deck2"></select></div>
         <div><label>Kết quả cặp đấu</label><select class="duel-winner">
             <option value="TEAM1">Đội 1 thắng</option><option value="TEAM2">Đội 2 thắng</option><option value="DRAW">Hòa</option>

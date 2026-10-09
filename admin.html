@@ -252,7 +252,7 @@
 <script type="module">
     import { request } from './js/api.js';
 
-    window.cacheData = { users: [], decks: [], comps: [], cards: [], compUses: [] };
+    window.cacheData = { users: [], decks: [], comps: [], cards: [], compUses: [], teamfightMembers: [] };
     window.libFilter = { name: '', color: '' };
 
     async function reloadData() {
@@ -284,7 +284,8 @@
             decks: decksWithCards, 
             comps: c || [],
             cards: cards || [],
-            compUses: uses || []
+            compUses: uses || [],
+            teamfightMembers: window.cacheData?.teamfightMembers || []
         };
         
         window.renderDeckList();
@@ -330,11 +331,18 @@
     window.filterSelect = (selectId, term) => {
         const el = document.getElementById(selectId);
         const val = term.trim().toLowerCase();
-        if (!val) { el.classList.remove('show'); return; }
-
+        const selectedValue = el.value;
         let data = [];
         let key = 'name';
         if (selectId === 'regUser') { data = window.cacheData.users; key = 'username'; }
+        else if (selectId.startsWith('teamfightDuelUser-')) {
+            key = 'username';
+            const teamId = el.dataset.teamId;
+            const memberIds = new Set((window.cacheData.teamfightMembers || [])
+                .filter(member => String(member.teamId) === String(teamId))
+                .map(member => String(member.userId)));
+            data = window.cacheData.users.filter(user => memberIds.has(String(user.id)));
+        }
         else if (selectId.startsWith('teamfightUser-')) { data = window.cacheData.users; key = 'username'; }
         else if (selectId === 'regDeck') { data = window.cacheData.decks; }
         else if (selectId === 'regComp') {
@@ -352,7 +360,9 @@
             option.textContent = i[key] || i.name;
             el.appendChild(option);
         });
-        filtered.length > 0 ? el.classList.add('show') : el.classList.remove('show');
+        if (filtered.some(i => String(i.id) === selectedValue)) el.value = selectedValue;
+        if (val && filtered.length > 0) el.classList.add('show');
+        else el.classList.remove('show');
     };
 
     document.getElementById('regUser').onchange = (e) => {
