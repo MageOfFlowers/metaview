@@ -26,6 +26,16 @@
         .c-g { background: #28a745; }
         .c-r { background: #dc3545; }
         .c-p { background: #6f42c1; }
+        .mode-switch, .teamfight-panel { margin-bottom: 18px; }
+        .teamfight-panel { display: none; }
+        .teamfight-roster-row, .teamfight-duel-row { display: grid; gap: 8px; align-items: end; margin: 8px 0; }
+        .teamfight-roster-row { grid-template-columns: 1fr 1fr auto; }
+        .teamfight-duel-row { grid-template-columns: repeat(5, minmax(100px, 1fr)) auto; }
+        .teamfight-row select, .teamfight-row input, .teamfight-panel select, .teamfight-panel input { width: 100%; padding: 8px; box-sizing: border-box; }
+        .teamfight-match { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin: 8px 0; }
+        @media (max-width: 700px) {
+            .teamfight-roster-row, .teamfight-duel-row { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -34,6 +44,89 @@
         <a href="index.html">← Trang chủ</a>
         <h1>⚙️ Quản lý hệ thống</h1>
     </header>
+
+    <section class="card mode-switch">
+        <label for="managerMode"><strong>Chế độ giải đấu</strong></label>
+        <select id="managerMode" style="margin-left:8px;padding:8px;">
+            <option value="SINGLE">Cá nhân</option>
+            <option value="TEAMFIGHT">Teamfight</option>
+        </select>
+        <p id="managerModeHint">Quản lý kết quả thi đấu cá nhân.</p>
+        <div class="dashboard-grid">
+            <div class="input-group">
+                <label for="newCompetitionName">Tên giải đấu mới</label>
+                <input id="newCompetitionName" type="text" placeholder="Tên giải đấu">
+            </div>
+            <div class="input-group">
+                <label for="newCompetitionDate">Ngày thi đấu</label>
+                <input id="newCompetitionDate" type="date">
+            </div>
+            <div class="input-group">
+                <label for="newCompetitionRegion">Khu vực</label>
+                <select id="newCompetitionRegion"><option value="N">Miền Bắc</option><option value="S">Miền Nam</option></select>
+            </div>
+            <div class="input-group">
+                <label for="newCompetitionFormat">Thể thức</label>
+                <select id="newCompetitionFormat">
+                    <option value="SINGLE_ELIMINATION">Loại trực tiếp</option>
+                    <option value="ROUND_ROBIN">Vòng tròn</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn-submit" id="createCompetitionBtn">Tạo giải đấu</button>
+        <span id="competitionCreateStatus" role="status"></span>
+    </section>
+
+    <section class="card teamfight-panel" id="teamfight-manager">
+        <h2>Quản lý Teamfight</h2>
+        <div class="input-group">
+            <label for="teamfightCompetition">Giải đấu Teamfight</label>
+            <select id="teamfightCompetition"></select>
+        </div>
+        <p id="teamfightStatus" role="status"></p>
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>Tạo đội (3-4 thành viên)</h3>
+                <div class="input-group">
+                    <label for="teamfightTeamName">Tên đội</label>
+                    <input id="teamfightTeamName" type="text" placeholder="Tên đội">
+                </div>
+                <div id="teamfightRoster"></div>
+                <button class="btn-submit" type="button" id="addRosterMember">Thêm thành viên</button>
+                <button class="btn-submit" type="button" id="saveTeamfightTeam">Lưu đội</button>
+            </div>
+            <div class="card">
+                <h3>Ghi kết quả trận đấu</h3>
+                <div class="dashboard-grid">
+                    <div class="input-group">
+                        <label for="teamfightRound">Vòng đấu</label>
+                        <input id="teamfightRound" type="number" min="1" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="teamfightTeam1">Team 1</label>
+                        <select id="teamfightTeam1"></select>
+                    </div>
+                    <div class="input-group">
+                        <label for="teamfightTeam2">Team 2</label>
+                        <select id="teamfightTeam2"></select>
+                    </div>
+                    <div class="input-group">
+                        <label for="teamfightTieBreak">Đội thắng tie-break (loại trực tiếp)</label>
+                        <select id="teamfightTieBreak"></select>
+                    </div>
+                </div>
+                <div id="teamfightDuels"></div>
+                <button class="btn-submit" type="button" id="addTeamfightDuel">Thêm cặp đấu</button>
+                <button class="btn-submit" type="button" id="saveTeamfightMatch">Lưu trận</button>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Danh sách đội</h3>
+            <div id="teamfightTeamList"></div>
+            <h3>Lịch sử trận đấu</h3>
+            <div id="teamfightMatchList"></div>
+        </div>
+    </section>
 
     <div class="accordion-item">
         <div class="accordion-header" onclick="window.toggleAcc(this)">👤 Quản lý Người dùng <span>+</span></div>
@@ -46,7 +139,7 @@
         </div>
     </div>
 
-    <div class="accordion-item">
+    <div class="accordion-item" id="single-tournament-manager">
         <div class="accordion-header" onclick="window.toggleAcc(this)">🏆 Đăng ký Giải & Xem Lịch sử <span>+</span></div>
         <div class="accordion-content">
             <div class="dashboard-grid">
@@ -230,7 +323,12 @@
         let key = 'name';
         if (selectId === 'regUser') { data = window.cacheData.users; key = 'username'; }
         else if (selectId === 'regDeck') { data = window.cacheData.decks; }
-        else if (selectId === 'regComp') { data = window.cacheData.comps; }
+        else if (selectId === 'regComp') {
+            const mode = document.getElementById('managerMode').value;
+            data = window.cacheData.comps.filter(c =>
+                (c.tournamentType || 'SINGLE').toUpperCase() === mode
+            );
+        }
 
         const filtered = data.filter(i => (i[key] || "").toLowerCase().includes(val));
         el.innerHTML = filtered.map(i => `<option value="${i.id}">${i[key]}</option>`).join('');
@@ -417,5 +515,6 @@ document.getElementById('regComp').onchange = (e) => {
 
     reloadData();
 </script>
+<script type="module" src="js/teamfight-admin.js"></script>
 </body>
 </html>

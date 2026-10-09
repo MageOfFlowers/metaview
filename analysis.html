@@ -18,6 +18,13 @@
     <div class="card">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
             <div class="input-group">
+                <label>Loại giải đấu</label>
+                <select id="analysisTournamentMode" style="width:100%; padding:8px;" onchange="switchAnalysisMode()">
+                    <option value="SINGLE">Cá nhân</option>
+                    <option value="TEAMFIGHT">Teamfight</option>
+                </select>
+            </div>
+            <div class="input-group">
                 <label style="font-size:0.8rem; color:var(--text-muted);">Giải đấu</label>
                 <select id="filterComp" style="width:100%; padding:8px;" onchange="triggerRender()"></select>
             </div>
@@ -98,7 +105,7 @@
     <div style="height: 400px;">
         <canvas id="deckRankChart"></canvas>
     </div>
-</div>
+    </div>
 
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -162,6 +169,23 @@
     </div>
     <div id="deck-comp-container"></div>
 </div>
+</div>
+ <div id="teamfight-analysis" class="card" style="display:none;">
+    <h3>Kết quả các đội Teamfight</h3>
+     <p id="teamfight-analysis-status" role="status"></p>
+    <div class="table-responsive">
+        <table>
+            <thead><tr><th>Đội</th><th>Trận</th><th>Thắng</th><th>Thua</th><th>Hòa</th><th>Winrate</th></tr></thead>
+            <tbody id="teamfight-analysis-teams"></tbody>
+        </table>
+    </div>
+    <h3>Lịch sử trận đội</h3>
+    <div class="table-responsive">
+        <table>
+            <thead><tr><th>Vòng</th><th>Đội 1</th><th>Điểm</th><th>Đội 2</th><th>Kết quả</th></tr></thead>
+            <tbody id="teamfight-analysis-matches"></tbody>
+        </table>
+    </div>
 </div>
  <div id="than-tich-chatbot"></div>
     <script src="js/chatbot.js"></script>

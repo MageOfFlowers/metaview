@@ -9,6 +9,8 @@ import { renderPlayerRanking } from './charts/player-ranking.js';
 import { tooltipData } from './tooltips-content.js';
 
 let rawData = { cards: [], compUses: [], deckInfos: [], decks: [], competitions: [] };
+let singleCompetitionUses = [];
+let teamfightSnapshot = null;
 let currentStats = null; 
 let charts = { usage: null, winrate: null, qty: null, deckRank: null, playerRank: null };
 let metaCurrentPage = 1;
@@ -22,11 +24,8 @@ export async function initAnalysis() {
             request('/users')
         ]);
         rawData = { cards, compUses: uses, deckInfos: infos, decks, competitions: comps, users };
-        const fComp = document.getElementById('filterComp');
-        if (comps && fComp) {
-            fComp.innerHTML = '<option value="all">Tất cả giải đấu</option>' + 
-                comps.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-        }
+        singleCompetitionUses = uses || [];
+        populateCompetitionFilter('SINGLE');
         const startInput = document.getElementById('filterStart');
         const endInput = document.getElementById('filterEnd');
         const regionInput = document.getElementById('filterRegion');
@@ -35,6 +34,7 @@ export async function initAnalysis() {
         if(regionInput) regionInput.onchange = () => render();
         Object.assign(window, {
             triggerRender: render,
+            switchAnalysisMode,
             triggerUsageRender,
             triggerWinrateOnlyRender,
             renderTableOnly,
@@ -53,6 +53,9 @@ export async function initAnalysis() {
 }
 
 export function render() {
+    rawData.compUses = document.getElementById('analysisTournamentMode').value === 'TEAMFIGHT'
+        ? createTeamfightCompetitionUses()
+        : singleCompetitionUses;
     const filters = {
         compId: document.getElementById('filterComp').value,
         region: document.getElementById('filterRegion').value,
@@ -81,6 +84,128 @@ export function render() {
     triggerPlayerRender();
     
     renderTableOnly();
+    renderTeamfightAnalysis(filters);
+}
+
+function populateCompetitionFilter(type) {
+    const select = document.getElementById('filterComp');
+    const competitions = rawData.competitions.filter((competition) =>
+        (competition.tournamentType || 'SINGLE').toUpperCase() === type
+    );
+    const selectedId = select.value;
+    select.innerHTML = '<option value="all">Tất cả giải đấu</option>' +
+        competitions.map((competition) => `<option value="${competition.id}">${escapeHtml(competition.name)}</option>`).join('');
+    if (competitions.some((competition) => String(competition.id) === selectedId)) {
+        select.value = selectedId;
+    } else {
+        select.value = type === 'TEAMFIGHT' && competitions.length ? String(competitions[0].id) : 'all';
+    }
+}
+
+async function switchAnalysisMode() {
+    const isTeamfight = document.getElementById('analysisTournamentMode').value === 'TEAMFIGHT';
+    populateCompetitionFilter(isTeamfight ? 'TEAMFIGHT' : 'SINGLE');
+    document.getElementById('teamfight-analysis').style.display = isTeamfight ? '' : 'none';
+    if (isTeamfight && !teamfightSnapshot) {
+        const status = document.getElementById('teamfight-analysis-status');
+        teamfightSnapshot = await request('/teamfight/analysis');
+        if (!teamfightSnapshot) {
+            status.textContent = 'Chưa tải được dữ liệu Teamfight. Hãy chạy config/teamfight.sql và triển khai lại backend.';
+            renderTeamfightAnalysis({});
+            return;
+        }
+        status.textContent = '';
+    }
+    render();
+}
+
+function createTeamfightCompetitionUses() {
+    if (!teamfightSnapshot) return [];
+    const matches = new Map((teamfightSnapshot.matches || []).map((match) => [match.id, match]));
+    const uses = [];
+    (teamfightSnapshot.duels || []).forEach((duel) => {
+        const match = matches.get(duel.matchId);
+        if (!match) return;
+        const winrate1 = duel.winnerSide === 'TEAM1' ? 100 : duel.winnerSide === 'TEAM2' ? 0 : 50;
+        const winrate2 = duel.winnerSide === 'TEAM2' ? 100 : duel.winnerSide === 'TEAM1' ? 0 : 50;
+        uses.push({
+            id: `teamfight-${duel.id}-1`, competitionid: match.competitionId,
+            deckid: duel.deck1Id, userid: duel.player1Id, winrate: winrate1,
+            rank: winrate1 === 100 ? 1 : winrate1 === 0 ? 2 : 1.5
+        }, {
+            id: `teamfight-${duel.id}-2`, competitionid: match.competitionId,
+            deckid: duel.deck2Id, userid: duel.player2Id, winrate: winrate2,
+            rank: winrate2 === 100 ? 1 : winrate2 === 0 ? 2 : 1.5
+        });
+    });
+    return uses;
+}
+
+function renderTeamfightAnalysis(filters) {
+    const teamsBody = document.getElementById('teamfight-analysis-teams');
+    const matchesBody = document.getElementById('teamfight-analysis-matches');
+    if (!teamsBody || !matchesBody) return;
+    if (!teamfightSnapshot) {
+        teamsBody.innerHTML = '';
+        matchesBody.innerHTML = '';
+        return;
+    }
+    const competitions = new Map(rawData.competitions.map((competition) => [competition.id, competition]));
+    const matches = (teamfightSnapshot.matches || []).filter((match) => {
+        if (filters.compId !== 'all' && String(match.competitionId) !== String(filters.compId)) return false;
+        const competition = competitions.get(match.competitionId);
+        if (!competition) return false;
+        if (filters.region && filters.region !== 'all' && competition.region !== filters.region) return false;
+        const date = competition.competition_date || competition.date;
+        if (!date) return !filters.startDate && !filters.endDate;
+        if (filters.startDate && date < filters.startDate) return false;
+        if (filters.endDate && date > filters.endDate) return false;
+        return true;
+    });
+    const teams = new Map((teamfightSnapshot.teams || []).map((team) => [team.id, team]));
+    const duelsByMatch = new Map();
+    (teamfightSnapshot.duels || []).forEach((duel) => {
+        const rows = duelsByMatch.get(duel.matchId) || [];
+        rows.push(duel);
+        duelsByMatch.set(duel.matchId, rows);
+    });
+    const stats = new Map();
+    matches.forEach((match) => {
+        [match.team1Id, match.team2Id].forEach((teamId) => {
+            if (!stats.has(teamId)) stats.set(teamId, { played: 0, wins: 0, losses: 0, draws: 0 });
+        });
+        const first = stats.get(match.team1Id);
+        const second = stats.get(match.team2Id);
+        first.played++;
+        second.played++;
+        if (match.winnerTeamId == null) {
+            first.draws++;
+            second.draws++;
+        } else {
+            const won = match.winnerTeamId === match.team1Id ? first : second;
+            const lost = match.winnerTeamId === match.team1Id ? second : first;
+            won.wins++;
+            lost.losses++;
+        }
+    });
+    teamsBody.innerHTML = Array.from(stats, ([teamId, row]) => {
+        const team = teams.get(teamId);
+        const percentage = row.played ? ((row.wins + row.draws / 2) / row.played * 100).toFixed(1) : '0.0';
+        return `<tr><td>${escapeHtml(team?.name || `Team ${teamId}`)}</td><td>${row.played}</td><td>${row.wins}</td><td>${row.losses}</td><td>${row.draws}</td><td>${percentage}%</td></tr>`;
+    }).join('');
+    matchesBody.innerHTML = matches.map((match) => {
+        const duels = duelsByMatch.get(match.id) || [];
+        const score1 = duels.filter((duel) => duel.winnerSide === 'TEAM1').length;
+        const score2 = duels.filter((duel) => duel.winnerSide === 'TEAM2').length;
+        const winner = teams.get(match.winnerTeamId);
+        return `<tr><td>${match.roundNumber}</td><td>${escapeHtml(teams.get(match.team1Id)?.name || '')}</td><td>${score1} - ${score2}</td><td>${escapeHtml(teams.get(match.team2Id)?.name || '')}</td><td>${escapeHtml(winner?.name || 'Hòa')}</td></tr>`;
+    }).join('');
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
 }
 
 // Thống nhất 1 hàm trigger duy nhất

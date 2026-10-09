@@ -20,7 +20,7 @@ export function renderDeckRanking(canvasId, rawData, filteredUses, currentChart 
             deckStatsMap[dId] = { id: use.deckid, totalWin: 0, count: 0, totalRank: 0 };
         }
         deckStatsMap[dId].totalWin += parseFloat(use.winrate || 0);
-        deckStatsMap[dId].totalRank += parseInt(use.rank || 99);
+        deckStatsMap[dId].totalRank += parseFloat(use.rank || 99);
         deckStatsMap[dId].count++;
     });
 

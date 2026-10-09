@@ -118,7 +118,7 @@ calculateStats(rawData, filters = {}) {
         }
 
         playerStats[pName].wins += parseFloat(use.winrate || 0);
-        playerStats[pName].totalRank += parseInt(use.rank || 0);
+        playerStats[pName].totalRank += parseFloat(use.rank || 0);
         playerStats[pName].count++;
 
         // Theo dõi stats từng deck của người chơi này
