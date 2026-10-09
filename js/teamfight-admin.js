@@ -63,7 +63,7 @@ function refreshCompetitionOptions() {
     singleSection.style.display = mode === 'SINGLE' ? '' : 'none';
     teamfightSection.style.display = mode === 'TEAMFIGHT' ? 'block' : 'none';
     byId('managerModeHint').textContent = mode === 'TEAMFIGHT'
-        ? 'Mỗi đội có 3-4 thành viên, mỗi người đăng ký một bộ bài. Có thể chọn bộ bài của đồng đội khi ghi nhận cặp đấu.'
+        ? 'Mỗi đội có 3-4 thành viên. Khi ghi kết quả, có thể chọn bất kỳ người chơi và bộ bài nào trong danh sách.'
         : 'Quản lý kết quả thi đấu cá nhân.';
     if (mode === 'TEAMFIGHT' && !teamfightCompetitions.some((item) => String(item.id) === byId('teamfightCompetition').value)) {
         byId('teamfightCompetition').value = '';
@@ -185,18 +185,38 @@ function renderDuelRows() {
 function addDuelRow() {
     const row = document.createElement('div');
     row.className = 'teamfight-duel-row teamfight-row';
+    const player1SelectId = `teamfightUser-${++rosterPlayerSearchId}`;
+    const player2SelectId = `teamfightUser-${++rosterPlayerSearchId}`;
     row.innerHTML = `
-        <div><label>Người chơi đội 1</label><select class="duel-player1"></select></div>
-        <div><label>Tìm bộ bài sử dụng</label><input class="duel-deck1-search" type="search" placeholder="Tìm bộ bài...">
+        <div><label>Tìm người chơi (đội 1)</label><input class="duel-player1-search" type="search" placeholder="Tìm trong tất cả người chơi..."
+        oninput="window.filterSelect('${player1SelectId}', this.value)">
+        <select class="duel-player1 select-dropdown" id="${player1SelectId}" size="4"></select></div>
+        <div><label>Tìm bộ bài sử dụng (toàn bộ bộ bài)</label><input class="duel-deck1-search" type="search" placeholder="Tìm bộ bài...">
         <select class="duel-deck1"></select></div>
-        <div><label>Người chơi đội 2</label><select class="duel-player2"></select></div>
-        <div><label>Tìm bộ bài sử dụng</label><input class="duel-deck2-search" type="search" placeholder="Tìm bộ bài...">
+        <div><label>Tìm người chơi (đội 2)</label><input class="duel-player2-search" type="search" placeholder="Tìm trong tất cả người chơi..."
+        oninput="window.filterSelect('${player2SelectId}', this.value)">
+        <select class="duel-player2 select-dropdown" id="${player2SelectId}" size="4"></select></div>
+        <div><label>Tìm bộ bài sử dụng (toàn bộ bộ bài)</label><input class="duel-deck2-search" type="search" placeholder="Tìm bộ bài...">
         <select class="duel-deck2"></select></div>
         <div><label>Kết quả cặp đấu</label><select class="duel-winner">
             <option value="TEAM1">Đội 1 thắng</option><option value="TEAM2">Đội 2 thắng</option><option value="DRAW">Hòa</option>
         </select></div>
         <button type="button" class="remove-duel btn-sm" style="background:#dc3545">Xóa</button>`;
     row.querySelector('.remove-duel').onclick = () => row.remove();
+    row.querySelector('.duel-player1').onchange = (event) => {
+        const select = event.currentTarget;
+        if (select.selectedIndex >= 0) {
+            row.querySelector('.duel-player1-search').value = select.options[select.selectedIndex].text;
+        }
+        select.classList.remove('show');
+    };
+    row.querySelector('.duel-player2').onchange = (event) => {
+        const select = event.currentTarget;
+        if (select.selectedIndex >= 0) {
+            row.querySelector('.duel-player2-search').value = select.options[select.selectedIndex].text;
+        }
+        select.classList.remove('show');
+    };
     row.querySelector('.duel-deck1-search').oninput = () => renderDuelRows();
     row.querySelector('.duel-deck2-search').oninput = () => renderDuelRows();
     byId('teamfightDuels').appendChild(row);

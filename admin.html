@@ -344,12 +344,12 @@
             );
         }
 
-        const filtered = data.filter(i => (i[key] || "").toLowerCase().includes(val));
+        const filtered = data.filter(i => String(i[key] || i.name || "").toLowerCase().includes(val));
         el.replaceChildren();
         filtered.forEach(i => {
             const option = document.createElement('option');
             option.value = i.id;
-            option.textContent = i[key];
+            option.textContent = i[key] || i.name;
             el.appendChild(option);
         });
         filtered.length > 0 ? el.classList.add('show') : el.classList.remove('show');
