@@ -6,6 +6,7 @@ const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => 
 }[char]));
 
 const state = { users: [], decks: [], competitions: [], teams: [], members: [], matches: [], duels: [] };
+let rosterPlayerSearchId = 0;
 
 function competitionType(competition) {
     return (competition.tournamentType || 'SINGLE').toUpperCase();
@@ -20,18 +21,6 @@ function fillSelect(select, rows, valueOf, labelOf, placeholder) {
 }
 
 function fillSearchableDeck(select, search, rows, placeholder) {
-    const selectedValue = select.value;
-    const term = search.value.trim().toLocaleLowerCase();
-    const filtered = rows.filter((row) => String(row.name ?? '').toLocaleLowerCase().includes(term));
-    fillSelect(select, filtered, (row) => row.id, (row) => row.name, placeholder);
-    if (filtered.some((row) => String(row.id) === selectedValue)) {
-        select.value = selectedValue;
-    } else if (selectedValue) {
-        select.value = '';
-    }
-}
-
-function fillSearchablePlayer(select, search, rows, placeholder) {
     const selectedValue = select.value;
     const term = search.value.trim().toLocaleLowerCase();
     const filtered = rows.filter((row) => String(row.name ?? '').toLocaleLowerCase().includes(term));
@@ -130,8 +119,6 @@ function renderRosterRows() {
     const users = state.users;
     const decks = state.decks;
     rows.forEach((row) => {
-        fillSearchablePlayer(row.querySelector('.roster-user'), row.querySelector('.roster-user-search'),
-            users.map((user) => ({ id: user.id, name: user.username || user.name })), 'Chọn người chơi');
         fillSearchableDeck(row.querySelector('.roster-deck'), row.querySelector('.roster-deck-search'),
             decks.map((deck) => ({ id: deck.id, name: deck.name })), 'Chọn bộ bài');
         row.querySelector('.remove-roster-member').disabled = memberCount <= 3;
@@ -141,13 +128,21 @@ function renderRosterRows() {
 function addRosterRow() {
     const row = document.createElement('div');
     row.className = 'teamfight-roster-row teamfight-row';
+    const playerSelectId = `teamfightUser-${++rosterPlayerSearchId}`;
     row.innerHTML = `
-        <div><label>Tìm người chơi</label><input class="roster-user-search" type="search" placeholder="Tìm người chơi...">
-        <select class="roster-user"></select></div>
+        <div><label>Tìm người chơi</label><input class="roster-user-search" type="search" placeholder="Tìm người chơi..."
+        oninput="window.filterSelect('${playerSelectId}', this.value)">
+        <select class="roster-user select-dropdown" id="${playerSelectId}" size="4"></select></div>
         <div><label>Tìm bộ bài thành viên</label><input class="roster-deck-search" type="search" placeholder="Tìm bộ bài...">
         <select class="roster-deck"></select></div>
         <button type="button" class="remove-roster-member btn-sm" style="background:#dc3545">Xóa</button>`;
-    row.querySelector('.roster-user-search').oninput = () => renderRosterRows();
+    row.querySelector('.roster-user').onchange = (event) => {
+        const select = event.currentTarget;
+        if (select.selectedIndex >= 0) {
+            row.querySelector('.roster-user-search').value = select.options[select.selectedIndex].text;
+        }
+        select.classList.remove('show');
+    };
     row.querySelector('.roster-deck-search').oninput = () => renderRosterRows();
     row.querySelector('.remove-roster-member').onclick = () => {
         if (byId('teamfightRoster').querySelectorAll('.teamfight-roster-row').length > 3) {
@@ -253,7 +248,12 @@ function editTeam(teamId) {
     members.forEach((member) => {
         addRosterRow();
         const row = byId('teamfightRoster').lastElementChild;
-        row.querySelector('.roster-user').value = String(member.userId);
+        const user = state.users.find((item) => item.id === member.userId);
+        const userSearch = row.querySelector('.roster-user-search');
+        const userSelect = row.querySelector('.roster-user');
+        userSearch.value = user?.username || user?.name || '';
+        window.filterSelect(userSelect.id, userSearch.value);
+        userSelect.value = String(member.userId);
         row.querySelector('.roster-deck').value = String(member.deckId);
     });
     renderRosterRows();

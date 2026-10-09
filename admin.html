@@ -324,6 +324,7 @@
         let data = [];
         let key = 'name';
         if (selectId === 'regUser') { data = window.cacheData.users; key = 'username'; }
+        else if (selectId.startsWith('teamfightUser-')) { data = window.cacheData.users; key = 'username'; }
         else if (selectId === 'regDeck') { data = window.cacheData.decks; }
         else if (selectId === 'regComp') {
             const mode = document.getElementById('managerMode').value;
@@ -333,7 +334,13 @@
         }
 
         const filtered = data.filter(i => (i[key] || "").toLowerCase().includes(val));
-        el.innerHTML = filtered.map(i => `<option value="${i.id}">${i[key]}</option>`).join('');
+        el.replaceChildren();
+        filtered.forEach(i => {
+            const option = document.createElement('option');
+            option.value = i.id;
+            option.textContent = i[key];
+            el.appendChild(option);
+        });
         filtered.length > 0 ? el.classList.add('show') : el.classList.remove('show');
     };
 
