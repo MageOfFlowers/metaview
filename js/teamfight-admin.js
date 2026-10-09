@@ -216,14 +216,14 @@ function addDuelRow() {
     const player1SelectId = `teamfightDuelUser-${++rosterPlayerSearchId}`;
     const player2SelectId = `teamfightDuelUser-${++rosterPlayerSearchId}`;
     row.innerHTML = `
-        <div><label>Tìm người chơi đội 1</label><input class="duel-player1-search" type="search" placeholder="Tìm người chơi trong đội 1..."
+        <div class="teamfight-player-picker"><label>Tìm người chơi đội 1</label><input class="duel-player1-search" type="search" placeholder="Tìm người chơi trong đội 1..."
         oninput="window.filterSelect('${player1SelectId}', this.value)">
-        <select class="duel-player1 select-dropdown" id="${player1SelectId}" size="4"></select></div>
+        <select class="duel-player1" id="${player1SelectId}"></select></div>
         <div><label>Tìm bộ bài đội 1</label><input class="duel-deck1-search" type="search" placeholder="Tìm bộ bài trong đội 1...">
         <select class="duel-deck1"></select></div>
-        <div><label>Tìm người chơi đội 2</label><input class="duel-player2-search" type="search" placeholder="Tìm người chơi trong đội 2..."
+        <div class="teamfight-player-picker"><label>Tìm người chơi đội 2</label><input class="duel-player2-search" type="search" placeholder="Tìm người chơi trong đội 2..."
         oninput="window.filterSelect('${player2SelectId}', this.value)">
-        <select class="duel-player2 select-dropdown" id="${player2SelectId}" size="4"></select></div>
+        <select class="duel-player2" id="${player2SelectId}"></select></div>
         <div><label>Tìm bộ bài đội 2</label><input class="duel-deck2-search" type="search" placeholder="Tìm bộ bài trong đội 2...">
         <select class="duel-deck2"></select></div>
         <div><label>Kết quả cặp đấu</label><select class="duel-winner">
