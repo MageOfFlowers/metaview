@@ -258,7 +258,9 @@
         ]);
         
         const decksWithCards = (d || []).map(deck => {
-            const matchingInfos = (infos || []).filter(info => info.deckid === deck.id);
+            const matchingInfos = (infos || []).filter(info =>
+                Number(info.deckid) === Number(deck.id)
+            );
             return {
                 ...deck,
                 cards: matchingInfos.map(info => ({
